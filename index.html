@@ -136,7 +136,7 @@ body{display:flex;flex-direction:column}
 .mono{font-family:'Share Tech Mono',monospace}
 
 /* MAP */
-.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
 .dst{background:var(--d3);border:1px solid var(--br2);border-radius:7px;padding:9px 6px;text-align:center;cursor:pointer;position:relative;overflow:hidden;user-select:none}
 .dst::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
 .dst.mine::after{background:var(--g)}
@@ -353,7 +353,7 @@ body{display:flex;flex-direction:column}
   <div class="tab"     onclick="goHub('city',this)"><i>🗺️</i>ГОРОД</div>
   <div class="tab"     onclick="goHub('org',this)"><i>🏢</i>ОРГА</div>
   <div class="tab"     onclick="goHub('crime',this)"><i>💀</i>КРИМ</div>
-  <div class="tab"     onclick="goHub('fun',this)"><i>🎲</i>ЧАТ<div class="tbadge" id="funBadge">!</div></div>
+  <div class="tab"     onclick="goHub('fun',this)"><i>🎲</i>ДОСУГ<div class="tbadge" id="funBadge">!</div></div>
   <div class="tab"     id="adminTab" style="display:none" onclick="goHub('admin',this)"><i>⚙️</i>ADM</div>
 </div>
 
@@ -506,12 +506,24 @@ body{display:flex;flex-direction:column}
 <div class="screen" id="s-fun">
   <div class="subnav" id="sn-fun">
     <div class="snav on" onclick="goSub('fun','casino',this)">🎰 Казино</div>
-    <div class="snav"    onclick="goSub('fun','poker',this)">🎲 Покер</div>
+    <div class="snav"    onclick="goSub('fun','poker',this)">🃏 Покер</div>
+    <div class="snav"    onclick="goSub('fun','mines',this)">💣 Мины</div>
+    <div class="snav"    onclick="goSub('fun','wheel',this)">🎡 Колесо</div>
+    <div class="snav"    onclick="goSub('fun','horses',this)">🐎 Скачки</div>
+    <div class="snav"    onclick="goSub('fun','lottery',this)">🎪 Лотерея</div>
+    <div class="snav"    onclick="goSub('fun','duel',this)">🥊 Дуэли</div>
+    <div class="snav"    onclick="goSub('fun','blackjack',this)">🃏 Блэкджек</div>
     <div class="snav"    onclick="goSub('fun','chat',this)">💬 Чат</div>
     <div class="snav"    onclick="goSub('fun','dm',this)">💌 ЛС</div>
   </div>
-  <div class="subscreen on pad" id="ss-casino"><div id="D_casino"></div></div>
-  <div class="subscreen pad"    id="ss-poker"><div id="D_poker"></div></div>
+  <div class="subscreen pad" id="ss-casino"><div id="D_casino"></div></div>
+  <div class="subscreen pad" id="ss-poker"><div id="D_poker"></div></div>
+  <div class="subscreen pad" id="ss-mines"><div id="D_mines"></div></div>
+  <div class="subscreen pad" id="ss-wheel"><div id="D_wheel"></div></div>
+  <div class="subscreen pad" id="ss-horses"><div id="D_horses"></div></div>
+  <div class="subscreen pad" id="ss-lottery"><div id="D_lottery"></div></div>
+  <div class="subscreen pad" id="ss-duel"><div id="D_duel"></div></div>
+  <div class="subscreen pad" id="ss-blackjack"><div id="D_blackjack"></div></div>
   <div class="subscreen"        id="ss-chat">
     <div class="pad" style="display:flex;flex-direction:column;height:calc(100vh - 200px)">
       <div class="card" style="padding:0;flex:1;overflow-y:auto;margin-bottom:7px" id="D_chatMsgs"></div>
@@ -585,7 +597,7 @@ body{display:flex;flex-direction:column}
     </div>
   </div>
 </div>
-<div class="mo" id="mDMChat" onclick="cm('mDMChat')">
+<div class="mo" id="mDMChat" onclick="cm('mDMChat');clearInterval(_dmPollInterval)">
   <div class="mbox" onclick="event.stopPropagation()" style="height:70vh;display:flex;flex-direction:column">
     <div class="mtitle" id="mDMT">Сообщения</div>
     <div style="flex:1;overflow-y:auto" id="mDMM"></div>
@@ -601,8 +613,8 @@ body{display:flex;flex-direction:column}
 // ── CONFIG ──
 const ADMINS=[{id:'658117827',pin:'1337',name:'Главный',role:'superadmin'}];
 const OB_KEY='lso_ob_v4'; // v4 = updated onboarding with all features
-const AVTS=['😎','🤠','👊','🥷','🎩','😈','🦁','🐺','🐉','⚡','🎯','💀'];
-const EMBLEMS='🔫💀🐉🦅🐺🦁⚡🔥💎🕷️🎯👑🌊🗡️🛡️🎪🌹☠️🦈🔱'.split('');
+const AVTS=['😎','🤠','👊','🥷','🎩','😈','🦁','🐺','🐉','🔥','🎯','💀'];
+const EMBLEMS=['🔫','💀','🐉','🦅','🐺','🦁','⚡','🔥','💎','🕷️','🎯','👑','🌊','🗡️','🛡️','🎪','🌹','☠️','🦈','🔱'];
 const OTYPES={gang:'Банда',corp:'Корпорация',mafia:'Мафия',police:'Полиция'};
 const UNLOCK={casino:3,carjack:4,drugs:6,poker:5,war:4};
 
@@ -612,7 +624,12 @@ if(tg){tg.ready();tg.expand();}
 const tgu=tg?.initDataUnsafe?.user;
 const PID=tgu?.id?'p'+tgu.id:'p'+Math.random().toString(36).slice(2,8);
 const PNAME=tgu?.first_name||'Игрок';
-const PAVA=AVTS[Math.abs([...PID].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0))%AVTS.length];
+// Safe hash — never breaks regardless of PID format
+const PAVA=(()=>{
+  let h=0;
+  for(let i=0;i<PID.length;i++) h=(h*31+PID.charCodeAt(i))>>>0;
+  return AVTS[h%AVTS.length]||'😎';
+})();
 const CUR_ADMIN=ADMINS.find(a=>tgu?.id&&String(tgu.id)===a.id);
 const IS_ADMIN=!!CUR_ADMIN;
 let adminUnlocked=false;
@@ -811,12 +828,26 @@ let curHub='me',curSub={me:'profile',city:'map',org:'orgmain',crime:'missions',f
 
 // ── WORLD DEFAULTS ──
 function defWorld(){return{orgs:{},districts:{
-  downtown:{name:'Центр',icon:'🏙️',income:200,orgId:null,power:0},
-  port:{name:'Порт',icon:'⚓',income:300,orgId:null,power:0},
-  vinewood:{name:'Вайнвуд',icon:'🌴',income:150,orgId:null,power:0},
-  suburbs:{name:'Пригород',icon:'🏡',income:100,orgId:null,power:0},
-  industrial:{name:'Заводы',icon:'🏭',income:250,orgId:null,power:0},
-  airport:{name:'Аэропорт',icon:'✈️',income:350,orgId:null,power:0},
+  // ЗОНА: ЦЕНТР ГОРОДА (4)
+  downtown:   {name:'Центр',       icon:'🏙️',zone:'city',    income:200,tax:8, power:0,orgId:null,control:0,police:3,buildings:[],minPower:30},
+  business:   {name:'Бизнес-р-н', icon:'🏢',zone:'city',    income:280,tax:10,power:0,orgId:null,control:0,police:4,buildings:[],minPower:40},
+  casino_dist:{name:'Казино-стрит',icon:'🎰',zone:'city',    income:400,tax:15,power:0,orgId:null,control:0,police:5,buildings:[],minPower:60},
+  chinatown:  {name:'Чайна-таун', icon:'🏮',zone:'city',    income:160,tax:6, power:0,orgId:null,control:0,police:2,buildings:[],minPower:25},
+  // ЗОНА: ПОБЕРЕЖЬЕ (4)
+  port:       {name:'Порт',        icon:'⚓',zone:'coast',   income:300,tax:8, power:0,orgId:null,control:0,police:2,buildings:[],minPower:35},
+  beach:      {name:'Пляж',        icon:'🏖️',zone:'coast',   income:180,tax:5, power:0,orgId:null,control:0,police:1,buildings:[],minPower:20},
+  docks:      {name:'Доки',        icon:'🚢',zone:'coast',   income:350,tax:10,power:0,orgId:null,control:0,police:2,buildings:[],minPower:45},
+  marina:     {name:'Яхт-клуб',   icon:'⛵',zone:'coast',   income:230,tax:9, power:0,orgId:null,control:0,police:1,buildings:[],minPower:30},
+  // ЗОНА: ПРИГОРОД (4)
+  vinewood:   {name:'Вайнвуд',     icon:'🌴',zone:'suburb',  income:150,tax:5, power:0,orgId:null,control:0,police:1,buildings:[],minPower:15},
+  suburbs:    {name:'Пригород',    icon:'🏡',zone:'suburb',  income:100,tax:3, power:0,orgId:null,control:0,police:1,buildings:[],minPower:10},
+  hills:      {name:'Холмы',       icon:'⛰️',zone:'suburb',  income:220,tax:7, power:0,orgId:null,control:0,police:2,buildings:[],minPower:25},
+  grove:      {name:'Грув-стрит', icon:'🌳',zone:'suburb',  income:120,tax:4, power:0,orgId:null,control:0,police:2,buildings:[],minPower:15},
+  // ЗОНА: ПРОМЫШЛЕННАЯ (4)
+  industrial: {name:'Заводы',      icon:'🏭',zone:'industry',income:250,tax:6, power:0,orgId:null,control:0,police:2,buildings:[],minPower:30},
+  airport:    {name:'Аэропорт',    icon:'✈️',zone:'industry',income:350,tax:12,power:0,orgId:null,control:0,police:4,buildings:[],minPower:50},
+  wasteland:  {name:'Пустошь',     icon:'🏜️',zone:'industry',income:80, tax:1, power:0,orgId:null,control:0,police:0,buildings:[],minPower:5},
+  trainyard:  {name:'Депо',        icon:'🚂',zone:'industry',income:190,tax:5, power:0,orgId:null,control:0,police:1,buildings:[],minPower:20},
 },wars:{},season:{num:1,start:Date.now(),end:Date.now()+30*864e5}};}
 function defElection(){return{candidates:[
   {id:'c1',name:'Дон Педро',avatar:'🎩',party:'Мафия',motto:'Мир через силу',votes:0},
@@ -829,7 +860,8 @@ function defPlayer(){return{id:PID,name:PNAME,avatar:PAVA,orgId:null,
   skills:{},skillPoints:1,cooldowns:{},props:[],
   lastSeen:Date.now(),dailyStreak:0,dailyLastDate:'',bpXP:0,bpLevel:1,
   kills:0,heists:0,raceWins:0,contractsDone:0,
-  titles:[],activeTitle:null,taxes:{lastPaid:Date.now()},drugStash:[],_wantedTimer:0};}
+  titles:[],activeTitle:null,taxes:{lastPaid:Date.now()},drugStash:[],_wantedTimer:0,
+  lastWheelSpin:0};}
 
 async function syncAll(){
   // Load world + players from Supabase (key-value table)
@@ -883,7 +915,7 @@ function updateHdr(){
   if(!me)return;
   const id=x=>document.getElementById(x);
   const t=me.activeTitle&&TITLES.find(x=>x.id===me.activeTitle);
-  id('hAva').textContent=me.avatar;
+  id('hAva').textContent=me.avatar||PAVA||'😎';
   id('hName').textContent=(t?t.badge+' ':'')+me.name;
   const org=me.orgId&&W?.orgs?.[me.orgId];
   id('hOrg').textContent=org?org.emblem+' '+org.name:'⚠️ Без орги (−35%)';
@@ -906,7 +938,9 @@ const RENDERS={
   city:{map:rCity,news:rNews,election:rElection,top:rTop},
   org:{orgmain:rOrg,wars:rWars,tourn:rTournament,allies:rAlliances},
   crime:{missions:rMissions,carjack:rCarjack,drugs:rDrugs,contracts:rContracts,bets:rBets},
-  fun:{casino:rCasino,poker:rPoker,chat:rChat,dm:rDM},
+  fun:{casino:rCasino,poker:rPoker,chat:rChat,dm:rDM,
+       mines:rMines,wheel:rWheel,horses:rHorses,
+       lottery:rLottery,duel:rDuel,blackjack:rBlackjack},
   admin:{aplayers:rAPlayers,aevents:rAEvents,aworld:rAWorld,aannounce:rAAnnounce,astats:rAStats},
 };
 function goHub(hub,el){
@@ -954,55 +988,208 @@ function toast(msg,err){
 }
 
 // ── CITY ──
+const ZONES={
+  city:    {name:'🏙️ Центр города', color:'#2e86de'},
+  coast:   {name:'🌊 Побережье',    color:'#00d2d3'},
+  suburb:  {name:'🌳 Пригород',     color:'#1db87a'},
+  industry:{name:'⚙️ Промзона',     color:'#9b59b6'},
+};
+const BUILDINGS={
+  warehouse:{name:'Склад',    ico:'📦', cost:2000, incBonus:50,  desc:'+50$/ч к доходу района'},
+  casino_b: {name:'Казино',   ico:'🎰', cost:5000, incBonus:150, desc:'+150$/ч, снижает налог'},
+  market:   {name:'Рынок',    ico:'🛒', cost:3000, incBonus:80,  desc:'+80$/ч к доходу'},
+  fortress: {name:'Крепость', ico:'🛡️', cost:4000, defBonus:30,  desc:'+30 к защите района'},
+};
+
 function rCity(){
   const mg=document.getElementById('D_map');if(!mg)return;
-  mg.innerHTML=Object.entries(W.districts).map(([id,d])=>{
-    const own=d.orgId&&W.orgs[d.orgId];
-    const cls=!d.orgId?'neutral':d.orgId===me.orgId?'mine':'enemy';
-    return`<div class="dst ${cls}" onclick="openDist('${id}')">
-      <div style="font-size:20px;margin-bottom:3px">${d.icon}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px">${d.name}</div>
-      <div style="font-size:8px;color:var(--dm);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${own?own.emblem+own.name:'Свободный'}</div>
-      <div style="font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--gr)">+${d.income}$/ч</div>
-    </div>`;
-  }).join('');
+
+  // Fixed zone order and layout: 2 zones per row
+  const zoneOrder=[
+    ['city','coast'],
+    ['suburb','industry']
+  ];
+
+  const distByZone={};
+  Object.entries(W.districts).forEach(([id,d])=>{
+    if(!distByZone[d.zone])distByZone[d.zone]=[];
+    distByZone[d.zone].push([id,d]);
+  });
+
+  let html=`<div style="display:flex;flex-direction:column;gap:10px">`;
+
+  zoneOrder.forEach(row=>{
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
+    row.forEach(zone=>{
+      const zi=ZONES[zone]||{name:zone,color:'#888'};
+      const districts=distByZone[zone]||[];
+      html+=`
+        <div style="background:var(--d2);border:1px solid ${zi.color}33;border-radius:12px;overflow:hidden">
+          <!-- Zone header -->
+          <div style="background:${zi.color}18;border-bottom:1px solid ${zi.color}33;padding:6px 10px;display:flex;align-items:center;gap:6px">
+            <div style="width:6px;height:6px;border-radius:50%;background:${zi.color};flex-shrink:0"></div>
+            <span style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:${zi.color};text-transform:uppercase">${zi.name.replace(/./u,'')}</span>
+          </div>
+          <!-- 2x2 district grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:${zi.color}22">
+            ${districts.map(([id,d])=>{
+              const own=d.orgId&&W.orgs[d.orgId];
+              const isOwn=d.orgId===me.orgId;
+              const isEnemy=d.orgId&&!isOwn;
+              const ctrl=d.control||0;
+              const bInc=(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
+              const income=d.income+bInc;
+              const clr=isOwn?'var(--g)':isEnemy?'var(--r)':'rgba(255,255,255,.15)';
+              const bg=isOwn?'rgba(240,180,41,.08)':isEnemy?'rgba(230,57,80,.08)':'var(--d2)';
+              return`<div onclick="openDist('${id}')"
+                style="background:${bg};padding:10px 8px;cursor:pointer;position:relative;transition:background .15s"
+                onmouseenter="this.style.background='var(--d3)'" onmouseleave="this.style.background='${bg}'">
+                <!-- status bar left -->
+                <div style="position:absolute;top:0;bottom:0;left:0;width:2px;background:${clr}"></div>
+                <div style="padding-left:6px">
+                  <div style="font-size:20px;margin-bottom:3px;line-height:1">${d.icon}</div>
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.5px;line-height:1.1;margin-bottom:2px">${d.name}</div>
+                  <div style="font-size:8px;color:${isOwn?'var(--g)':isEnemy?'var(--r)':'var(--dm)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">
+                    ${own?own.emblem+' '+own.name:'Свободный'}
+                  </div>
+                  <!-- control bar -->
+                  <div style="background:rgba(255,255,255,.08);border-radius:2px;height:3px;overflow:hidden;margin-bottom:4px">
+                    <div style="height:100%;width:${ctrl}%;background:${clr};border-radius:2px"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:10px;font-weight:700;color:var(--gr)">+${income}$</span>
+                    <span style="font-size:8px;color:var(--dm)">${d.police>0?'👮'+d.police:''}</span>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  html+=`</div>`;
+  mg.innerHTML=html;
+
   const fl=document.getElementById('D_feed');if(!fl)return;
   fl.innerHTML=FEED.slice(0,20).map(f=>`<div class="fi">
     <div class="fav">${f.icon}</div>
     <div><div class="ftxt">${f.text}</div><div class="ftime">${fmtT(f.ts)}</div></div>
   </div>`).join('')||'<div class="empty">🕊️ В городе тихо</div>';
 }
+
 function openDist(id){
-  const d=W.districts[id];const own=d.orgId&&W.orgs[d.orgId];
+  const d=W.districts[id];if(!d)return;
+  const own=d.orgId&&W.orgs[d.orgId];
   const myOrg=me.orgId&&W.orgs[me.orgId];
   const isOwn=d.orgId===me.orgId;
-  const canAtk=myOrg&&!isOwn&&(me.level||1)>=UNLOCK.war;
+  const zi=ZONES[d.zone]||{name:d.zone,color:'#888'};
+  const canAtk=myOrg&&!isOwn&&(me.level||1)>=UNLOCK.war&&me.power>=(d.minPower||30);
+  const ctrl=d.control||0;
+  const buildings=d.buildings||[];
+  // Calculate real income with buildings
+  const bInc=buildings.reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
+  const bDef=buildings.reduce((s,b)=>s+(BUILDINGS[b]?.defBonus||0),0);
+  const realIncome=d.income+bInc;
   document.getElementById('mDistT').textContent=d.icon+' '+d.name;
   document.getElementById('mDistB').innerHTML=`
+    <div class="tag" style="background:${zi.color}22;border-color:${zi.color}44;color:${zi.color};font-size:9px;margin-bottom:8px">${zi.name}</div>
     <div class="card mb8">
-      <div class="fb mb5"><span style="color:var(--dm);font-size:10px">ВЛАДЕЛЕЦ</span><span>${own?own.emblem+' '+own.name:'<span class="tag tbl">Свободный</span>'}</span></div>
-      <div class="fb mb5"><span style="color:var(--dm);font-size:10px">ДОХОД</span><span class="tag tgr">+${d.income}$/ч</span></div>
-      <div class="fb"><span style="color:var(--dm);font-size:10px">ОБОРОНА</span><span class="tag tg">${d.power||0}⚡</span></div>
+      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">ВЛАДЕЛЕЦ</span>
+        <span>${own?own.emblem+' '+own.name:'<span class="tag tbl">Свободный</span>'}</span></div>
+      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">КОНТРОЛЬ</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <div style="width:80px;background:var(--dk);border-radius:3px;height:6px;overflow:hidden">
+            <div style="height:100%;width:${ctrl}%;background:${isOwn?'var(--g)':'var(--r)'};border-radius:3px"></div>
+          </div>
+          <span style="font-size:10px">${ctrl}%</span>
+        </span></div>
+      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">ДОХОД</span>
+        <span class="tag tgr">+${realIncome}$/ч${bInc>0?` <span style="font-size:8px">(+${bInc} здания)</span>`:''}</span></div>
+      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">НАЛОГ</span>
+        <span style="font-size:11px">${d.tax}%</span></div>
+      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">ОБОРОНА</span>
+        <span class="tag tg">${(d.power||0)+bDef}⚡</span></div>
+      <div class="fb"><span style="color:var(--dm);font-size:10px">ПОЛИЦИЯ</span>
+        <span style="font-size:12px">${d.police>0?'👮'.repeat(d.police):'—'}</span></div>
     </div>
-    ${isOwn?'<div class="tag tg" style="display:block;text-align:center;padding:10px">✅ Ваш район</div>':''}
-    ${canAtk?`<button class="btn btn-r btn-full mt8" onclick="captDist('${id}')">⚔️ ЗАХВАТИТЬ (−50 силы)</button>`:''}
-    ${!myOrg&&!isOwn?'<div class="empty">Нужна организация</div>':''}`;
+    ${buildings.length?`<div class="card mb8">
+      <div style="font-size:10px;color:var(--dm);margin-bottom:6px">ПОСТРОЙКИ</div>
+      ${buildings.map(b=>`<div class="fb mb3">
+        <span>${BUILDINGS[b]?.ico} ${BUILDINGS[b]?.name}</span>
+        <span style="font-size:9px;color:var(--gr)">${BUILDINGS[b]?.desc}</span>
+      </div>`).join('')}
+    </div>`:''}
+    ${isOwn?`<div>
+      <div style="font-size:10px;color:var(--dm);margin-bottom:6px">ПОСТРОИТЬ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+        ${Object.entries(BUILDINGS).filter(([bid])=>!buildings.includes(bid)).map(([bid,b])=>`
+          <button class="btn btn-sm" style="background:var(--d3);border:1px solid var(--br2);text-align:left;padding:7px;border-radius:7px" onclick="buildInDist('${id}','${bid}')">
+            <div style="font-size:14px">${b.ico}</div>
+            <div style="font-size:9px;font-weight:700">${b.name}</div>
+            <div style="font-size:8px;color:var(--g)">${fmt(b.cost)}$</div>
+          </button>`).join('')}
+      </div>
+      <div class="tag tg" style="display:block;text-align:center;padding:8px">✅ Ваш район</div>
+    </div>`:''}
+    ${canAtk?`<button class="btn btn-r btn-full mt8" onclick="captDist('${id}')">
+      ⚔️ ЗАХВАТИТЬ (−${d.minPower||30} силы)
+    </button>`:''}
+    ${!myOrg&&!isOwn?'<div class="empty">Нужна организация</div>':''}
+    ${myOrg&&!isOwn&&!canAtk&&(me.level||1)<UNLOCK.war?`<div class="empty">🔒 Нужен уровень ${UNLOCK.war}</div>`:''}
+    ${myOrg&&!isOwn&&canAtk===false&&me.power<(d.minPower||30)?`<div class="empty">Нужно ${d.minPower||30}+ силы</div>`:''}`;
   om('mDist');
 }
+
+async function buildInDist(distId, buildId){
+  cm('mDist');
+  const d=W.districts[distId];
+  const b=BUILDINGS[buildId];
+  if(!d||!b){toast('Не найдено',1);return;}
+  if(d.orgId!==me.orgId){toast('Не ваш район!',1);return;}
+  if(me.money<b.cost){toast('Нужно '+fmt(b.cost)+'$!',1);return;}
+  if((d.buildings||[]).includes(buildId)){toast('Уже построено!',1);return;}
+  me.money-=b.cost;
+  if(!d.buildings)d.buildings=[];
+  d.buildings.push(buildId);
+  addTx(-b.cost,'🏗️ Постройка '+b.name+' в '+d.name);
+  sfx('levelup');haptic('medium');
+  await saveAll();updateHdr();rCity();
+  await pushFeed('🏗️',`<b>${me.name}</b> построил ${b.ico}<b>${b.name}</b> в районе <b>${d.name}</b>!`);
+  toast(`✅ ${b.name} построен в ${d.name}!`);
+}
+
 async function captDist(id){
   cm('mDist');await syncAll();
   const d=W.districts[id];const myOrg=W.orgs[me.orgId];
   if(!myOrg){toast('Нужна орга!',1);return;}
-  if(me.power<50){toast('Нужно 50+ силы!',1);return;}
+  const minPow=d.minPower||30;
+  if(me.power<minPow){toast('Нужно '+minPow+'+ силы!',1);return;}
   if(d.orgId===me.orgId){toast('Уже ваш!',1);return;}
   const prev=d.orgId&&W.orgs[d.orgId];
-  const win=(me.power+(me.skills?.combat||0)*5)>(d.power||0)*0.8||Math.random()>0.38;
-  me.power-=50;
-  if(win){d.orgId=me.orgId;d.power=Math.floor(me.power*.2);me.money+=300;me.rep+=15;me.score+=100;me.kills=(me.kills||0)+1;gainXP(80);
-    addTx(300,'🏙️ Захват района '+d.name);sfx('win');haptic('heavy');checkAchievements();
+  const defTotal=(d.power||0)+(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.defBonus||0),0);
+  const atkPow=(me.power+(me.skills?.combat||0)*5)*getPremiumMoneyMult();
+  const win=atkPow>(defTotal*0.8)||Math.random()>0.38;
+  me.power-=minPow;
+  if(win){
+    const oldControl=d.control||0;
+    d.orgId=me.orgId;
+    d.power=Math.floor(me.power*.2);
+    d.control=Math.min(100,oldControl+40); // build control over time
+    const reward=150+Math.floor(d.income*0.5);
+    me.money+=reward;me.rep+=15;me.score+=100;me.kills=(me.kills||0)+1;
+    gainXP(80);checkBP();
+    addTx(reward,'⚔️ Захват района '+d.name);sfx('win');haptic('heavy');checkAchievements();
     await pushFeed('⚔️','<b>'+me.name+'</b> захватил <b>'+d.name+'</b>'+(prev?' у '+prev.emblem+prev.name:'')+'!');
-    toast('🏆 Захвачен! +300$');
-  }else{me.rep-=5;me.wanted=(me.wanted||0)+1;gainXP(10);await pushFeed('💀','<b>'+me.name+'</b> атаковал <b>'+d.name+'</b>, но потерпел поражение');toast('❌ Атака отбита',1);}
+    toast('🏆 '+d.name+' захвачен! +'+reward+'$');
+    // Police wanted if high police district
+    if(d.police>=3){me.wanted=(me.wanted||0)+1;toast('🚔 Полиция заметила!',1);}
+  }else{
+    me.rep-=5;me.wanted=(me.wanted||0)+(d.police>0?2:1);gainXP(10);
+    await pushFeed('💀','<b>'+me.name+'</b> атаковал <b>'+d.name+'</b>, но потерпел поражение');
+    toast('❌ Атака отбита! +розыск',1);
+  }
   await saveAll();updateHdr();rCity();
 }
 
@@ -1018,7 +1205,7 @@ function rProfile(){
   const nextEn=Math.max(1,Math.ceil(((me.lastEnergy||Date.now())+36e5-Date.now())/6e4));
   el.innerHTML=`
     <div class="card hi" style="text-align:center;padding:16px;margin-bottom:8px">
-      <div style="font-size:52px;margin-bottom:6px">${me.avatar}</div>
+      <div style="font-size:52px;margin-bottom:6px">${me.avatar||PAVA||'😎'}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--g)">${me.name}</div>
       <div style="font-size:11px;color:var(--dm);margin-bottom:8px">${t?t.badge+' '+t.name:'Без титула'}</div>
       ${org?`<span class="tag tg">${org.emblem} ${org.name}</span>`:'<span class="tag tr">⚠️ Без организации</span>'}
@@ -1727,10 +1914,15 @@ async function finishCJ(win){
 
 // ── DRUGS ──
 const DROUTES=[
-  {from:'suburbs',to:'downtown',drug:'Трава',buy:200,sell:500,risk:.15},
-  {from:'industrial',to:'port',drug:'Крисс',buy:800,sell:1800,risk:.25},
-  {from:'port',to:'vinewood',drug:'Кокс',buy:1500,sell:3500,risk:.35},
-  {from:'airport',to:'downtown',drug:'Экстази',buy:500,sell:1200,risk:.2},
+  {from:'suburbs',   to:'downtown',   drug:'Трава',     buy:200,  sell:500,  risk:.15},
+  {from:'industrial',to:'port',       drug:'Крисс',     buy:800,  sell:1800, risk:.25},
+  {from:'port',      to:'vinewood',   drug:'Кокс',      buy:1500, sell:3500, risk:.35},
+  {from:'airport',   to:'downtown',   drug:'Экстази',   buy:500,  sell:1200, risk:.20},
+  {from:'wasteland', to:'beach',      drug:'Синтетика', buy:400,  sell:900,  risk:.18},
+  {from:'docks',     to:'casino_dist',drug:'Порошок',   buy:1200, sell:2800, risk:.30},
+  {from:'hills',     to:'business',   drug:'Таблетки',  buy:600,  sell:1400, risk:.22},
+  {from:'grove',     to:'chinatown',  drug:'Спайс',     buy:300,  sell:700,  risk:.16},
+  {from:'trainyard', to:'marina',     drug:'Героин',    buy:2000, sell:4500, risk:.40},
 ];
 function rDrugs(){
   const el=document.getElementById('D_drugs');if(!el)return;
@@ -2023,11 +2215,36 @@ async function sendChat(){
   // Write to Supabase — realtime will push to other players
   await sendChatMsg(text);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement?.id==='chatInp')sendChat();});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.activeElement?.id==='chatInp')sendChat();
+  if(e.key==='Enter'&&document.activeElement?.id==='dmInp')sendDM();
+});
 
 // ── DM ──
 let dmTgt=null;
+let _dmPollInterval=null;
+let _lastDmTs=0; // track last seen message ts for badge
+
 function dmKey(a,b){return[a,b].sort().join('_');}
+
+// ── DM badge update ──
+async function checkDMBadge(){
+  if(!me)return;
+  const dms=await ST.get('dms')||{};
+  const unread=Object.entries(dms)
+    .filter(([k])=>k.includes(PID))
+    .reduce((sum,[,msgs])=>sum+msgs.filter(m=>m.to===PID&&!m.read).length,0);
+  // Show badge on ДОСУГ tab snav for ЛС
+  const dmSnav=document.querySelector('#sn-fun .snav[onclick*="dm"]');
+  if(dmSnav){
+    let badge=dmSnav.querySelector('.dm-snav-badge');
+    if(unread>0){
+      if(!badge){badge=document.createElement('span');badge.className='dm-snav-badge';badge.style.cssText='background:var(--r);color:#fff;border-radius:6px;padding:0 4px;font-size:8px;margin-left:4px;font-weight:700';dmSnav.appendChild(badge);}
+      badge.textContent=unread;
+    }else if(badge){badge.remove();}
+  }
+}
+
 async function rDM(){
   const el=document.getElementById('D_dm');if(!el)return;
   const dms=await ST.get('dms')||{};
@@ -2039,8 +2256,11 @@ async function rDM(){
   el.innerHTML=(convos.length?`<div class="card" style="padding:0;margin-bottom:10px">
     ${convos.map(c=>`<div class="fc" style="gap:10px;padding:9px 12px;border-bottom:1px solid var(--br2);cursor:pointer" onclick="openDM('${c.oid}')">
       <div style="font-size:18px;width:32px;height:32px;background:var(--d3);border-radius:50%;display:flex;align-items:center;justify-content:center">${c.op?.avatar||'👤'}</div>
-      <div style="flex:1"><div style="font-size:12px;font-weight:700">${c.op?.name||'???'} ${c.unread?`<span class="tag tr">${c.unread}</span>`:''}</div>
-      <div style="font-size:10px;color:var(--dm)">${c.last?.text||'—'}</div></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700">${c.op?.name||'???'} ${c.unread?`<span class="tag tr" style="font-size:8px">${c.unread}</span>`:''}</div>
+        <div style="font-size:10px;color:var(--dm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${c.last?.text||'—'}</div>
+      </div>
+      <div style="font-size:9px;color:var(--dm)">${fmtAge(c.last?.ts||0)}</div>
     </div>`).join('')}
   </div>`:'')
   +`<div class="sec"><div class="sec-l">Написать</div></div>
@@ -2049,28 +2269,767 @@ async function rDM(){
       <div style="font-size:17px">${p.avatar}</div>
       <div style="flex:1"><div style="font-size:12px;font-weight:700">${p.name}</div></div>
       <button class="btn btn-gh btn-sm" onclick="openDM('${p.id}')">💌</button>
-    </div>`).join('')||'<div class="empty">Нет игроков</div>'}
+    </div>`).join('')||'<div class="empty">Нет игроков онлайн</div>'}
   </div>`;
 }
+
 async function openDM(tid){
-  dmTgt=tid;const op=P[tid];
+  dmTgt=tid;
+  const op=P[tid];
   document.getElementById('mDMT').textContent='💌 '+(op?.name||'Игрок');
-  const dms=await ST.get('dms')||{};const k=dmKey(PID,tid),msgs=dms[k]||[];
-  const el=document.getElementById('mDMM');
-  el.innerHTML=msgs.slice(-50).map(m=>`<div style="max-width:75%;padding:8px 11px;border-radius:12px;margin-bottom:6px;font-size:12px;${m.from===PID?'background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.2);margin-left:auto;border-radius:12px 12px 0 12px':'background:var(--d3);border:1px solid var(--br2);border-radius:12px 12px 12px 0'}">
-    <div style="font-size:9px;color:var(--dm);margin-bottom:2px">${m.from===PID?'Вы':op?.name||'???'}</div>
-    ${String(m.text).replace(/</g,'&lt;')}
-  </div>`).join('');
-  requestAnimationFrame(()=>{el.scrollTop=el.scrollHeight;});
-  if(dms[k])dms[k].forEach(m=>{if(m.to===PID)m.read=true;});
-  await ST.set('dms',dms);om('mDMChat');
+  await refreshDMMessages(false);
+  om('mDMChat');
+  // Start polling every 3 seconds while chat is open
+  clearInterval(_dmPollInterval);
+  _dmPollInterval=setInterval(()=>{
+    if(document.getElementById('mDMChat')?.classList.contains('show')){
+      refreshDMMessages(true); // silent refresh
+    }else{
+      clearInterval(_dmPollInterval);
+    }
+  },3000);
 }
+
+async function refreshDMMessages(silent=false){
+  if(!dmTgt)return;
+  const op=P[dmTgt];
+  const dms=await ST.get('dms')||{};
+  const k=dmKey(PID,dmTgt);
+  const msgs=dms[k]||[];
+  const el=document.getElementById('mDMM');
+  if(!el)return;
+  // Check if there are new messages before re-rendering
+  const lastMsg=msgs[msgs.length-1];
+  const hasNew=lastMsg&&lastMsg.ts>_lastDmTs;
+  if(silent&&!hasNew)return; // no new msgs — don't re-render
+  _lastDmTs=lastMsg?.ts||_lastDmTs;
+  const wasAtBottom=el.scrollHeight-el.scrollTop-el.clientHeight<60;
+  el.innerHTML=msgs.slice(-50).map(m=>`
+    <div style="max-width:75%;padding:8px 11px;border-radius:12px;margin-bottom:6px;font-size:12px;
+      ${m.from===PID
+        ?'background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.2);margin-left:auto;border-radius:12px 12px 0 12px'
+        :'background:var(--d3);border:1px solid var(--br2);border-radius:12px 12px 12px 0'}">
+      <div style="font-size:9px;color:var(--dm);margin-bottom:2px">${m.from===PID?'Вы':op?.name||'???'} · ${fmtAge(m.ts)}</div>
+      ${String(m.text).replace(/</g,'&lt;')}
+    </div>`).join('');
+  // Auto-scroll only if was at bottom or new incoming message
+  if(wasAtBottom||hasNew){
+    requestAnimationFrame(()=>{el.scrollTop=el.scrollHeight;});
+  }
+  // Mark as read
+  let changed=false;
+  if(dms[k])dms[k].forEach(m=>{if(m.to===PID&&!m.read){m.read=true;changed=true;}});
+  if(changed)await ST.set('dms',dms);
+  // Update conversation list if open
+  if(curSub.fun==='dm')rDM();
+}
+
 async function sendDM(){
-  if(!dmTgt)return;const inp=document.getElementById('dmInp');const text=inp?.value.trim();if(!text)return;
+  if(!dmTgt)return;
+  const inp=document.getElementById('dmInp');
+  const text=inp?.value.trim();if(!text)return;
   if(inp)inp.value='';
-  const dms=await ST.get('dms')||{};const k=dmKey(PID,dmTgt);if(!dms[k])dms[k]=[];
-  dms[k].push({from:PID,to:dmTgt,text,ts:Date.now(),read:false});dms[k]=dms[k].slice(-100);
-  await ST.set('dms',dms);openDM(dmTgt);
+  const dms=await ST.get('dms')||{};
+  const k=dmKey(PID,dmTgt);if(!dms[k])dms[k]=[];
+  const msg={from:PID,to:dmTgt,text,ts:Date.now(),read:false};
+  dms[k].push(msg);dms[k]=dms[k].slice(-100);
+  _lastDmTs=msg.ts;
+  await ST.set('dms',dms);
+  await refreshDMMessages(false); // immediate re-render
+}
+
+// Hook DM badge check into autoSync
+
+
+// ════════════════════════════════════════
+// 💣 MINES
+// ════════════════════════════════════════
+let minesState=null;
+function rMines(){
+  const el=document.getElementById('D_mines');if(!el)return;
+  if(!minesState||minesState.done){
+    el.innerHTML=`
+      <div class="card hi" style="text-align:center;padding:20px;margin-bottom:10px">
+        <div style="font-size:48px;margin-bottom:8px">💣</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">САПЁР</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Открывай клетки — не нарвись на мину.<br>Останови в любой момент и забери деньги!</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input class="inp" id="minesBet" type="number" placeholder="Ставка $" value="500" style="flex:1">
+          <select class="inp" id="minesCnt" style="flex:1">
+            <option value="3">3 мины (легко)</option>
+            <option value="5" selected>5 мин (средне)</option>
+            <option value="10">10 мин (хардкор)</option>
+          </select>
+        </div>
+        <button class="btn btn-r btn-full" onclick="startMines()">💣 НАЧАТЬ ИГРУ</button>
+      </div>
+      ${minesState?.done?`<div class="card" style="text-align:center;color:${minesState.win?'var(--gr)':'var(--r)'}">
+        ${minesState.win?`🎉 Выиграл +${fmt(minesState.profit)}$!`:`💥 Мина! Потерял -${fmt(minesState.bet)}$`}
+      </div>`:''}`;
+    return;
+  }
+  const {grid,bet,mines,revealed,multiplier}=minesState;
+  const safe=revealed.filter(r=>r).length;
+  const total=25;
+  const cashout=Math.floor(bet*multiplier);
+  el.innerHTML=`
+    <div class="card mb8" style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:11px;color:var(--dm)">Ставка</div><div style="font-weight:700">${fmt(bet)}$</div></div>
+      <div style="text-align:center"><div style="font-size:11px;color:var(--dm)">Множитель</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g)">x${multiplier.toFixed(2)}</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:var(--dm)">Выигрыш</div><div style="font-weight:700;color:var(--gr)">${fmt(cashout)}$</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px">
+      ${grid.map((cell,i)=>{
+        const isRevealed=revealed[i];
+        const isMine=cell==='mine';
+        return`<div onclick="clickMine(${i})" style="aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:${isRevealed?'default':'pointer'};
+          background:${isRevealed?(isMine?'rgba(230,57,80,.3)':'rgba(29,184,122,.2)'):'var(--d3)'};
+          border:1px solid ${isRevealed?(isMine?'var(--r)':'var(--gr)'):'var(--br2)'};
+          transition:all .15s">
+          ${isRevealed?(isMine?'💣':'💎'):safe>0?'':'❓'}
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-g btn-full" onclick="cashoutMines()">💰 ЗАБРАТЬ ${fmt(cashout)}$</button>
+    </div>
+    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:6px">Открыто: ${safe} · Мин: ${mines} · Осталось: ${total-mines-safe} безопасных</div>`;
+}
+
+function startMines(){
+  const bet=parseInt(document.getElementById('minesBet')?.value)||0;
+  const mines=parseInt(document.getElementById('minesCnt')?.value)||5;
+  if(bet<100){toast('Минимум 100$!',1);return;}
+  if(me.money<bet){toast('Недостаточно денег!',1);return;}
+  me.money-=bet;saveMe();updateHdr();
+  // Build grid
+  const grid=Array(25).fill('safe');
+  let placed=0;
+  while(placed<mines){const i=Math.floor(Math.random()*25);if(grid[i]!=='mine'){grid[i]='mine';placed++;}}
+  minesState={grid,bet,mines,revealed:Array(25).fill(false),multiplier:1,done:false};
+  addTx(-bet,'💣 Мины — ставка');
+  sfx('click');rMines();
+}
+
+function clickMine(i){
+  if(!minesState||minesState.done||minesState.revealed[i])return;
+  minesState.revealed[i]=true;
+  if(minesState.grid[i]==='mine'){
+    // Hit mine — lose
+    minesState.done=true;minesState.win=false;minesState.profit=0;
+    // Reveal all mines
+    minesState.grid.forEach((c,j)=>{if(c==='mine')minesState.revealed[j]=true;});
+    sfx('fail');haptic('heavy');toast('💥 МИНА! Потерял '+fmt(minesState.bet)+'$',1);
+    minesState=null;setTimeout(rMines,1500);
+    return;
+  }
+  // Safe — update multiplier
+  const safe=minesState.revealed.filter(r=>r).length;
+  const remaining=25-minesState.mines-safe;
+  const risk=minesState.mines/(25-safe+1);
+  minesState.multiplier=parseFloat((minesState.multiplier*(1+risk*1.2)).toFixed(2));
+  sfx('coins');haptic('light');
+  // Auto cashout if all safe cells found
+  if(remaining===0)cashoutMines();
+  else rMines();
+}
+
+function cashoutMines(){
+  if(!minesState||minesState.done)return;
+  const profit=Math.floor(minesState.bet*minesState.multiplier);
+  me.money+=profit;
+  addTx(profit-minesState.bet,'💣 Мины — выигрыш x'+minesState.multiplier.toFixed(2));
+  me.casinoWins=(me.casinoWins||0)+1;
+  saveMe();updateHdr();checkAchievements();
+  sfx('win');haptic('medium');
+  toast('💰 Забрал '+fmt(profit)+'$! (x'+minesState.multiplier.toFixed(2)+')');
+  minesState=null;rMines();
+}
+
+// ════════════════════════════════════════
+// 🎡 КОЛЕСО ФОРТУНЫ
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// 🎡 КОЛЕСО ФОРТУНЫ — бесплатно раз в 12ч
+// ════════════════════════════════════════
+const WHEEL_SEGMENTS=[
+  {label:'💵 +500$',    color:'#2e86de', type:'money',  val:500},
+  {label:'⚡ +5 энерг', color:'#9b59b6', type:'energy', val:5},
+  {label:'💵 +1000$',   color:'#1db87a', type:'money',  val:1000},
+  {label:'🧬 +1 SP',    color:'#00d2d3', type:'sp',     val:1},
+  {label:'💵 +250$',    color:'#2e86de', type:'money',  val:250},
+  {label:'⭐ +30 репы', color:'#f0b429', type:'rep',    val:30},
+  {label:'💵 +3000$',   color:'#e63950', type:'money',  val:3000},
+  {label:'⚡ +3 энерг', color:'#9b59b6', type:'energy', val:3},
+  {label:'💵 +750$',    color:'#1db87a', type:'money',  val:750},
+  {label:'🧬 +2 SP',    color:'#00d2d3', type:'sp',     val:2},
+  {label:'⚡ +10 энерг',color:'#e63950', type:'energy', val:10},
+  {label:'💎 +5000$',   color:'#f0b429', type:'money',  val:5000},
+];
+const WHEEL_CD = 12 * 3600 * 1000; // 12 hours
+let wheelSpinning=false;
+
+function rWheel(){
+  const el=document.getElementById('D_wheel');if(!el)return;
+  const lastSpin=me.lastWheelSpin||0;
+  const now=Date.now();
+  const cdLeft=Math.max(0, lastSpin+WHEEL_CD-now);
+  const canSpin=cdLeft===0;
+  const nextHrs=Math.floor(cdLeft/3600000);
+  const nextMins=Math.floor((cdLeft%3600000)/60000);
+  const nextSecs=Math.floor((cdLeft%60000)/1000);
+
+  el.innerHTML=`
+    <div style="text-align:center;padding:16px 10px 10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--g);margin-bottom:2px">КОЛЕСО ФОРТУНЫ</div>
+      <div style="font-size:10px;color:var(--dm);margin-bottom:14px">🎁 Бесплатно · раз в 12 часов</div>
+
+      <!-- Pointer -->
+      <div style="font-size:28px;line-height:1;margin-bottom:-8px;position:relative;z-index:2">▼</div>
+
+      <!-- Wheel -->
+      <div id="wheelVis" style="width:260px;height:260px;margin:0 auto 14px;border-radius:50%;border:4px solid var(--g);box-shadow:0 0 30px rgba(240,180,41,.25);position:relative"></div>
+
+      <!-- Timer or spin button -->
+      ${canSpin
+        ? `<button class="btn btn-g btn-full" id="wheelBtn" onclick="spinWheel()" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;padding:14px">
+             🎡 КРУТИТЬ БЕСПЛАТНО!
+           </button>`
+        : `<div class="card" style="text-align:center;padding:14px">
+             <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Следующее кручение через</div>
+             <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--g)" id="wheelCdTimer">
+               ${String(nextHrs).padStart(2,'0')}:${String(nextMins).padStart(2,'0')}:${String(nextSecs).padStart(2,'0')}
+             </div>
+             <div style="font-size:9px;color:var(--dm);margin-top:4px">чч:мм:сс</div>
+           </div>`}
+      <div id="wheelResult" style="margin-top:10px;font-size:14px;font-weight:700;min-height:24px"></div>
+    </div>
+
+    <!-- Prize list -->
+    <div class="card mt8">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--dm);letter-spacing:1px;margin-bottom:8px">ВОЗМОЖНЫЕ ПРИЗЫ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        ${WHEEL_SEGMENTS.map(s=>`
+          <div style="background:${s.color}18;border:1px solid ${s.color}44;border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+            <span style="font-size:11px;font-weight:700;color:${s.color}">${s.label}</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  drawWheel(0);
+
+  // Live countdown timer
+  if(!canSpin){
+    const cdTick=setInterval(()=>{
+      const rem=Math.max(0,(me.lastWheelSpin||0)+WHEEL_CD-Date.now());
+      const t=document.getElementById('wheelCdTimer');
+      if(!t){clearInterval(cdTick);return;}
+      if(rem<=0){clearInterval(cdTick);rWheel();return;}
+      const h=Math.floor(rem/3600000);
+      const m=Math.floor((rem%3600000)/60000);
+      const s=Math.floor((rem%60000)/1000);
+      t.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    },1000);
+  }
+}
+
+function drawWheel(rotation){
+  const vis=document.getElementById('wheelVis');if(!vis)return;
+  const size=260;
+  const canvas=document.createElement('canvas');
+  canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext('2d');
+  const cx=size/2,cy=size/2,r=size/2-2;
+  const n=WHEEL_SEGMENTS.length;
+  const sliceAngle=(Math.PI*2)/n;
+
+  WHEEL_SEGMENTS.forEach((seg,i)=>{
+    const start=i*sliceAngle+rotation-Math.PI/2;
+    const end=start+sliceAngle;
+    // Slice
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();
+    ctx.fillStyle=seg.color+'dd';ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    // Label
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start+sliceAngle/2);
+    ctx.textAlign='right';
+    ctx.fillStyle='#fff';
+    ctx.font='bold 9px Arial';
+    ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=3;
+    ctx.fillText(seg.label, r-8, 4);
+    ctx.restore();
+  });
+
+  // Center circle
+  ctx.beginPath();ctx.arc(cx,cy,18,0,Math.PI*2);
+  const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,18);
+  grad.addColorStop(0,'#f0b429');grad.addColorStop(1,'#c4911a');
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  // Star in center
+  ctx.fillStyle='#fff';ctx.font='bold 14px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('★',cx,cy);
+
+  vis.innerHTML='';vis.appendChild(canvas);
+}
+
+async function spinWheel(){
+  if(wheelSpinning)return;
+  const cdLeft=Math.max(0,(me.lastWheelSpin||0)+WHEEL_CD-Date.now());
+  if(cdLeft>0){toast('Подожди ещё '+fmtS(Math.ceil(cdLeft/1000))+'!',1);return;}
+
+  wheelSpinning=true;
+  const btn=document.getElementById('wheelBtn');if(btn){btn.disabled=true;btn.textContent='🎡 Крутится...';}
+  haptic('medium');
+
+  // Pick winner
+  const winIdx=Math.floor(Math.random()*WHEEL_SEGMENTS.length);
+  const seg=WHEEL_SEGMENTS[winIdx];
+
+  // Animate: 6-8 full spins + land on winner
+  const totalSpins=6+Math.random()*2;
+  const sliceAngle=(Math.PI*2)/WHEEL_SEGMENTS.length;
+  // Target: the winning slice lands under the pointer (top = -PI/2)
+  const targetRotation=totalSpins*Math.PI*2 - winIdx*sliceAngle - sliceAngle/2;
+  const dur=5000;
+  let startTs=null;
+
+  function frame(ts){
+    if(!startTs)startTs=ts;
+    const prog=Math.min((ts-startTs)/dur,1);
+    // Ease out cubic
+    const ease=1-Math.pow(1-prog,3);
+    drawWheel(targetRotation*ease);
+    if(prog<1){requestAnimationFrame(frame);}
+    else{
+      drawWheel(targetRotation);
+      wheelSpinning=false;
+      me.lastWheelSpin=Date.now();
+      saveMe();
+      applyWheelResult(seg);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function applyWheelResult(seg){
+  const resultEl=document.getElementById('wheelResult');
+  let msg='';
+  switch(seg.type){
+    case 'money':
+      me.money+=seg.val;
+      addTx(seg.val,'🎡 Колесо фортуны: '+seg.label);
+      sfx(seg.val>=3000?'win':'coins');
+      haptic(seg.val>=3000?'heavy':'medium');
+      msg=`<span style="color:var(--gr)">🎉 ${seg.label}!</span>`;
+      break;
+    case 'energy':
+      me.energy=Math.min(me.energyMax||10,(me.energy||0)+seg.val);
+      sfx('coins');haptic('light');
+      msg=`<span style="color:var(--pu)">⚡ ${seg.label}!</span>`;
+      break;
+    case 'sp':
+      me.skillPoints=(me.skillPoints||0)+seg.val;
+      sfx('win');haptic('medium');
+      msg=`<span style="color:var(--cy)">🧬 ${seg.label}!</span>`;
+      break;
+    case 'rep':
+      me.rep=(me.rep||0)+seg.val;
+      sfx('coins');haptic('light');
+      msg=`<span style="color:var(--g)">⭐ ${seg.label}!</span>`;
+      break;
+  }
+  saveMe();updateHdr();checkAchievements();
+  if(resultEl)resultEl.innerHTML=msg;
+  // Refresh after 2s to show the timer
+  setTimeout(rWheel,2000);
+}
+
+// ════════════════════════════════════════
+// 🐎 СКАЧКИ
+// ════════════════════════════════════════
+const HORSES=[
+  {name:'Буря',     emoji:'🐎', odds:2.0, color:'#f0b429'},
+  {name:'Молния',   emoji:'🏇', odds:3.5, color:'#2e86de'},
+  {name:'Тень',     emoji:'🐴', odds:5.0, color:'#9b59b6'},
+  {name:'Удача',    emoji:'🦄', odds:8.0, color:'#1db87a'},
+];
+let horsePick=null;
+
+function rHorses(){
+  const el=document.getElementById('D_horses');if(!el)return;
+  const cd=me.cooldowns?.horses||0;const ready=Date.now()>cd;
+  el.innerHTML=`
+    <div class="card hi" style="text-align:center;padding:16px;margin-bottom:10px">
+      <div style="font-size:44px;margin-bottom:6px">🐎</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">СКАЧКИ</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Выбери лошадь и делай ставку</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+      ${HORSES.map((h,i)=>`
+        <div onclick="pickHorse(${i})" style="background:${horsePick===i?h.color+'22':'var(--d2)'};border:2px solid ${horsePick===i?h.color:'var(--br2)'};border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:30px;margin-bottom:4px">${h.emoji}</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:2px">${h.name}</div>
+          <div style="font-size:11px;color:var(--dm)">Коэф: <b style="color:${h.color}">x${h.odds}</b></div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="inp" id="horsesBet" type="number" placeholder="Ставка $" value="500" style="flex:1">
+      </div>
+      ${ready
+        ?`<button class="btn btn-g btn-full" onclick="runHorses()">🏁 НА СТАРТ!</button>`
+        :`<div class="tag tr" style="text-align:center;width:100%;padding:8px">⏳ Кулдаун <span class="cd-timer" data-until="${cd}">${fmtS(Math.max(0,Math.ceil((cd-Date.now())/1000)))}</span></div>`}
+    </div>`;
+}
+
+async function pickHorse(i){horsePick=i;rHorses();}
+
+async function runHorses(){
+  if(horsePick===null){toast('Выбери лошадь!',1);return;}
+  const bet=parseInt(document.getElementById('horsesBet')?.value)||0;
+  if(bet<100){toast('Минимум 100$!',1);return;}
+  if(me.money<bet){toast('Недостаточно денег!',1);return;}
+  me.money-=bet;
+  addTx(-bet,'🐎 Скачки — ставка на '+HORSES[horsePick].name);
+  saveMe();updateHdr();
+  // Race! Each horse wins with probability inverse to odds
+  const weights=HORSES.map(h=>1/h.odds);
+  const total=weights.reduce((s,w)=>s+w,0);
+  let rng=Math.random()*total,winner=0;
+  for(let i=0;i<weights.length;i++){rng-=weights[i];if(rng<=0){winner=i;break;}}
+  // Show race animation
+  const el=document.getElementById('D_horses');
+  const raceEl=document.createElement('div');
+  raceEl.className='card';raceEl.style.cssText='margin-bottom:10px;padding:14px';
+  raceEl.innerHTML=`<div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--dm);letter-spacing:1px;margin-bottom:8px">🏁 ЗАБЕГ!</div>
+    ${HORSES.map((h,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:16px;width:28px">${h.emoji}</span>
+      <div style="flex:1;background:var(--d3);border-radius:4px;height:10px;overflow:hidden">
+        <div id="hbar${i}" style="height:100%;background:${h.color};border-radius:4px;width:0%;transition:width .05s"></div>
+      </div>
+      <span style="font-size:10px;color:var(--dm);width:40px">${h.name}</span>
+    </div>`).join('')}`;
+  if(el)el.insertBefore(raceEl,el.firstChild);
+  // Animate bars
+  const positions=HORSES.map(()=>0);
+  const speeds=HORSES.map((h,i)=>{
+    const base=0.8+Math.random()*0.4;
+    return i===winner?base*1.15:base; // winner slightly faster
+  });
+  await new Promise(res=>{
+    let frame=0;
+    const tick=setInterval(()=>{
+      frame++;
+      positions.forEach((p,i)=>{
+        positions[i]=Math.min(100,p+speeds[i]*(0.5+Math.random()*1));
+        const bar=document.getElementById('hbar'+i);
+        if(bar)bar.style.width=positions[i]+'%';
+      });
+      if(frame>60){clearInterval(tick);res();}
+    },50);
+  });
+  // Force winner to 100
+  positions[winner]=100;
+  const bar=document.getElementById('hbar'+winner);
+  if(bar)bar.style.width='100%';
+  await new Promise(r=>setTimeout(r,300));
+  raceEl.remove();
+  const won=horsePick===winner;
+  if(won){
+    const prize=Math.floor(bet*HORSES[horsePick].odds);
+    me.money+=prize;me.casinoWins=(me.casinoWins||0)+1;
+    addTx(prize-bet,'🐎 Скачки — выигрыш на '+HORSES[horsePick].name);
+    sfx('win');haptic('heavy');
+    await pushFeed('🐎',`<b>${me.name}</b> выиграл в скачках +${fmt(prize-bet)}$ на ${HORSES[horsePick].emoji}${HORSES[horsePick].name}!`);
+    toast(`🏆 ${HORSES[horsePick].name} победил! +${fmt(prize)}$`);
+  }else{
+    sfx('fail');haptic('medium');
+    toast(`💔 Победил ${HORSES[winner].emoji}${HORSES[winner].name}. Ты потерял ${fmt(bet)}$`,1);
+  }
+  if(!me.cooldowns)me.cooldowns={};
+  me.cooldowns.horses=Date.now()+6e4; // 1 min cooldown
+  horsePick=null;saveMe();updateHdr();checkAchievements();rHorses();
+}
+
+// ════════════════════════════════════════
+// 🎪 ЛОТЕРЕЯ
+// ════════════════════════════════════════
+async function rLottery(){
+  const el=document.getElementById('D_lottery');if(!el)return;
+  const lotto=await ST.get('lottery')||{tickets:[],lastDraw:0,jackpot:5000};
+  const now=Date.now();
+  const nextDraw=lotto.lastDraw+864e5; // 24h
+  const myTickets=(lotto.tickets||[]).filter(t=>t.pid===PID).length;
+  const totalTickets=(lotto.tickets||[]).length;
+  const jackpot=lotto.jackpot||5000;
+  const timeLeft=Math.max(0,nextDraw-now);
+  el.innerHTML=`
+    <div class="card hi" style="text-align:center;padding:20px;margin-bottom:10px">
+      <div style="font-size:48px;margin-bottom:6px">🎪</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px">ГОРОДСКАЯ ЛОТЕРЕЯ</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--g);margin:8px 0">${fmt(jackpot)}$</div>
+      <div style="font-size:10px;color:var(--dm)">ДЖЕКПОТ</div>
+    </div>
+    <div class="card mb8">
+      <div class="fb mb6"><span style="font-size:11px;color:var(--dm)">Участников</span><span class="tag tg">${totalTickets} билетов</span></div>
+      <div class="fb mb6"><span style="font-size:11px;color:var(--dm)">Твои билеты</span><span class="tag ${myTickets>0?'tgr':''}"> ${myTickets}</span></div>
+      <div class="fb"><span style="font-size:11px;color:var(--dm)">Следующий розыгрыш</span><span style="font-size:11px;color:var(--g)">${timeLeft>0?fmtS(Math.ceil(timeLeft/1000)):'Скоро!'}</span></div>
+    </div>
+    <div class="card">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">1 билет = 500$ · Чем больше билетов, тем выше шанс</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(1)">🎫 1 билет<br><span style="font-size:10px">500$</span></button>
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(3)">🎫 3 билета<br><span style="font-size:10px">1500$</span></button>
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(5)">🎫 5 билетов<br><span style="font-size:10px">2500$</span></button>
+      </div>
+    </div>`;
+  // Auto-draw if time is up
+  if(timeLeft<=0&&totalTickets>0)drawLottery(lotto);
+}
+
+async function buyLotteryTicket(count){
+  const cost=count*500;
+  if(me.money<cost){toast('Нужно '+cost+'$!',1);return;}
+  me.money-=cost;addTx(-cost,'🎫 Лотерея — '+count+' билет(ов)');
+  saveMe();updateHdr();
+  const lotto=await ST.get('lottery')||{tickets:[],lastDraw:Date.now(),jackpot:5000};
+  for(let i=0;i<count;i++)lotto.tickets.push({pid:PID,name:me.name,ts:Date.now()});
+  lotto.jackpot=(lotto.jackpot||5000)+cost; // each ticket adds to jackpot
+  await ST.set('lottery',lotto);
+  sfx('coins');haptic('light');
+  toast('🎫 '+count+' билет(ов) куплено! Удачи!');
+  rLottery();
+}
+
+async function drawLottery(lotto){
+  if(!lotto.tickets?.length)return;
+  const winner=lotto.tickets[Math.floor(Math.random()*lotto.tickets.length)];
+  const prize=lotto.jackpot;
+  await pushFeed('🎪',`🎉 <b>ЛОТЕРЕЯ!</b> Победитель: <b>${winner.name}</b> выиграл <b>${fmt(prize)}$</b>!`);
+  if(winner.pid===PID){
+    me.money+=prize;addTx(prize,'🎪 Лотерея — ДЖЕКПОТ!');
+    saveMe();updateHdr();sfx('win');haptic('heavy');
+    toast(`🎉 ТЫ ВЫИГРАЛ ЛОТЕРЕЮ! +${fmt(prize)}$!!!`);
+  }
+  await ST.set('lottery',{tickets:[],lastDraw:Date.now(),jackpot:5000});
+  rLottery();
+}
+
+// ════════════════════════════════════════
+// 🥊 ДУЭЛИ 1v1
+// ════════════════════════════════════════
+async function rDuel(){
+  const el=document.getElementById('D_duel');if(!el)return;
+  const duels=await ST.get('duels')||[];
+  const myDuel=duels.find(d=>d.challenger===PID&&!d.done);
+  const incoming=duels.filter(d=>d.target===PID&&!d.done&&!d.accepted);
+  el.innerHTML=`
+    <div class="card hi" style="text-align:center;padding:14px;margin-bottom:10px">
+      <div style="font-size:44px;margin-bottom:4px">🥊</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;margin-bottom:4px">ДУЭЛИ 1v1</div>
+      <div style="font-size:11px;color:var(--dm)">Вызови игрока — победитель забирает банк</div>
+    </div>
+    ${incoming.length?`<div class="admt" style="color:var(--r)">⚔️ Входящие вызовы</div>
+      ${incoming.map(d=>`<div class="card mb6 fb">
+        <div><div style="font-weight:700">${P[d.challenger]?.name||'???'} 👊</div>
+        <div style="font-size:10px;color:var(--dm)">Банк: ${fmt(d.bet*2)}$</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-g btn-sm" onclick="acceptDuel('${d.id}')">✅ ПРИНЯТЬ</button>
+          <button class="btn btn-r btn-sm" onclick="declineDuel('${d.id}')">❌</button>
+        </div>
+      </div>`).join('')}`:''}
+    ${myDuel?`<div class="card mb8" style="text-align:center;border-color:rgba(240,180,41,.3)">
+      <div style="font-size:11px;color:var(--dm)">Ждёшь ответа от ${P[myDuel.target]?.name||'...'}</div>
+      <div class="tag tg mt4">Банк: ${fmt(myDuel.bet*2)}$</div>
+    </div>`:''}
+    <div class="sec"><div class="sec-l">Вызвать игрока</div></div>
+    <div class="card">
+      <input class="inp" id="duelBet" type="number" placeholder="Ставка $" value="1000" style="margin-bottom:8px">
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${Object.values(P).filter(p=>p.id!==PID).slice(0,8).map(p=>`
+          <div class="fb" style="background:var(--d3);border-radius:8px;padding:8px 10px">
+            <div class="fc g8"><span style="font-size:18px">${p.avatar}</span>
+              <div><div style="font-size:12px;font-weight:700">${p.name}</div>
+              <div style="font-size:9px;color:var(--dm)">⚡${p.power} · Lvl${p.level||1}</div></div>
+            </div>
+            <button class="btn btn-r btn-sm" onclick="challengeDuel('${p.id}')">⚔️ Вызвать</button>
+          </div>`).join('')||'<div class="empty">Нет других игроков</div>'}
+      </div>
+    </div>`;
+}
+
+async function challengeDuel(tid){
+  const bet=parseInt(document.getElementById('duelBet')?.value)||0;
+  if(bet<200){toast('Минимум 200$!',1);return;}
+  if(me.money<bet){toast('Недостаточно денег!',1);return;}
+  me.money-=bet;addTx(-bet,'🥊 Дуэль — залог');
+  saveMe();updateHdr();
+  const duels=await ST.get('duels')||[];
+  duels.push({id:'d'+Date.now(),challenger:PID,chalName:me.name,target:tid,bet,done:false,accepted:false,ts:Date.now()});
+  await ST.set('duels',duels.slice(-20));
+  sfx('click');haptic('medium');
+  toast('⚔️ Вызов отправлен '+P[tid]?.name+'!');rDuel();
+}
+
+async function acceptDuel(duelId){
+  const duels=await ST.get('duels')||[];
+  const d=duels.find(x=>x.id===duelId);if(!d)return;
+  if(me.money<d.bet){toast('Недостаточно денег!',1);return;}
+  me.money-=d.bet;addTx(-d.bet,'🥊 Дуэль — залог');
+  saveMe();updateHdr();
+  d.accepted=true;
+  // Resolve: power-based with randomness
+  const me_power=(me.power||5)*(0.7+Math.random()*0.6);
+  const opp_power=(P[d.challenger]?.power||5)*(0.7+Math.random()*0.6);
+  const iWin=me_power>opp_power;
+  const prize=d.bet*2;
+  d.done=true;d.winner=iWin?PID:d.challenger;
+  await ST.set('duels',duels);
+  if(iWin){
+    me.money+=prize;me.rep+=20;me.score+=50;
+    addTx(prize,'🥊 Дуэль — победа!');
+    sfx('win');haptic('heavy');
+    await pushFeed('🥊',`<b>${me.name}</b> победил <b>${P[d.challenger]?.name}</b> в дуэли и забрал ${fmt(prize)}$!`);
+    toast(`🏆 Победа! +${fmt(prize)}$`);
+  }else{
+    sfx('fail');haptic('medium');
+    await pushFeed('🥊',`<b>${P[d.challenger]?.name}</b> победил <b>${me.name}</b> в дуэли и забрал ${fmt(prize)}$!`);
+    toast(`💀 Проигрыш! ${P[d.challenger]?.name} оказался сильнее`,1);
+  }
+  saveMe();updateHdr();checkAchievements();rDuel();
+}
+
+async function declineDuel(duelId){
+  const duels=await ST.get('duels')||[];
+  const d=duels.find(x=>x.id===duelId);if(!d)return;
+  d.done=true;
+  // Refund challenger
+  if(d.challenger===PID){me.money+=d.bet;saveMe();}
+  await ST.set('duels',duels);
+  toast('Дуэль отклонена');rDuel();
+}
+
+// ════════════════════════════════════════
+// 🃏 БЛЭКДЖЕК
+// ════════════════════════════════════════
+let bjState=null;
+
+function bjCardVal(c){const r=c.split('')[0];return r==='A'?11:['K','Q','J','1'].includes(r)?10:parseInt(r);}
+function bjHandVal(hand){
+  let val=hand.reduce((s,c)=>s+bjCardVal(c),0);
+  let aces=hand.filter(c=>c[0]==='A').length;
+  while(val>21&&aces>0){val-=10;aces--;}
+  return val;
+}
+function bjDeck(){
+  const suits=['♠','♥','♦','♣'],ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const d=[];for(const s of suits)for(const r of ranks)d.push(r+s);
+  return d.sort(()=>Math.random()-.5);
+}
+
+function rBlackjack(){
+  const el=document.getElementById('D_blackjack');if(!el)return;
+  if(!bjState){
+    el.innerHTML=`
+      <div class="card hi" style="text-align:center;padding:20px;margin-bottom:10px">
+        <div style="font-size:44px;margin-bottom:6px">🃏</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">БЛЭКДЖЕК</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Набери 21 не перебрав · Ближе к 21 чем дилер = победа</div>
+        <input class="inp" id="bjBet" type="number" placeholder="Ставка $" value="500" style="margin-bottom:8px">
+        <button class="btn btn-g btn-full" onclick="bjStart()">🃏 РАЗДАТЬ КАРТЫ</button>
+      </div>`;
+    return;
+  }
+  const {player,dealer,bet,phase}=bjState;
+  const pVal=bjHandVal(player);
+  const dVal=bjHandVal(dealer);
+  const showAll=phase==='done';
+  const dDisplay=showAll?dealer:[dealer[0],'🂠'];
+  const dScore=showAll?dVal:bjCardVal(dealer[0]);
+
+  let resultHtml='';
+  if(phase==='done'){
+    const bust=pVal>21;
+    const win=!bust&&(pVal>dVal||dVal>21);
+    const push=!bust&&pVal===dVal&&dVal<=21;
+    const color=win?'var(--gr)':push?'var(--g)':'var(--r)';
+    const msg=bust?'💥 Перебор!':win?`🏆 Победа! +${fmt(bjState.win)}$`:push?'🤝 Ничья!':'💀 Дилер выиграл';
+    resultHtml=`<div style="text-align:center;font-size:16px;font-weight:700;color:${color};padding:10px">${msg}</div>`;
+  }
+
+  el.innerHTML=`
+    <div class="card mb8">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">ДИЛЕР — ${showAll?dVal:bjCardVal(dealer[0])}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+        ${dDisplay.map(c=>`<div style="background:var(--d3);border:1px solid var(--br2);border-radius:6px;padding:8px 10px;font-size:18px;min-width:40px;text-align:center">${c}</div>`).join('')}
+      </div>
+    </div>
+    <div class="card mb8">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">ТЫ — ${pVal}${pVal===21?` <span style="color:var(--g)">БЛЭКДЖЕК!</span>`:''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+        ${player.map(c=>`<div style="background:var(--d2);border:1px solid ${pVal>21?'var(--r)':'var(--br)'};border-radius:6px;padding:8px 10px;font-size:18px;min-width:40px;text-align:center">${c}</div>`).join('')}
+      </div>
+    </div>
+    ${resultHtml}
+    <div class="fb" style="gap:8px">
+      ${phase==='playing'
+        ?`<button class="btn btn-g" style="flex:1" onclick="bjHit()">➕ ЕЩЁ</button>
+           <button class="btn btn-r" style="flex:1" onclick="bjStand()">✋ СТОП</button>`
+        :`<button class="btn btn-g btn-full" onclick="bjState=null;rBlackjack()">🃏 СНОВА</button>`}
+    </div>
+    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:6px">Ставка: ${fmt(bet)}$</div>`;
+}
+
+function bjStart(){
+  const bet=parseInt(document.getElementById('bjBet')?.value)||0;
+  if(bet<100){toast('Минимум 100$!',1);return;}
+  if(me.money<bet){toast('Недостаточно денег!',1);return;}
+  me.money-=bet;addTx(-bet,'🃏 Блэкджек — ставка');saveMe();updateHdr();
+  const deck=bjDeck();
+  const player=[deck.pop(),deck.pop()];
+  const dealer=[deck.pop(),deck.pop()];
+  bjState={player,dealer,deck,bet,phase:'playing',win:0};
+  if(bjHandVal(player)===21){bjStand();}else{sfx('click');rBlackjack();}
+}
+
+function bjHit(){
+  if(!bjState||bjState.phase!=='playing')return;
+  bjState.player.push(bjState.deck.pop());
+  sfx('click');
+  if(bjHandVal(bjState.player)>21){bjResolvе();}
+  else rBlackjack();
+}
+
+function bjStand(){
+  if(!bjState)return;
+  // Dealer plays: hit until 17
+  while(bjHandVal(bjState.dealer)<17)bjState.dealer.push(bjState.deck.pop());
+  bjResolvе();
+}
+
+function bjResolvе(){
+  const pVal=bjHandVal(bjState.player);
+  const dVal=bjHandVal(bjState.dealer);
+  const bust=pVal>21;
+  const win=!bust&&(pVal>dVal||dVal>21);
+  const push=!bust&&pVal===dVal&&dVal<=21;
+  bjState.phase='done';
+  if(win){
+    const prize=bjState.bet*2;bjState.win=prize;
+    me.money+=prize;me.casinoWins=(me.casinoWins||0)+1;
+    addTx(prize-bjState.bet,'🃏 Блэкджек — победа');
+    sfx('win');haptic('heavy');
+  }else if(push){
+    me.money+=bjState.bet; // return bet
+    addTx(0,'🃏 Блэкджек — ничья');
+    sfx('coins');haptic('light');
+  }else{
+    sfx('fail');haptic('medium');
+  }
+  saveMe();updateHdr();checkAchievements();rBlackjack();
 }
 
 // ── ADMIN ──
@@ -3223,7 +4182,13 @@ function obFinish(){
 async function collectIncome(){
   if(!me||!W)return;
   const pInc=PROPS.filter(p=>(me.props||[]).includes(p.id)).reduce((s,p)=>s+Math.floor(p.income/60),0);
-  const dInc=Object.values(W.districts).filter(d=>d.orgId===me.orgId).reduce((s,d)=>s+Math.floor(d.income/60),0);
+  const dInc=Object.values(W.districts)
+    .filter(d=>d.orgId===me.orgId)
+    .reduce((s,d)=>{
+      const bBonus=(d.buildings||[]).reduce((b,bid)=>b+(BUILDINGS[bid]?.incBonus||0),0);
+      const ctrl=(d.control||100)/100;
+      return s+Math.floor((d.income+bBonus)*ctrl/60);
+    },0);
   const total=pInc+dInc;
   if(total>0){
     me.money+=total;
@@ -3302,6 +4267,8 @@ async function autoSync(){
   checkOrgDues();
   // Re-render current screen
   const fn=RENDERS[curHub]?.[curSub[curHub]];if(fn)try{fn();}catch(e){}
+  // Always check DM badge for unread messages
+  checkDMBadge();
   // Show chat badge ONLY for new messages that arrived AFTER we loaded
   // prevChatLen===0 means first load — don't show badge
   const newMsgs=(CHAT||[]).length-prevChatLen;
@@ -3373,7 +4340,7 @@ async function boot(){
 
     const isNew=!lsGet(OB_KEY)&&(!me.score||me.score<10);
     if(isNew){
-      obAva=me.avatar||PAVA;
+      obAva=me.avatar||PAVA||AVTS[0];
       const ob=document.getElementById('ob');if(ob)ob.style.display='flex';
       const obBtn=document.getElementById('obBtn');if(obBtn)obBtn.onclick=obNext;
       obRender();
