@@ -578,7 +578,7 @@ body{display:flex;flex-direction:column}
   </div>
 </div>
 <div class="mo" id="mDist" onclick="cm('mDist')"><div class="mbox" onclick="e.stopPropagation()"><div class="mtitle" id="mDistT"></div><div id="mDistB"></div></div></div>
-<div class="mo" id="mMiss" onclick="cm('mMiss')"><div class="mbox" onclick="event.stopPropagation()"><div class="mtitle" id="mMissT"></div><div id="mMissB"></div></div></div>
+<div class="mo" id="mMiss" onclick="cm('mMiss');if(mgState){mgState._cleanup?.();mgState=null;}"><div class="mbox" onclick="event.stopPropagation()"><div class="mtitle" id="mMissT"></div><div id="mMissB"></div></div></div>
 <div class="mo" id="mSkill" onclick="cm('mSkill')"><div class="mbox" onclick="event.stopPropagation()"><div class="mtitle" id="mSkillT"></div><div id="mSkillB"></div></div></div>
 <div class="mo" id="mCreateOrg" onclick="cm('mCreateOrg')">
   <div class="mbox" onclick="event.stopPropagation()">
@@ -864,14 +864,15 @@ function defPlayer(){return{id:PID,name:PNAME,avatar:PAVA,orgId:null,
   lastWheelSpin:0};}
 
 async function syncAll(){
-  // Load world + players from Supabase (key-value table)
   const [worldData, playersData, elecData] = await Promise.all([
     ST.get('world'), ST.get('players'), ST.get('election')
   ]);
+  const isNewWorld = !worldData;
   W    = worldData   || defWorld();
   P    = playersData || {};
   ELEC = elecData    || defElection();
-  // Chat + Feed from their own tables (shared across all players)
+  // First run — save world to Supabase so all players share it
+  if(isNewWorld) await ST.set('world', W);
   try{ CHAT = (await loadChat()) || []; }catch{ CHAT=[]; }
   try{ FEED = (await loadFeed()) || []; }catch{ FEED=[]; }
   me = P[PID] || defPlayer();
@@ -1004,73 +1005,79 @@ const BUILDINGS={
 function rCity(){
   const mg=document.getElementById('D_map');if(!mg)return;
 
-  // Fixed zone order and layout: 2 zones per row
-  const zoneOrder=[
-    ['city','coast'],
-    ['suburb','industry']
-  ];
-
+  // Group districts by zone in defined order
+  const zoneOrder=['city','coast','suburb','industry'];
   const distByZone={};
   Object.entries(W.districts).forEach(([id,d])=>{
     if(!distByZone[d.zone])distByZone[d.zone]=[];
     distByZone[d.zone].push([id,d]);
   });
 
-  let html=`<div style="display:flex;flex-direction:column;gap:10px">`;
+  let html='';
+  zoneOrder.forEach(zone=>{
+    const zi=ZONES[zone];if(!zi)return;
+    const districts=distByZone[zone]||[];if(!districts.length)return;
 
-  zoneOrder.forEach(row=>{
-    html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
-    row.forEach(zone=>{
-      const zi=ZONES[zone]||{name:zone,color:'#888'};
-      const districts=distByZone[zone]||[];
-      html+=`
-        <div style="background:var(--d2);border:1px solid ${zi.color}33;border-radius:12px;overflow:hidden">
-          <!-- Zone header -->
-          <div style="background:${zi.color}18;border-bottom:1px solid ${zi.color}33;padding:6px 10px;display:flex;align-items:center;gap:6px">
-            <div style="width:6px;height:6px;border-radius:50%;background:${zi.color};flex-shrink:0"></div>
-            <span style="font-size:9px;font-weight:800;letter-spacing:1.5px;color:${zi.color};text-transform:uppercase">${zi.name.replace(/./u,'')}</span>
-          </div>
-          <!-- 2x2 district grid -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:${zi.color}22">
-            ${districts.map(([id,d])=>{
-              const own=d.orgId&&W.orgs[d.orgId];
-              const isOwn=d.orgId===me.orgId;
-              const isEnemy=d.orgId&&!isOwn;
-              const ctrl=d.control||0;
-              const bInc=(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
-              const income=d.income+bInc;
-              const clr=isOwn?'var(--g)':isEnemy?'var(--r)':'rgba(255,255,255,.15)';
-              const bg=isOwn?'rgba(240,180,41,.08)':isEnemy?'rgba(230,57,80,.08)':'var(--d2)';
-              return`<div onclick="openDist('${id}')"
-                style="background:${bg};padding:10px 8px;cursor:pointer;position:relative;transition:background .15s"
-                onmouseenter="this.style.background='var(--d3)'" onmouseleave="this.style.background='${bg}'">
-                <!-- status bar left -->
-                <div style="position:absolute;top:0;bottom:0;left:0;width:2px;background:${clr}"></div>
-                <div style="padding-left:6px">
-                  <div style="font-size:20px;margin-bottom:3px;line-height:1">${d.icon}</div>
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:.5px;line-height:1.1;margin-bottom:2px">${d.name}</div>
-                  <div style="font-size:8px;color:${isOwn?'var(--g)':isEnemy?'var(--r)':'var(--dm)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px">
-                    ${own?own.emblem+' '+own.name:'Свободный'}
-                  </div>
-                  <!-- control bar -->
-                  <div style="background:rgba(255,255,255,.08);border-radius:2px;height:3px;overflow:hidden;margin-bottom:4px">
-                    <div style="height:100%;width:${ctrl}%;background:${clr};border-radius:2px"></div>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center">
-                    <span style="font-size:10px;font-weight:700;color:var(--gr)">+${income}$</span>
-                    <span style="font-size:8px;color:var(--dm)">${d.police>0?'👮'+d.police:''}</span>
-                  </div>
-                </div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>`;
-    });
-    html+=`</div>`;
+    html+=`
+    <div style="margin-bottom:14px">
+      <!-- Zone label -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;padding:0 2px">
+        <div style="width:3px;height:14px;border-radius:2px;background:${zi.color};flex-shrink:0"></div>
+        <span style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:${zi.color};text-transform:uppercase">${zi.name}</span>
+        <div style="height:1px;flex:1;background:${zi.color}30"></div>
+      </div>
+      <!-- Districts list -->
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${districts.map(([id,d])=>{
+          const own=d.orgId&&W.orgs[d.orgId];
+          const isOwn=d.orgId===me.orgId;
+          const isEnemy=d.orgId&&!isOwn;
+          const ctrl=d.control||0;
+          const bInc=(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
+          const income=d.income+bInc;
+          const accentClr=isOwn?'#f0b429':isEnemy?'#e63950':'#2e86de';
+          const bg=isOwn?'rgba(240,180,41,.07)':isEnemy?'rgba(230,57,80,.07)':'var(--d2)';
+          const ownerTxt=own?(own.emblem+' '+own.name):'Свободный';
+          const ownerClr=isOwn?'#f0b429':isEnemy?'#e63950':'#5a5a80';
+          return`
+          <div onclick="openDist('${id}')" style="
+            display:flex;align-items:center;gap:10px;
+            background:${bg};
+            border:1px solid ${accentClr}33;
+            border-left:3px solid ${accentClr};
+            border-radius:9px;padding:9px 11px;
+            cursor:pointer;transition:background .15s"
+            onmouseenter="this.style.background='var(--d3)'"
+            onmouseleave="this.style.background='${bg}'">
+
+            <!-- Icon -->
+            <div style="font-size:22px;flex-shrink:0;width:32px;text-align:center">${d.icon}</div>
+
+            <!-- Main info -->
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.5px">${d.name}</span>
+                ${d.police>0?`<span style="font-size:9px;color:#5a5a80">👮${d.police}</span>`:''}
+                ${(d.buildings||[]).length?`<span style="font-size:9px;color:#5a5a80">🏗️${d.buildings.length}</span>`:''}
+              </div>
+              <!-- Control bar -->
+              <div style="background:rgba(255,255,255,.07);border-radius:2px;height:3px;width:100%;overflow:hidden">
+                <div style="height:100%;width:${ctrl}%;background:${accentClr};border-radius:2px;transition:width .4s"></div>
+              </div>
+            </div>
+
+            <!-- Right side -->
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:11px;font-weight:700;color:#1db87a;margin-bottom:2px">+${income}$</div>
+              <div style="font-size:9px;color:${ownerClr};max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ownerTxt}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
   });
 
-  html+=`</div>`;
-  mg.innerHTML=html;
+  mg.innerHTML=html||'<div class="empty">Загрузка карты...</div>';
 
   const fl=document.getElementById('D_feed');if(!fl)return;
   fl.innerHTML=FEED.slice(0,20).map(f=>`<div class="fi">
@@ -1078,6 +1085,7 @@ function rCity(){
     <div><div class="ftxt">${f.text}</div><div class="ftime">${fmtT(f.ts)}</div></div>
   </div>`).join('')||'<div class="empty">🕊️ В городе тихо</div>';
 }
+
 
 function openDist(id){
   const d=W.districts[id];if(!d)return;
@@ -1798,47 +1806,549 @@ function openMission(id){
   const m=MISSIONS.find(x=>x.id===id);if(!m)return;
   document.getElementById('mMissT').textContent=m.ico+' '+m.name;
   document.getElementById('mMissB').innerHTML=`
-    <div class="card mb10">
-      <div style="font-size:12px;line-height:1.5;margin-bottom:8px">${m.desc}</div>
-      <div class="fb mb5"><span style="font-size:10px;color:var(--dm)">СЛОЖНОСТЬ</span><span>${'⭐'.repeat({EASY:1,MEDIUM:2,HARD:3}[m.diff])}</span></div>
-      <div class="fb mb5"><span style="font-size:10px;color:var(--dm)">ЭНЕРГИЯ</span><span class="tag tcy">-${m.en}⚡</span></div>
-      <div class="fb"><span style="font-size:10px;color:var(--dm)">ТИП</span><span class="tag t${m.type==='org'?'pu':'bl'}">${m.type==='org'?'👥 Орга':'👤 Соло'}</span></div>
+    <div style="text-align:center;padding:10px 0 14px">
+      <div style="font-size:44px;margin-bottom:8px">${m.ico}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;margin-bottom:4px">${m.name}</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:12px">${m.desc}</div>
+      <div class="fc" style="gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">
+        <span class="tag tgr">💵 +${m.r.m}$</span>
+        <span class="tag tg">⚡ +${m.r.p}</span>
+        <span class="tag tbl">⭐ +${m.r.rep}</span>
+        <span class="tag tcy">-${m.en}⚡</span>
+        ${soloMult()<1?'<span class="tag tr">Соло −35%</span>':''}
+      </div>
     </div>
-    <div class="fc" style="gap:5px;flex-wrap:wrap;margin-bottom:14px">
-      <span class="tag tgr">💵+${m.r.m}$</span><span class="tag tg">⚡+${m.r.p}</span>
-      <span class="tag tbl">⭐+${m.r.rep}</span><span class="tag tpu">🏅+${m.r.sc}pts</span>
-      ${soloMult()<1?'<span class="tag tr">Соло -35%</span>':''}
-    </div>
-    <button class="btn btn-g btn-full" onclick="doMission('${id}')">🎯 НАЧАТЬ</button>`;
+    <button class="btn btn-g btn-full" style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;padding:13px"
+            onclick="startMissionGame('${id}')">
+      🎮 НАЧАТЬ ЗАДАНИЕ
+    </button>`;
   om('mMiss');
 }
-async function doMission(id){
-  cm('mMiss');const m=MISSIONS.find(x=>x.id===id);if(!m)return;
+
+// ── MISSION MINI-GAMES ──
+let mgState=null; // current mini-game state
+
+function startMissionGame(id){
+  const m=MISSIONS.find(x=>x.id===id);if(!m)return;
   if(m.type==='org'&&!me.orgId){toast('Нужна орга!',1);return;}
   if(Date.now()<(me.cooldowns?.[m.id]||0)){toast('Кулдаун!',1);return;}
   if(!useEnergy(m.en))return;
-  toast('⏳ Выполняю...');
-  await new Promise(r=>setTimeout(r,1200));
-  const win=Math.random()<(0.5+(me.skills?.combat||0)*.05+(me.power>=30?.1:0)+(me.orgId?.1:0));
-  if(win){
-    const mult=soloMult()*getPremiumMoneyMult();const money=Math.floor(m.r.m*mult);
-    me.money+=money;me.power+=m.r.p;me.rep+=m.r.rep;me.score+=m.r.sc;me.bpXP=(me.bpXP||0)+m.r.sc;
-    me.missionsDone=(me.missionsDone||0)+1;
-    if(m.id==='heist')me.heists=(me.heists||0)+1;
-    if(m.id==='race')me.raceWins=(me.raceWins||0)+1;
-    if(me.orgId&&W.orgs[me.orgId])W.orgs[me.orgId].score=(W.orgs[me.orgId].score||0)+Math.floor(m.r.sc/2);
-    gainXP(m.r.sc);
-    checkBP();
-    addTx(money, m.ico+' '+m.name);
-    sfx('coins'); haptic('light');
-    checkAchievements();
-    await pushFeed(m.ico,'<b>'+me.name+'</b> выполнил «'+m.name+'» (+'+money+'$)');
-    toast('✅ +'+money+'$'+(mult<1?' (соло -35%)':''));
-  }else{me.power=Math.max(5,me.power-8);me.wanted=(me.wanted||0)+1;gainXP(5);sfx('fail');haptic('medium');toast('❌ Провал. +1 розыск',1);}
+  mgState={id,m,startTs:Date.now()};
+  // Route to correct mini-game
+  const games={
+    patrol:   mgPatrol,
+    heist:    mgHeist,
+    race:     mgRace,
+    hack:     mgHack,
+    deal:     mgDeal,
+    smuggle:  mgSmuggle,
+    protect:  mgPatrol, // reuses patrol style
+    recruit:  mgDeal,   // reuses deal style
+  };
+  const fn=games[id]||mgDeal;
+  fn();
+}
+
+async function finishMission(win, bonusMult=1){
+  if(!mgState)return;
+  const {id,m}=mgState; mgState=null;
+  cm('mMiss');
   if(!me.cooldowns)me.cooldowns={};
-  me.cooldowns[m.id]=Date.now()+m.cd*1000;
+  me.cooldowns[id]=Date.now()+m.cd*1000;
+  if(win){
+    const mult=soloMult()*getPremiumMoneyMult()*bonusMult;
+    const money=Math.floor(m.r.m*mult);
+    me.money+=money;me.power+=m.r.p;me.rep+=m.r.rep;me.score+=m.r.sc;
+    me.bpXP=(me.bpXP||0)+m.r.sc;
+    me.missionsDone=(me.missionsDone||0)+1;
+    if(id==='heist')me.heists=(me.heists||0)+1;
+    if(id==='race')me.raceWins=(me.raceWins||0)+1;
+    if(me.orgId&&W.orgs[me.orgId])W.orgs[me.orgId].score=(W.orgs[me.orgId].score||0)+Math.floor(m.r.sc/2);
+    gainXP(m.r.sc);checkBP();
+    addTx(money,m.ico+' '+m.name+(bonusMult>1?' 🔥':'')); sfx('win');haptic('heavy');
+    checkAchievements();
+    await pushFeed(m.ico,'<b>'+me.name+'</b> выполнил «'+m.name+'» (+'+fmt(money)+'$)'+(bonusMult>1?' 🔥':''));
+    toast('✅ +'+fmt(money)+'$'+(bonusMult>1?' ОТЛИЧНО x'+bonusMult.toFixed(1)+'!':mult<1?' (соло −35%)':''));
+  }else{
+    me.power=Math.max(5,me.power-8);me.wanted=(me.wanted||0)+1;
+    gainXP(5);sfx('fail');haptic('medium');
+    toast('❌ Провал! +1 розыск',1);
+  }
   await saveAll();updateHdr();rMissions();
 }
+
+// ─────────────────────────────────
+// 🚗 ПАТРУЛЬ — whack-a-mole
+// Тапай по преступникам за 15 сек
+// ─────────────────────────────────
+function mgPatrol(){
+  let score=0,timeLeft=15,total=0;
+  const needed=6;
+  const el=document.getElementById('mMissB');
+  function render(){
+    el.innerHTML=`
+      <div style="text-align:center;padding:8px 0 6px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g);margin-bottom:2px">${score} / ${needed} задержано</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:8px">⏱️ ${timeLeft} сек</div>
+        <div style="background:var(--dk);border-radius:4px;height:5px;overflow:hidden;margin-bottom:12px">
+          <div style="height:100%;width:${(timeLeft/15)*100}%;background:${timeLeft>5?'var(--gr)':'var(--r)'};transition:width 1s linear"></div>
+        </div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:10px">Тапай по преступникам 👇</div>
+      </div>
+      <div id="mgGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px"></div>
+      <div style="font-size:10px;color:var(--dm);text-align:center">Пропущенные не считаются</div>`;
+    spawnCriminals();
+  }
+  function spawnCriminals(){
+    const grid=document.getElementById('mgGrid');if(!grid)return;
+    const criminals=['😈','🔫','💀','🦹','👿','🤬'];
+    const decoys=['👮','🧑','👴','🐕','👩','🧒'];
+    grid.innerHTML=Array(9).fill(0).map((_,i)=>{
+      const isCriminal=Math.random()>0.45;
+      const ico=isCriminal?criminals[Math.floor(Math.random()*criminals.length)]:decoys[Math.floor(Math.random()*decoys.length)];
+      return`<div onclick="mgPatrolTap(this,${isCriminal})"
+        style="background:var(--d3);border:1px solid var(--br2);border-radius:10px;font-size:28px;
+               height:62px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+               transition:all .1s;user-select:none">${ico}</div>`;
+    }).join('');
+  }
+  window.mgPatrolTap=function(el,isCriminal){
+    if(!mgState)return;
+    el.style.transform='scale(.85)';
+    setTimeout(()=>{if(el)el.style.transform='';},100);
+    if(isCriminal){
+      score++;total++;
+      el.innerHTML='✅';el.style.background='rgba(29,184,122,.2)';
+      sfx('click');haptic('light');
+      if(score>=needed){mgPatrolWin();return;}
+    }else{
+      el.innerHTML='❌';el.style.background='rgba(230,57,80,.2)';
+      sfx('fail');haptic('medium');
+    }
+    setTimeout(()=>{const g=document.getElementById('mgGrid');if(g)spawnCriminals();},400);
+  };
+  function mgPatrolWin(){clearInterval(timer);finishMission(true,score>=needed+2?1.3:1);}
+  render();
+  const timer=setInterval(()=>{
+    timeLeft--;
+    const tb=document.querySelector('#mMissB .tbr');
+    if(tb)tb.style.width=(timeLeft/15*100)+'%';
+    const tl=document.querySelector('#mMissB .ttl');
+    if(tl)tl.textContent='⏱️ '+timeLeft+' сек';
+    // Re-render timer bar
+    const bars=document.querySelectorAll('#mMissB div[style*="transition:width 1s"]');
+    bars.forEach(b=>b.style.width=(timeLeft/15*100)+'%');
+    const ttxts=document.querySelectorAll('#mMissB div[style*="color:var(--dm)"]');
+    if(ttxts[0])ttxts[0].textContent='⏱️ '+timeLeft+' сек';
+    if(timeLeft<=0){clearInterval(timer);finishMission(score>=needed,1);}
+  },1000);
+  mgState._cleanup=()=>clearInterval(timer);
+}
+
+// ─────────────────────────────────
+// 🏦 ОГРАБЛЕНИЕ — взлом кода
+// Угадай 4-значный код за 8 попыток
+// ─────────────────────────────────
+function mgHeist(){
+  const secret=Array(4).fill(0).map(()=>Math.floor(Math.random()*6)+1);
+  let attempts=[],input=[];
+  const el=document.getElementById('mMissB');
+  function render(){
+    el.innerHTML=`
+      <div style="text-align:center;padding:6px 0 10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);margin-bottom:4px">🏦 ВЗЛОМ СЕЙФА</div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:10px">Угадай 4-значный код (цифры 1-6)<br>🟡 Цифра верная, не то место · 🟢 Верно!</div>
+      </div>
+      <!-- Attempts history -->
+      <div style="margin-bottom:10px;min-height:120px">
+        ${attempts.map(a=>`
+          <div style="display:flex;gap:6px;justify-content:center;margin-bottom:5px">
+            ${a.digits.map((d,i)=>`
+              <div style="width:36px;height:36px;background:${a.hits[i]===2?'#1db87a':a.hits[i]===1?'#f0b429':'var(--d3)'};
+                border-radius:7px;display:flex;align-items:center;justify-content:center;
+                font-family:'Bebas Neue',sans-serif;font-size:18px;color:#000">${d}</div>`).join('')}
+            <div style="display:flex;align-items:center;gap:3px;margin-left:4px">
+              ${Array(4).fill(0).map((_,i)=>`<div style="width:8px;height:8px;border-radius:50%;
+                background:${a.hits[i]===2?'#1db87a':a.hits[i]===1?'#f0b429':'#333'}"></div>`).join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+      <!-- Current input -->
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px">
+        ${Array(4).fill(0).map((_,i)=>`
+          <div style="width:42px;height:42px;background:${input[i]?'var(--d2)':'var(--dk)'};
+            border:2px solid ${input[i]?'var(--g)':'var(--br2)'};border-radius:9px;
+            display:flex;align-items:center;justify-content:center;
+            font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g)">
+            ${input[i]||'?'}
+          </div>`).join('')}
+      </div>
+      <!-- Numpad 1-6 -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:8px">
+        ${[1,2,3,4,5,6].map(n=>`
+          <button onclick="mgHeistNum(${n})"
+            style="padding:10px 0;background:var(--d3);border:1px solid var(--br2);border-radius:8px;
+                   font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--tx);cursor:pointer">
+            ${n}
+          </button>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button onclick="mgHeistDel()"
+          style="padding:10px;background:var(--d3);border:1px solid var(--br2);border-radius:8px;color:var(--r);cursor:pointer;font-size:13px">
+          ⌫ Стереть
+        </button>
+        <button onclick="mgHeistSubmit()"
+          style="padding:10px;background:${input.length===4?'var(--g)':'var(--d3)'};
+                 border:1px solid var(--br2);border-radius:8px;
+                 color:${input.length===4?'#000':'var(--dm)'};cursor:pointer;font-weight:700;font-size:13px">
+          ✓ Ввести
+        </button>
+      </div>
+      <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:8px">
+        Попытка ${attempts.length+1} / 8
+      </div>`;
+  }
+  window.mgHeistNum=function(n){
+    if(!mgState||input.length>=4)return;
+    input.push(n);sfx('click');haptic('light');render();
+  };
+  window.mgHeistDel=function(){
+    if(!mgState)return;
+    input.pop();render();
+  };
+  window.mgHeistSubmit=function(){
+    if(!mgState||input.length!==4)return;
+    const hits=input.map((d,i)=>{
+      if(d===secret[i])return 2;
+      if(secret.includes(d))return 1;
+      return 0;
+    });
+    attempts.push({digits:[...input],hits});
+    const win=hits.every(h=>h===2);
+    input=[];
+    sfx(win?'win':'click');haptic(win?'heavy':'light');
+    if(win){
+      const bonus=attempts.length<=3?1.5:attempts.length<=5?1.2:1;
+      render();setTimeout(()=>finishMission(true,bonus),600);
+    }else if(attempts.length>=8){
+      render();setTimeout(()=>finishMission(false),600);
+    }else{render();}
+  };
+  render();
+}
+
+// ─────────────────────────────────
+// 🏎️ ГОНКА — реакция на дороге
+// Уклоняйся от препятствий 15 сек
+// ─────────────────────────────────
+function mgRace(){
+  let lane=1,score=0,timeLeft=15,lives=3,raf=null,lastObstacle=0;
+  const obstacles=[];
+  const el=document.getElementById('mMissB');
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g)">🏎️ УЛИЧНАЯ ГОНКА</div>
+      <div style="font-size:10px;color:var(--dm)">Свайп влево/вправо чтобы уклоняться</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span id="mgRaceTime" style="font-size:12px;color:var(--dm)">⏱️ 15с</span>
+      <span id="mgRaceScore" style="font-size:12px;color:var(--g)">🏅 0</span>
+      <span id="mgRaceLives" style="font-size:12px">❤️❤️❤️</span>
+    </div>
+    <div id="mgRaceTrack" style="background:var(--d3);border-radius:10px;height:280px;position:relative;overflow:hidden;border:1px solid var(--br2);touch-action:none">
+      <!-- Lane lines -->
+      <div style="position:absolute;top:0;bottom:0;left:33%;width:1px;background:rgba(255,255,255,.1)"></div>
+      <div style="position:absolute;top:0;bottom:0;left:66%;width:1px;background:rgba(255,255,255,.1)"></div>
+      <div id="mgRaceCar" style="position:absolute;bottom:20px;font-size:28px;transition:left .12s;text-align:center;width:33%">🏎️</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button onclick="mgRaceMove(-1)" style="padding:14px;background:var(--d3);border:1px solid var(--br2);border-radius:9px;font-size:20px;cursor:pointer">◀ Влево</button>
+      <button onclick="mgRaceMove(1)"  style="padding:14px;background:var(--d3);border:1px solid var(--br2);border-radius:9px;font-size:20px;cursor:pointer">Вправо ▶</button>
+    </div>`;
+  const track=document.getElementById('mgRaceTrack');
+  const car=document.getElementById('mgRaceCar');
+  function updateCar(){if(car)car.style.left=(lane*33.3)+'%';}
+  updateCar();
+  // Swipe support
+  let touchX=0;
+  if(track){
+    track.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;},{passive:true});
+    track.addEventListener('touchend',e=>{
+      const dx=e.changedTouches[0].clientX-touchX;
+      if(Math.abs(dx)>30)mgRaceMove(dx>0?1:-1);
+    },{passive:true});
+  }
+  window.mgRaceMove=function(dir){
+    if(!mgState)return;
+    lane=Math.max(0,Math.min(2,lane+dir));
+    updateCar();sfx('click');haptic('light');
+  };
+  const EMOJIS=['🚗','🚕','🚙','🚌','🚎','🚐'];
+  function spawnObstacle(){
+    const ob=document.createElement('div');
+    ob.style.cssText=`position:absolute;top:-40px;font-size:26px;width:33%;text-align:center;transition:top .05s linear`;
+    ob.dataset.lane=Math.floor(Math.random()*3);
+    ob.style.left=(parseInt(ob.dataset.lane)*33.3)+'%';
+    ob.textContent=EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
+    track?.appendChild(ob);
+    obstacles.push(ob);
+  }
+  const timerInterval=setInterval(()=>{
+    timeLeft--;
+    const te=document.getElementById('mgRaceTime');if(te)te.textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){
+      clearInterval(timerInterval);cancelAnimationFrame(raf);
+      finishMission(lives>0,lives===3?1.3:lives===2?1.1:1);
+    }
+  },1000);
+  let lastTime=0;
+  function gameLoop(ts){
+    if(!mgState){cancelAnimationFrame(raf);return;}
+    raf=requestAnimationFrame(gameLoop);
+    if(ts-lastTime<16)return;lastTime=ts;
+    // Spawn
+    if(Date.now()-lastObstacle>1200){spawnObstacle();lastObstacle=Date.now();}
+    // Move obstacles
+    obstacles.forEach((ob,i)=>{
+      const top=parseFloat(ob.style.top)||-40;
+      ob.style.top=(top+3)+'px';
+      // Collision check
+      if(top>200&&top<260&&parseInt(ob.dataset.lane)===lane){
+        ob.textContent='💥';ob.style.opacity='0';
+        lives--;score=Math.max(0,score-1);
+        sfx('fail');haptic('heavy');
+        const le=document.getElementById('mgRaceLives');
+        if(le)le.textContent='❤️'.repeat(Math.max(0,lives))+'🖤'.repeat(3-Math.max(0,lives));
+        if(lives<=0){
+          clearInterval(timerInterval);cancelAnimationFrame(raf);
+          finishMission(false);return;
+        }
+      }
+      if(top>300){
+        ob.remove();obstacles.splice(i,1);
+        score++;
+        const se=document.getElementById('mgRaceScore');if(se)se.textContent='🏅 '+score;
+      }
+    });
+  }
+  raf=requestAnimationFrame(gameLoop);
+  mgState._cleanup=()=>{clearInterval(timerInterval);cancelAnimationFrame(raf);};
+}
+
+// ─────────────────────────────────
+// 💻 ВЗЛОМ — Simon Says
+// Повтори последовательность кнопок
+// ─────────────────────────────────
+function mgHack(){
+  let sequence=[],playerSeq=[],round=1,phase='show';
+  const BTNS=[
+    {id:0,color:'#e63950',label:'ALPHA'},
+    {id:1,color:'#2e86de',label:'BETA'},
+    {id:2,color:'#1db87a',label:'GAMMA'},
+    {id:3,color:'#f0b429',label:'DELTA'},
+  ];
+  const el=document.getElementById('mMissB');
+  function addToSeq(){sequence.push(Math.floor(Math.random()*4));}
+  function renderBtns(activeId=-1){
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);margin-bottom:2px">💻 ВЗЛОМ СИСТЕМЫ</div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:4px">Повтори последовательность</div>
+        <div style="font-size:11px;color:var(--g)">Уровень ${round} / 5 · ${phase==='show'?'👁️ Запоминай...':'👆 Твоя очередь!'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        ${BTNS.map(b=>`
+          <button id="hackBtn${b.id}" onclick="${phase==='input'?`mgHackPress(${b.id})`:''}"
+            style="height:70px;border-radius:12px;border:2px solid ${b.color};
+                   background:${activeId===b.id?b.color+'cc':'rgba(0,0,0,.3)'};
+                   color:${activeId===b.id?'#000':'#fff'};
+                   font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;
+                   cursor:${phase==='input'?'pointer':'default'};transition:all .15s">
+            ${b.label}
+          </button>`).join('')}
+      </div>
+      <div style="display:flex;gap:4px;justify-content:center">
+        ${sequence.map((_,i)=>`<div style="width:8px;height:8px;border-radius:50%;
+          background:${i<playerSeq.length?'var(--g)':'var(--dk)'};border:1px solid var(--br2)"></div>`).join('')}
+      </div>`;
+  }
+  async function showSequence(){
+    phase='show';
+    for(let i=0;i<sequence.length;i++){
+      await new Promise(r=>setTimeout(r,400));
+      renderBtns(sequence[i]);sfx('click');haptic('light');
+      await new Promise(r=>setTimeout(r,500));
+      renderBtns(-1);
+    }
+    await new Promise(r=>setTimeout(r,300));
+    phase='input';playerSeq=[];renderBtns(-1);
+  }
+  window.mgHackPress=function(id){
+    if(!mgState||phase!=='input')return;
+    playerSeq.push(id);
+    renderBtns(id);sfx('click');haptic('light');
+    setTimeout(()=>renderBtns(-1),200);
+    const expected=sequence[playerSeq.length-1];
+    if(id!==expected){sfx('fail');haptic('heavy');finishMission(false);return;}
+    if(playerSeq.length===sequence.length){
+      if(round>=5){sfx('win');haptic('heavy');setTimeout(()=>finishMission(true,1.4),400);}
+      else{round++;addToSeq();setTimeout(showSequence,600);}
+    }
+  };
+  addToSeq();addToSeq();showSequence();
+}
+
+// ─────────────────────────────────
+// 🤝 СДЕЛКА — угадай правильную цену
+// 3 раунда, выбери из 3 вариантов
+// ─────────────────────────────────
+function mgDeal(){
+  const items=[
+    {name:'💊 Колёса',base:500},  {name:'🔫 Ствол',base:1200},
+    {name:'💎 Камни',base:3000},  {name:'📱 Телефоны',base:800},
+    {name:'🧪 Химия',base:2000},  {name:'🎒 Посылка',base:600},
+  ];
+  let round=0,score=0;
+  const totalRounds=3;
+  const el=document.getElementById('mMissB');
+  function nextRound(){
+    if(round>=totalRounds){finishMission(score>=2,score===3?1.4:score===2?1.1:1);return;}
+    const item=items[Math.floor(Math.random()*items.length)];
+    const correct=item.base+Math.floor((Math.random()-.5)*item.base*.3);
+    // Generate 3 options
+    const opts=[correct];
+    while(opts.length<3){
+      const v=correct+Math.floor((Math.random()-.5)*correct*.6);
+      if(Math.abs(v-correct)/correct>.1&&!opts.includes(v))opts.push(v);
+    }
+    opts.sort(()=>Math.random()-.5);
+    const correctIdx=opts.indexOf(correct);
+    el.innerHTML=`
+      <div style="text-align:center;padding:6px 0 12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);margin-bottom:2px">🤝 ЧЁРНАЯ СДЕЛКА</div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:8px">Раунд ${round+1} / ${totalRounds}</div>
+        <div style="font-size:28px;margin-bottom:4px">${item.name}</div>
+        <div style="font-size:12px;color:var(--dm);margin-bottom:14px">Какая правильная цена?</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${opts.map((v,i)=>`
+            <button onclick="mgDealPick(${i===correctIdx})"
+              style="padding:14px;background:var(--d3);border:1.5px solid var(--br2);border-radius:10px;
+                     font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;
+                     color:var(--g);cursor:pointer;transition:all .15s">
+              ${fmt(v)}$
+            </button>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:8px">
+        ${Array(totalRounds).fill(0).map((_,i)=>`
+          <div style="width:28px;height:4px;border-radius:2px;
+            background:${i<round?(score>i-1+score-round+1?'var(--g)':'var(--r)'):'var(--dk)'}"></div>`).join('')}
+      </div>`;
+    round++;
+  }
+  window.mgDealPick=function(correct){
+    if(!mgState)return;
+    if(correct){score++;sfx('coins');haptic('medium');toast('✅ Верно!');}
+    else{sfx('fail');haptic('light');toast('❌ Неверно!',1);}
+    setTimeout(nextRound,500);
+  };
+  nextRound();
+}
+
+// ─────────────────────────────────
+// 🚢 КОНТРАБАНДА — ритм-тап
+// Тапай в ритм чтобы пронести груз
+// ─────────────────────────────────
+function mgSmuggle(){
+  let beat=0,score=0,lives=3,timeLeft=20,interval=null;
+  const totalBeats=12;
+  const el=document.getElementById('mMissB');
+  let expecting=false,beatTimeout=null;
+  function render(){
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--g);margin-bottom:2px">🚢 КОНТРАБАНДА</div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:6px">Тапай кнопку точно в момент сигнала!</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--dm)">⏱️ ${timeLeft}с</span>
+          <span style="font-size:12px;color:var(--g)">✅ ${score}/${totalBeats}</span>
+          <span style="font-size:12px">❤️${lives}</span>
+        </div>
+      </div>
+      <div id="mgSmuggSignal" style="height:80px;border-radius:12px;background:var(--d3);
+        border:2px solid var(--br2);display:flex;align-items:center;justify-content:center;
+        font-size:36px;margin-bottom:14px;transition:all .1s">📦</div>
+      <button id="mgSmuggBtn" onclick="mgSmuggTap()"
+        style="width:100%;padding:18px;background:linear-gradient(135deg,var(--bl),var(--cy));
+               border:none;border-radius:12px;font-family:'Bebas Neue',sans-serif;
+               font-size:18px;letter-spacing:2px;color:#000;cursor:pointer">
+        ТАП!
+      </button>`;
+  }
+  render();
+  function nextBeat(){
+    if(!mgState){clearInterval(interval);return;}
+    const delay=600+Math.random()*600;
+    setTimeout(()=>{
+      if(!mgState)return;
+      const sig=document.getElementById('mgSmuggSignal');
+      if(sig){sig.style.background='rgba(0,210,211,.3)';sig.style.borderColor='var(--cy)';sig.textContent='⚡';}
+      expecting=true;
+      beatTimeout=setTimeout(()=>{
+        if(!mgState||!expecting)return;
+        expecting=false;lives--;sfx('fail');haptic('medium');
+        const sig2=document.getElementById('mgSmuggSignal');
+        if(sig2){sig2.style.background='rgba(230,57,80,.2)';sig2.style.borderColor='var(--r)';sig2.textContent='❌';}
+        const livesEl=document.querySelectorAll('#mMissB span');
+        setTimeout(()=>{
+          if(!mgState)return;
+          const sig3=document.getElementById('mgSmuggSignal');
+          if(sig3){sig3.style.background='var(--d3)';sig3.style.borderColor='var(--br2)';sig3.textContent='📦';}
+          if(lives<=0){clearInterval(interval);finishMission(false);return;}
+          beat++;if(beat<totalBeats)nextBeat();
+        },400);
+      },800);
+    },delay);
+  }
+  window.mgSmuggTap=function(){
+    if(!mgState)return;
+    if(expecting){
+      clearTimeout(beatTimeout);expecting=false;score++;
+      sfx('coins');haptic('light');
+      const sig=document.getElementById('mgSmuggSignal');
+      if(sig){sig.style.background='rgba(29,184,122,.3)';sig.style.borderColor='var(--gr)';sig.textContent='✅';}
+      setTimeout(()=>{
+        if(!mgState)return;
+        const sig2=document.getElementById('mgSmuggSignal');
+        if(sig2){sig2.style.background='var(--d3)';sig2.style.borderColor='var(--br2)';sig2.textContent='📦';}
+        beat++;
+        if(score>=totalBeats){clearInterval(interval);finishMission(true,1.3);return;}
+        if(beat<totalBeats)nextBeat();
+        else setTimeout(()=>finishMission(score>totalBeats*0.7,score>=totalBeats?1.3:1),500);
+      },300);
+    }else{
+      // Too early tap
+      sfx('fail');haptic('light');
+      const sig=document.getElementById('mgSmuggSignal');
+      if(sig){sig.style.background='rgba(240,180,41,.2)';sig.textContent='⚠️';}
+      setTimeout(()=>{const s=document.getElementById('mgSmuggSignal');if(s){s.style.background='var(--d3)';s.textContent='📦';}},300);
+    }
+  };
+  const timerInt=setInterval(()=>{
+    if(!mgState){clearInterval(timerInt);return;}
+    timeLeft--;
+    const spans=document.querySelectorAll('#mMissB span');
+    if(spans[0])spans[0].textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){clearInterval(timerInt);finishMission(score>=totalBeats*0.6,score>=totalBeats?1.3:1);}
+  },1000);
+  mgState._cleanup=()=>{clearInterval(timerInt);clearTimeout(beatTimeout);clearInterval(interval);};
+  nextBeat();
+}
+
+async function doMission(id){ // legacy fallback
+  startMissionGame(id);
+}
+
 
 // ── CARJACK ──
 const CARS=[
@@ -1847,72 +2357,244 @@ const CARS=[
   {id:'lambo',name:'Lamborghini',ico:'🏎️',reward:1500,dur:2000,diff:'HARD'},
   {id:'truck',name:'Бронефургон',ico:'🚚',reward:3000,dur:1500,diff:'INSANE'},
 ];
+// ══════════════════════════════════════
+// 🚗 УГОН — многоэтапная мини-игра
+// ══════════════════════════════════════
 let cjState=null,cjRaf=null;
+
 function rCarjack(){
   const el=document.getElementById('D_carjack');if(!el)return;
-  if(cjState?.active){rCJGame(el);return;}
+  if(cjState?.phase){renderCJPhase(el);return;}
   const now=Date.now(),cd=me.cooldowns?.carjack||0,ready=now>cd;
-  el.innerHTML=`<div class="card" style="text-align:center;padding:20px;margin-bottom:10px">
-    <div style="font-size:44px;margin-bottom:8px">🚗</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;margin-bottom:4px">УГОН МАШИН</div>
-    <div style="font-size:11px;color:var(--dm)">Нажимай в нужный момент — поймай жёлтую зону!</div>
-    ${!ready?`<div class="tag tr mt8">⏳ ${fmtS(Math.max(0,Math.ceil((cd-now)/1000)))}</div>`:''}
-  </div>
-  ${CARS.map(c=>`<div class="card fb mb6">
-    <div class="fc" style="gap:10px"><div style="font-size:26px">${c.ico}</div>
-    <div><div style="font-weight:700;font-size:13px">${c.name}</div><div style="font-size:10px;color:var(--dm)">${c.diff}</div></div></div>
-    <div class="fc" style="gap:6px"><span class="tag tgr">+${c.reward}$</span>
-    <button class="btn btn-r btn-sm" onclick="startCJ('${c.id}')" ${!ready?'disabled':''}>УГНАТЬ</button></div>
-  </div>`).join('')}
-  ${cjState?.result?`<div class="card ${cjState.result.win?'hi':'rhi'}" style="text-align:center;padding:16px">
-    <div style="font-size:30px;margin-bottom:6px">${cjState.result.win?'🏆':'🚔'}</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px">${cjState.result.msg}</div>
-  </div>`:''}`;
+  el.innerHTML=`
+    <div class="card hi" style="text-align:center;padding:16px;margin-bottom:10px">
+      <div style="font-size:44px;margin-bottom:6px">🚗</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;margin-bottom:4px">УГОН МАШИН</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:10px">3 этапа: взлом замка → старт двигателя → уход от погони</div>
+      ${!ready?`<div class="tag tr" style="display:block;text-align:center;padding:8px;margin-bottom:10px">
+        ⏳ Кулдаун: <span class="cd-timer" data-until="${cd}">${fmtS(Math.max(0,Math.ceil((cd-now)/1000)))}</span>
+      </div>`:''}
+    </div>
+    ${CARS.map(c=>{
+      const lvlOk=(me.level||1)>={EASY:1,MEDIUM:4,HARD:6,INSANE:8}[c.diff];
+      return`<div class="card fb mb6" style="${!lvlOk?'opacity:.4':''}">
+        <div class="fc" style="gap:10px">
+          <div style="font-size:26px">${c.ico}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${c.name}</div>
+            <div style="font-size:10px;color:var(--dm)">${c.diff} · ${['EASY:3','MEDIUM:5','HARD:7','INSANE:9'].find(x=>x.startsWith(c.diff))?.split(':')[1]} этапов/скор</div>
+          </div>
+        </div>
+        <div class="fc" style="gap:6px">
+          <span class="tag tgr">+${c.reward}$</span>
+          ${!lvlOk?`<span class="tag tr">Lvl${({EASY:1,MEDIUM:4,HARD:6,INSANE:8})[c.diff]}</span>`
+          :`<button class="btn btn-r btn-sm" onclick="startCJ('${c.id}')" ${!ready?'disabled':''}>УГНАТЬ</button>`}
+        </div>
+      </div>`;
+    }).join('')}
+    ${cjState?.result?`<div class="card" style="text-align:center;padding:14px;margin-top:8px;border-color:${cjState.result.win?'var(--g)':'var(--r)'}">
+      <div style="font-size:30px;margin-bottom:6px">${cjState.result.win?'🏆':'🚔'}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${cjState.result.win?'var(--g)':'var(--r)'}">${cjState.result.msg}</div>
+    </div>`:''}`;
 }
-function startCJ(id){if(Date.now()<(me.cooldowns?.carjack||0)){toast('Кулдаун!',1);return;}const car=CARS.find(c=>c.id===id);cjState={car,active:true,start:Date.now()};rCarjack();}
-function rCJGame(el){
-  el.innerHTML=`<div class="card" style="text-align:center;padding:20px;margin-bottom:10px">
-    <div style="font-size:50px;margin-bottom:6px">${cjState.car.ico}</div>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;margin-bottom:6px">${cjState.car.name}</div>
-    <div style="font-size:11px;color:var(--dm);margin-bottom:8px">Нажми когда полоска в ЖЁЛТОЙ зоне!</div>
-    <div class="cjbar-wrap"><div class="cjbar" id="cjBar"></div><div class="cjzone"></div></div>
-  </div>
-  <div class="tapzone" onclick="tapCJ()">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--g)">⚡ НАЖМИ!</div>
-  </div>
-  <button class="btn btn-gh btn-full mt8" onclick="cancelCJ()">Отмена</button>`;
-  runCJ();
-}
-function runCJ(){
-  if(!cjState?.active)return;
-  const pct=Math.min(100,(Date.now()-cjState.start)/cjState.car.dur*100);
-  const bar=document.getElementById('cjBar');
-  if(bar){bar.style.width=pct+'%';bar.style.background=pct>70?'linear-gradient(90deg,var(--g),var(--r))':'linear-gradient(90deg,var(--gr),var(--g))';}
-  if(pct>=100){finishCJ(false);return;}
-  cjRaf=requestAnimationFrame(runCJ);
-}
-function tapCJ(){if(!cjState?.active)return;const pct=(Date.now()-cjState.start)/cjState.car.dur*100;finishCJ(pct>=62&&pct<=82);}
-function cancelCJ(){cancelAnimationFrame(cjRaf);cjState=null;rCarjack();}
-async function finishCJ(win){
-  cancelAnimationFrame(cjRaf);const car=cjState.car;
-  if(win){
-    const r=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05));
-    me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;me.wanted=(me.wanted||0)+2;me.raceWins=(me.raceWins||0)+1;
-    if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+3e5;
-    gainXP(60);cjState={active:false,result:{win:true,msg:'Угнан! +'+r+'$ 🚗💨'}};
-    addTx(r,'🚗 Угон: '+car.name);sfx('win');haptic('heavy');checkAchievements();
-    saveMe();updateHdr();await pushFeed('🚗','<b>'+me.name+'</b> угнал '+car.name+' за '+r+'$!');
-    toast('🏎️ '+car.name+' угнан! +'+r+'$');
-  }else{
-    me.wanted=(me.wanted||0)+3;me.power=Math.max(5,me.power-10);
-    if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+18e4;
-    cjState={active:false,result:{win:false,msg:'Поймали! -10 силы 🚔'}};
-    saveMe();updateHdr();toast('🚔 Поймали! +3 розыск',1);
-  }
+
+function startCJ(id){
+  if(Date.now()<(me.cooldowns?.carjack||0)){toast('Кулдаун!',1);return;}
+  const car=CARS.find(c=>c.id===id);
+  cjState={car,phase:1,score:0,result:null};
   rCarjack();
 }
 
-// ── DRUGS ──
+function renderCJPhase(el){
+  const {car,phase}=cjState;
+  if(phase===1)renderCJLock(el);
+  else if(phase===2)renderCJStart(el);
+  else if(phase===3)renderCJChase(el);
+}
+
+// ФАЗА 1 — Взлом замка (тапай кнопки в нужном порядке)
+function renderCJLock(el){
+  if(!cjState.lockSeq){
+    const len=cjState.car.diff==='EASY'?3:cjState.car.diff==='MEDIUM'?4:5;
+    const btns=['🔴','🔵','🟡','🟢'];
+    cjState.lockSeq=Array(len).fill(0).map(()=>btns[Math.floor(Math.random()*btns.length)]);
+    cjState.lockInput=[];
+    cjState.lockShown=false;
+  }
+  const {lockSeq,lockInput,lockShown}=cjState;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:4px">ЭТАП 1/3 · ВЗЛОМ ЗАМКА</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);margin-bottom:2px">${cjState.car.ico} ${cjState.car.name}</div>
+      <div style="font-size:10px;color:var(--dm)">Запомни и повтори последовательность</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
+      ${lockShown
+        ? lockSeq.map((b,i)=>`<div style="font-size:24px;width:40px;height:40px;background:var(--d3);border-radius:8px;display:flex;align-items:center;justify-content:center">${b}</div>`).join('')
+        : lockInput.map((b,i)=>`<div style="font-size:24px;width:40px;height:40px;background:${b===lockSeq[i]?'rgba(29,184,122,.3)':'rgba(230,57,80,.2)'};border-radius:8px;display:flex;align-items:center;justify-content:center">${b}</div>`).join('')
+          + Array(lockSeq.length-lockInput.length).fill(0).map(()=>`<div style="width:40px;height:40px;background:var(--dk);border-radius:8px;border:1px dashed var(--br2)"></div>`).join('')
+      }
+    </div>
+    ${lockShown
+      ? `<button class="btn btn-g btn-full" onclick="cjLockReveal()" style="margin-bottom:8px">👁️ ЗАПОМНИЛ — ПОЕХАЛИ</button>`
+      : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${['🔴','🔵','🟡','🟢'].map(b=>`
+            <button onclick="cjLockTap('${b}')"
+              style="padding:14px;background:var(--d3);border:1px solid var(--br2);border-radius:10px;font-size:28px;cursor:pointer">
+              ${b}
+            </button>`).join('')}
+        </div>`
+    }`;
+}
+
+window.cjLockReveal=function(){cjState.lockShown=false;renderCJLock(document.getElementById('D_carjack'));};
+window.cjLockTap=function(btn){
+  if(!cjState||cjState.phase!==1)return;
+  cjState.lockInput.push(btn);
+  sfx('click');haptic('light');
+  const {lockSeq,lockInput}=cjState;
+  if(lockInput.length===lockSeq.length){
+    const correct=lockInput.every((b,i)=>b===lockSeq[i]);
+    if(correct){sfx('coins');haptic('medium');cjState.score++;cjState.phase=2;cjState.lockSeq=null;rCarjack();}
+    else{sfx('fail');haptic('heavy');cjState.lockInput=[];renderCJLock(document.getElementById('D_carjack'));toast('❌ Неверно! Попробуй снова',1);}
+  }else{renderCJLock(document.getElementById('D_carjack'));}
+};
+
+// ФАЗА 2 — Старт двигателя (попади в зону как раньше)
+function renderCJStart(el){
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:4px">ЭТАП 2/3 · СТАРТ ДВИГАТЕЛЯ</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g);margin-bottom:8px">${cjState.car.ico} Заводи!</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">Нажми когда полоска в ЗЕЛЁНОЙ зоне!</div>
+    </div>
+    <div class="cjbar-wrap" style="margin-bottom:14px"><div class="cjbar" id="cjBar"></div><div class="cjzone"></div></div>
+    <div class="tapzone" onclick="cjStartTap()" style="margin-bottom:8px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--g)">⚡ ЗАВОДИ!</div>
+    </div>
+    <button class="btn btn-gh btn-full" onclick="cancelCJ()">Отмена</button>`;
+  cjState.barStart=Date.now();
+  runCJBar();
+}
+function runCJBar(){
+  if(!cjState||cjState.phase!==2)return;
+  const pct=Math.min(100,(Date.now()-cjState.barStart)/cjState.car.dur*100);
+  const bar=document.getElementById('cjBar');
+  if(bar){bar.style.width=pct+'%';bar.style.background=pct>=55&&pct<=80?'var(--gr)':pct>80?'var(--r)':'var(--g)';}
+  if(pct>=100){cjFinishFail();return;}
+  cjRaf=requestAnimationFrame(runCJBar);
+}
+window.cjStartTap=function(){
+  if(!cjState||cjState.phase!==2)return;
+  cancelAnimationFrame(cjRaf);
+  const pct=(Date.now()-cjState.barStart)/cjState.car.dur*100;
+  if(pct>=55&&pct<=80){
+    cjState.score++;sfx('coins');haptic('medium');
+    cjState.phase=3;cjState.chaseStart=Date.now();
+    cjState.chaseLane=1;cjState.chaseScore=0;cjState.chaseLives=3;
+    rCarjack();
+  }else{sfx('fail');haptic('heavy');cjFinishFail();}
+};
+
+// ФАЗА 3 — Уход от погони (уклонение)
+function renderCJChase(el){
+  const {chaseLane,chaseScore,chaseLives,car}=cjState;
+  const timeLeft=Math.max(0,15-Math.floor((Date.now()-(cjState.chaseStart||Date.now()))/1000));
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:2px">ЭТАП 3/3 · УХОД ОТ ПОГОНИ</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px">
+        <span style="color:var(--dm)">⏱️ ${timeLeft}с</span>
+        <span style="color:var(--g)">🚗 ${chaseScore} уклонений</span>
+        <span>${'❤️'.repeat(chaseLives)}</span>
+      </div>
+    </div>
+    <div id="cjChaseTrack" style="background:linear-gradient(180deg,var(--d3),var(--d2));border-radius:10px;height:200px;position:relative;overflow:hidden;border:1px solid var(--br2);margin-bottom:10px">
+      <div style="position:absolute;top:0;bottom:0;left:33%;width:1px;background:rgba(255,255,255,.08)"></div>
+      <div style="position:absolute;top:0;bottom:0;left:66%;width:1px;background:rgba(255,255,255,.08)"></div>
+      <div id="cjPolice1" style="position:absolute;font-size:22px;width:33%;text-align:center;top:-40px" data-lane="0">🚔</div>
+      <div id="cjPolice2" style="position:absolute;font-size:22px;width:33%;text-align:center;top:-40px" data-lane="2">🚨</div>
+      <div id="cjPlayerCar" style="position:absolute;bottom:10px;font-size:26px;width:33%;text-align:center;transition:left .12s" style="left:33%">${car.ico}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="cjChaseMove(-1)" style="padding:12px;background:var(--d3);border:1px solid var(--br2);border-radius:9px;font-size:18px;cursor:pointer">◀ Влево</button>
+      <button onclick="cjChaseMove(1)"  style="padding:12px;background:var(--d3);border:1px solid var(--br2);border-radius:9px;font-size:18px;cursor:pointer">Вправо ▶</button>
+    </div>`;
+  // Update car position
+  const playerCar=document.getElementById('cjPlayerCar');
+  if(playerCar)playerCar.style.left=(chaseLane*33.3)+'%';
+  // Start chase loop
+  if(!cjState.chaseRaf)cjChaseLoop();
+  // Swipe support
+  const track=document.getElementById('cjChaseTrack');
+  let tx=0;
+  if(track){
+    track.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true,once:false});
+    track.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>30)cjChaseMove(dx>0?1:-1);},{passive:true});
+  }
+}
+
+let _chasePolicePos=[{y:-40,lane:0,speed:3},{y:-200,lane:2,speed:3.5}];
+
+function cjChaseLoop(){
+  if(!cjState||cjState.phase!==3){return;}
+  const elapsed=(Date.now()-(cjState.chaseStart||Date.now()))/1000;
+  const timeLeft=15-elapsed;
+  if(timeLeft<=0){cjFinishWin();return;}
+  _chasePolicePos.forEach((p,i)=>{
+    p.y+=p.speed*(1+elapsed*0.05);
+    if(p.y>300){p.y=-40;p.lane=Math.floor(Math.random()*3);cjState.chaseScore++;sfx('click');}
+    // Collision
+    if(p.y>140&&p.y<185&&p.lane===cjState.chaseLane){
+      p.y=-40;p.lane=Math.floor(Math.random()*3);
+      cjState.chaseLives--;sfx('fail');haptic('heavy');
+      if(cjState.chaseLives<=0){cjFinishFail();return;}
+    }
+    const el=document.getElementById('cjPolice'+(i+1));
+    if(el){el.style.top=p.y+'px';el.style.left=(p.lane*33.3)+'%';}
+  });
+  // Update UI
+  const tEl=document.querySelector('#D_carjack span[style*="color:var(--dm)"]');
+  if(tEl)tEl.textContent='⏱️ '+Math.ceil(timeLeft)+'с';
+  cjState.chaseRaf=requestAnimationFrame(cjChaseLoop);
+}
+
+window.cjChaseMove=function(dir){
+  if(!cjState||cjState.phase!==3)return;
+  cjState.chaseLane=Math.max(0,Math.min(2,cjState.chaseLane+dir));
+  const playerCar=document.getElementById('cjPlayerCar');
+  if(playerCar)playerCar.style.left=(cjState.chaseLane*33.3)+'%';
+  haptic('light');
+};
+
+function cancelCJ(){cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);cjState=null;rCarjack();}
+
+function cjFinishFail(){
+  cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);
+  me.wanted=(me.wanted||0)+3;me.power=Math.max(5,me.power-10);
+  if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+18e4;
+  cjState={active:false,result:{win:false,msg:'Поймали! −10 силы 🚔'}};
+  saveMe();updateHdr();sfx('fail');haptic('heavy');toast('🚔 Поймали! +3 розыск',1);rCarjack();
+}
+
+async function cjFinishWin(){
+  cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);
+  const car=cjState.car;
+  const bonus=cjState.score>=3?1.3:1;
+  const r=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*bonus);
+  me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;me.wanted=(me.wanted||0)+2;
+  me.raceWins=(me.raceWins||0)+1;
+  if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+3e5;
+  gainXP(60);cjState={active:false,result:{win:true,msg:'Угнан! +'+r+'$'+(bonus>1?' 🔥':'')+' 🚗💨'}};
+  addTx(r,'🚗 Угон: '+car.name);sfx('win');haptic('heavy');checkAchievements();
+  saveMe();updateHdr();
+  await pushFeed('🚗','<b>'+me.name+'</b> угнал '+car.name+' за '+fmt(r)+'$!');
+  toast('🏎️ '+car.name+' угнан! +'+fmt(r)+'$');rCarjack();
+}
+
+// ══════════════════════════════════════
+// 💊 ТРАФИК — мини-игра при доставке
+// ══════════════════════════════════════
 const DROUTES=[
   {from:'suburbs',   to:'downtown',   drug:'Трава',     buy:200,  sell:500,  risk:.15},
   {from:'industrial',to:'port',       drug:'Крисс',     buy:800,  sell:1800, risk:.25},
@@ -1924,40 +2606,62 @@ const DROUTES=[
   {from:'grove',     to:'chinatown',  drug:'Спайс',     buy:300,  sell:700,  risk:.16},
   {from:'trainyard', to:'marina',     drug:'Героин',    buy:2000, sell:4500, risk:.40},
 ];
+
 function rDrugs(){
   const el=document.getElementById('D_drugs');if(!el)return;
+  // If delivery game is active
+  if(window._drugDelivery){renderDrugGame(el);return;}
   const stash=me.drugStash||[];
-  el.innerHTML=(stash.length?`<div class="sec"><div class="sec-l">Мой груз</div></div>`+stash.map((s,i)=>`<div class="card">
-    <div class="fc" style="gap:8px;margin-bottom:6px"><div style="font-size:22px">💊</div>
-    <div><div style="font-weight:700;font-size:13px">${s.drug} × ${s.qty}</div>
-    <div style="font-size:10px;color:var(--dm)">По ${s.buy}$ · В ${W.districts[s.to]?.name||s.to}</div></div></div>
-    <div class="fc" style="gap:6px">
-      <button class="btn btn-gr btn-sm" onclick="deliverDrugs(${i})">📦 ДОСТАВИТЬ +${s.qty*s.sell}$</button>
-      <button class="btn btn-r btn-sm" onclick="dumpDrugs(${i})">🗑</button>
-    </div>
-  </div>`).join(''):'')
+  el.innerHTML=(stash.length?`
+    <div class="sec"><div class="sec-l">Мой груз 💼</div></div>
+    ${stash.map((s,i)=>`<div class="card">
+      <div class="fc" style="gap:8px;margin-bottom:6px">
+        <div style="font-size:22px">💊</div>
+        <div>
+          <div style="font-weight:700;font-size:13px">${s.drug} × ${s.qty}</div>
+          <div style="font-size:10px;color:var(--dm)">Купил по ${s.buy}$ · Везти в ${W.districts[s.to]?.name||s.to}</div>
+        </div>
+      </div>
+      <div class="fc" style="gap:6px">
+        <button class="btn btn-gr btn-sm" onclick="startDrugDelivery(${i})">🚗 ВЕЗТИ +${s.qty*s.sell}$</button>
+        <button class="btn btn-r btn-sm" onclick="dumpDrugs(${i})">🗑</button>
+      </div>
+    </div>`).join('')}`:'')
   +`<div class="sec mt8"><div class="sec-l">Закупить товар</div></div>`
   +DROUTES.map((r,i)=>{
     const fd=W.districts[r.from],td=W.districts[r.to];
     const ctrl=fd?.orgId===me.orgId;const onCd=Date.now()<(me.cooldowns?.['drug'+i]||0);
+    const profit=r.sell-r.buy;
     return`<div class="card">
-      <div class="fc" style="gap:6px;margin-bottom:7px;overflow-x:auto">
+      <div class="fc" style="gap:6px;margin-bottom:8px">
         <div style="background:var(--d3);border:1px solid var(--br2);border-radius:7px;padding:7px 10px;text-align:center;flex-shrink:0">
-          <div style="font-size:18px">${fd?.icon||'📍'}</div><div style="font-size:9px;color:var(--dm)">${fd?.name||r.from}</div><div style="font-size:9px;color:var(--g)">${r.buy}$</div>
+          <div style="font-size:18px">${fd?.icon||'📍'}</div>
+          <div style="font-size:9px;color:var(--dm)">${fd?.name||r.from}</div>
+          <div style="font-size:9px;color:var(--r)">${r.buy}$</div>
         </div>
-        <div style="font-size:16px;color:var(--dm)">→</div>
+        <div style="flex:1;text-align:center">
+          <div style="font-size:20px">→</div>
+          <div style="font-size:10px;font-weight:700;color:var(--g)">${r.drug}</div>
+          <div style="font-size:9px;color:var(--gr)">+${profit}$/шт</div>
+        </div>
         <div style="background:var(--d3);border:1px solid var(--br2);border-radius:7px;padding:7px 10px;text-align:center;flex-shrink:0">
-          <div style="font-size:18px">${td?.icon||'📍'}</div><div style="font-size:9px;color:var(--dm)">${td?.name||r.to}</div><div style="font-size:9px;color:var(--gr)">${r.sell}$</div>
+          <div style="font-size:18px">${td?.icon||'📍'}</div>
+          <div style="font-size:9px;color:var(--dm)">${td?.name||r.to}</div>
+          <div style="font-size:9px;color:var(--gr)">${r.sell}$</div>
         </div>
       </div>
       <div class="fb">
-        <div><div style="font-size:12px;font-weight:700">${r.drug}</div>
-        <div style="font-size:10px;color:var(--dm)">Риск: ${Math.round(r.risk*(ctrl?.9:1)*100)}%</div></div>
-        <button class="btn btn-pu btn-sm" onclick="buyDrugs(${i})" ${me.money<r.buy||onCd?'disabled':''}>${onCd?'⏳':'КУПИТЬ'}</button>
+        <div style="font-size:10px;color:${r.risk>.25?'var(--r)':'var(--dm)'}">
+          Риск: ${Math.round(r.risk*(ctrl?.9:1)*100)}% ${ctrl?'🛡️':''}
+        </div>
+        <button class="btn btn-pu btn-sm" onclick="buyDrugs(${i})" ${me.money<r.buy||onCd?'disabled':''}>
+          ${onCd?`⏳`:`КУПИТЬ ${r.buy}$`}
+        </button>
       </div>
     </div>`;
   }).join('');
 }
+
 async function buyDrugs(i){
   const r=DROUTES[i];if(me.money<r.buy){toast('Нет денег!',1);return;}
   const qty=Math.min(5,Math.floor(me.money/r.buy));
@@ -1965,25 +2669,172 @@ async function buyDrugs(i){
   if(!me.drugStash)me.drugStash=[];
   me.drugStash.push({drug:r.drug,qty,buy:r.buy,sell:r.sell,to:r.to,ri:i,risk:r.risk});
   if(!me.cooldowns)me.cooldowns={};me.cooldowns['drug'+i]=Date.now()+3e5;
-  saveMe();updateHdr();rDrugs();toast('💊 Куплено '+qty+'x'+r.drug);
+  addTx(-r.buy*qty,'💊 Закупка: '+r.drug);sfx('coins');haptic('light');
+  saveMe();updateHdr();rDrugs();toast('💊 Куплено '+qty+'x '+r.drug);
 }
-async function deliverDrugs(idx){
-  const s=me.drugStash[idx];const ctrl=W.districts[DROUTES[s.ri]?.from]?.orgId===me.orgId;
-  const risk=s.risk*(ctrl?.9:1)-(me.skills?.defense||0)*.03;
-  if(Math.random()<risk){
-    me.wanted=(me.wanted||0)+4;me.money=Math.max(0,me.money-500);
-    me.drugStash.splice(idx,1);saveMe();updateHdr();rDrugs();
-    await pushFeed('🚔','<b>'+me.name+'</b> пойман с '+s.drug+'! Штраф 500$');
-    toast('🚔 Поймали! Груз конфискован.',1);return;
+
+// Delivery mini-game — провези груз не спалившись
+function startDrugDelivery(idx){
+  const s=me.drugStash[idx];
+  const ctrl=W.districts[DROUTES[s.ri]?.from]?.orgId===me.orgId;
+  const risk=Math.max(0.05,s.risk*(ctrl?.9:1)-(me.skills?.defense||0)*.03);
+  window._drugDelivery={idx,s,risk,checkpoints:0,maxCheckpoints:4,caught:false};
+  rDrugs();
+}
+
+function renderDrugGame(el){
+  const {s,risk,checkpoints,maxCheckpoints}=window._drugDelivery;
+  const progress=checkpoints/maxCheckpoints;
+  const from=W.districts[DROUTES[s.ri]?.from];
+  const to=W.districts[s.to];
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--pu);margin-bottom:4px">🚗 ДОСТАВКА ГРУЗА</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">
+        ${from?.icon} ${from?.name} → ${to?.icon} ${to?.name}
+      </div>
+      <!-- Route progress -->
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:14px">
+        <span style="font-size:16px">${from?.icon||'🏘️'}</span>
+        <div style="flex:1;background:var(--dk);border-radius:3px;height:6px;overflow:hidden">
+          <div style="height:100%;width:${progress*100}%;background:linear-gradient(90deg,var(--pu),var(--g));border-radius:3px;transition:width .4s"></div>
+        </div>
+        <span style="font-size:16px">${to?.icon||'🏙️'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Блокпост ${checkpoints+1} из ${maxCheckpoints}</div>
+    </div>
+
+    <!-- Checkpoint mini-game: выбери правильный вариант -->
+    <div id="drugCheckpoint"></div>`;
+
+  renderCheckpoint();
+}
+
+function renderCheckpoint(){
+  const cpEl=document.getElementById('drugCheckpoint');if(!cpEl)return;
+  const {risk}=window._drugDelivery;
+  // Random checkpoint scenario
+  const scenarios=[
+    {
+      q:'🚔 Полицейский машет жезлом. Что делаешь?',
+      opts:[
+        {t:'Спокойно останавливаешься',correct:true},
+        {t:'Жмёшь на газ',correct:false},
+        {t:'Бросаешь товар в окно',correct:false},
+      ]
+    },
+    {
+      q:'🐕 Собака начинает лаять на машину.',
+      opts:[
+        {t:'Отвлекаешь угощением',correct:true},
+        {t:'Уезжаешь резко',correct:false},
+        {t:'Не реагируешь',correct:Math.random()>0.4},
+      ]
+    },
+    {
+      q:'📱 Звонок с неизвестного номера.',
+      opts:[
+        {t:'Не берёшь трубку',correct:true},
+        {t:'Берёшь — это покупатель',correct:Math.random()>0.5},
+        {t:'Сбрасываешь и едешь дальше',correct:true},
+      ]
+    },
+    {
+      q:'🚧 Впереди патрульная машина.',
+      opts:[
+        {t:'Едешь как ни в чём не бывало',correct:true},
+        {t:'Делаешь объезд',correct:Math.random()>risk},
+        {t:'Паркуешься и ждёшь',correct:false},
+      ]
+    },
+    {
+      q:'📸 Камера видеонаблюдения на перекрёстке.',
+      opts:[
+        {t:'Прикрываешь лицо',correct:false},
+        {t:'Едешь в объезд',correct:true},
+        {t:'Едешь нормально',correct:Math.random()>risk},
+      ]
+    },
+  ];
+  const scene=scenarios[Math.floor(Math.random()*scenarios.length)];
+  window._drugDelivery._scene=scene;
+  // Shuffle options
+  const opts=[...scene.opts].sort(()=>Math.random()-.5);
+  cpEl.innerHTML=`
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;line-height:1.4">${scene.q}</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${opts.map((o,i)=>`
+          <button onclick="drugCheckpointChoice(${o.correct})"
+            style="padding:12px 14px;background:var(--d3);border:1.5px solid var(--br2);border-radius:9px;
+                   text-align:left;font-size:12px;cursor:pointer;color:var(--tx);transition:all .15s">
+            ${o.t}
+          </button>`).join('')}
+      </div>
+    </div>
+    <button onclick="drugAbort()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--r);border-radius:8px;color:var(--r);font-size:11px;cursor:pointer">
+      🗑 Бросить груз и уехать (потеря товара)
+    </button>`;
+}
+
+window.drugCheckpointChoice=function(correct){
+  if(!window._drugDelivery)return;
+  const dg=window._drugDelivery;
+  if(correct){
+    dg.checkpoints++;sfx('coins');haptic('light');
+    if(dg.checkpoints>=dg.maxCheckpoints){drugDeliverySuccess();return;}
+    toast(`✅ Чисто! Блокпост ${dg.checkpoints}/${dg.maxCheckpoints} пройден`);
+    setTimeout(()=>renderDrugGame(document.getElementById('D_drugs')),500);
+  }else{
+    // Wrong choice — still might get through based on risk
+    if(Math.random()>dg.risk*1.5){
+      dg.checkpoints++;sfx('click');haptic('light');
+      toast('😬 Пронесло...');
+      if(dg.checkpoints>=dg.maxCheckpoints){drugDeliverySuccess();return;}
+      setTimeout(()=>renderDrugGame(document.getElementById('D_drugs')),600);
+    }else{
+      drugDeliveryCaught();
+    }
   }
-  const profit=s.qty*s.sell*(drugBonus?2:1);
+};
+
+async function drugDeliverySuccess(){
+  const {s}=window._drugDelivery;
+  window._drugDelivery=null;
+  const profit=s.qty*s.sell*(window.drugBonus?2:1);
   me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;me.wanted=(me.wanted||0)+1;
-  me.drugStash.splice(idx,1);gainXP(80);
-  saveMe();updateHdr();rDrugs();
-  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+profit+'$');
-  toast('✅ Доставлено! +'+profit+'$');
+  me.drugStash.splice(s._idx||0,1);
+  // Find and remove correct stash item
+  const idx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
+  if(idx>=0)me.drugStash.splice(idx,1);
+  gainXP(80);addTx(profit,'💊 Доставлено: '+s.drug);sfx('win');haptic('heavy');
+  saveMe();updateHdr();
+  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$');
+  toast('✅ Доставлено! +'+fmt(profit)+'$');rDrugs();
 }
+
+async function drugDeliveryCaught(){
+  const {s}=window._drugDelivery;
+  window._drugDelivery=null;
+  me.wanted=(me.wanted||0)+4;me.money=Math.max(0,me.money-500);
+  const idx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
+  if(idx>=0)me.drugStash.splice(idx,1);
+  sfx('fail');haptic('heavy');
+  saveMe();updateHdr();
+  await pushFeed('🚔','<b>'+me.name+'</b> пойман с '+s.drug+'! Штраф 500$');
+  toast('🚔 Поймали! Груз конфискован.',1);rDrugs();
+}
+
+function drugAbort(){
+  const {s}=window._drugDelivery||{};
+  window._drugDelivery=null;
+  if(s){const idx=me.drugStash.findIndex(x=>x.drug===s.drug);if(idx>=0)me.drugStash.splice(idx,1);}
+  saveMe();toast('🗑 Груз брошен');rDrugs();
+}
+
 function dumpDrugs(i){me.drugStash.splice(i,1);saveMe();rDrugs();toast('🗑 Сброшен');}
+async function deliverDrugs(idx){startDrugDelivery(idx);}
+
 
 // ── CONTRACTS ──
 async function rContracts(){
