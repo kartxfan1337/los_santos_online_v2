@@ -3370,15 +3370,19 @@ async function cjFinishWin(){
   cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);
   const car=cjState.car;
   const bonus=cjState.score>=3?1.3:1;
-  const r=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*(1+(window._propGarageBonus||0))*bonus);
+  const gross=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*(1+(window._propGarageBonus||0))*bonus);
+  const tax=Math.floor(gross*0.10); // 10% налог с угона
+  const r=gross-tax;
   me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;me.wanted=(me.wanted||0)+2;
   me.raceWins=(me.raceWins||0)+1;
   if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+3e5;
-  gainXP(60);cjState={active:false,result:{win:true,msg:'Угнан! +'+r+'$'+(bonus>1?' 🔥':'')+' 🚗💨'}};
-  addTx(r,'🚗 Угон: '+car.name);sfx('win');haptic('heavy');checkAchievements();
+  gainXP(60);cjState={active:false,result:{win:true,msg:'Угнан! +'+fmt(r)+'$'+(bonus>1?' 🔥':'')+' 🚗💨'}};
+  addTx(gross,'🚗 Угон: '+car.name);
+  if(tax>0)addTx(-tax,'🏛️ Налог на угон (10%)');
+  sfx('win');haptic('heavy');checkAchievements();
   saveMe();updateHdr();
   await pushFeed('🚗','<b>'+me.name+'</b> угнал '+car.name+' за '+fmt(r)+'$!');
-  toast('🏎️ '+car.name+' угнан! +'+fmt(r)+'$');rCarjack();
+  toast('🏎️ '+car.name+' угнан! +'+fmt(r)+'$ (−'+fmt(tax)+'$ налог)');rCarjack();
 }
 
 // ══════════════════════════════════════
@@ -3590,16 +3594,20 @@ window.drugCheckpointChoice=function(correct){
 async function drugDeliverySuccess(){
   const {s}=window._drugDelivery;
   window._drugDelivery=null;
-  const profit=s.qty*s.sell*(window.drugBonus?2:1);
+  const gross=s.qty*s.sell*(window.drugBonus?2:1);
+  const tax=Math.floor(gross*0.15); // 15% налог на трафик
+  const profit=gross-tax;
   me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;me.wanted=(me.wanted||0)+1;
   me.drugStash.splice(s._idx||0,1);
-  // Find and remove correct stash item
   const idx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
   if(idx>=0)me.drugStash.splice(idx,1);
-  gainXP(80);addTx(profit,'💊 Доставлено: '+s.drug);sfx('win');haptic('heavy');
+  gainXP(80);
+  addTx(gross,'💊 Доставлено: '+s.drug);
+  if(tax>0)addTx(-tax,'🏛️ Налог на трафик (15%)');
+  sfx('win');haptic('heavy');
   saveMe();updateHdr();
-  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$');
-  toast('✅ Доставлено! +'+fmt(profit)+'$');rDrugs();
+  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$ (−'+fmt(tax)+'$ налог)');
+  toast('✅ Доставлено! +'+fmt(profit)+'$ (−'+fmt(tax)+'$ налог)');rDrugs();
 }
 
 async function drugDeliveryCaught(){
@@ -3792,10 +3800,16 @@ async function autoResolveBets(bets){
       const winners=b.bettors?.filter(x=>x.side===winner)||[];
       const winPool=winners.reduce((s,x)=>s+x.amount,1);
       winners.forEach(w=>{
-        const payout=Math.floor(pool*(w.amount/winPool)*0.95);
-        if(w.pid===PID){me.money+=payout;addTx(payout,`🎲 Ставка выиграла: ${b.title}`);
+        const gross=Math.floor(pool*(w.amount/winPool));
+        const tax=Math.floor(gross*0.05);
+        const payout=gross-tax;
+        if(w.pid===PID){
+          me.money+=payout;
+          addTx(gross,`🎲 Ставка выиграла: ${b.title}`);
+          if(tax>0)addTx(-tax,'🏛️ Налог на перевод (5%)');
           me.betsWon=(me.betsWon||0)+1;saveMe();updateHdr();
-          toast(`🏆 Ставка сыграла! +${fmt(payout)}$`);}
+          toast(`🏆 Ставка сыграла! +${fmt(payout)}$ (−${fmt(tax)}$ налог)`);
+        }
       });
       await pushFeed('🎲',`Ставка «${b.title}» завершена! Победила сторона ${winner==='A'?b.labelA:b.labelB}`);
     }
@@ -3887,13 +3901,19 @@ async function spinSlots(){
   if(res[0]===res[1]&&res[1]===res[2]){const m=res[0]==='7️⃣'?20:res[0]==='💎'?10:5;win=bet*m*(casinoBonus?2:1);msg='🎆 ТРОЙКА! +'+win+'$';}
   else if(res[0]===res[1]||res[1]===res[2]||res[0]===res[2]){win=bet*2*(casinoBonus?2:1);msg='✅ Пара! +'+win+'$';}
   else msg='❌ Мимо';
-  if(win){me.money+=Math.floor(win*(1+(window._propCasinoBonus||0)));me.score+=Math.floor(win/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
-    const realWin=Math.floor(win*(1+(window._propCasinoBonus||0)));
-    addTx(realWin,'🎰 Казино — слоты');sfx('win');haptic('medium');checkAchievements();
+  if(win){
+    const gross=Math.floor(win*(1+(window._propCasinoBonus||0)));
+    const tax=Math.floor(gross*0.10);
+    const realWin=gross-tax;
+    me.money+=realWin;me.score+=Math.floor(realWin/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
+    addTx(realWin,'🎰 Казино — слоты');
+    if(tax>0)addTx(-tax,'🏛️ Налог на выигрыш');
+    sfx('win');haptic('medium');checkAchievements();
     if(realWin>=bet*10){
       await pushFeed('🎰','<b>'+me.name+'</b> выиграл в казино +'+realWin+'$!');
       notifyChannel('casino_win',{player:me.name,avatar:me.avatar,amount:realWin});
     }
+    msg+=' (−'+tax+'$ налог)';
   }else{sfx('fail');addTx(-bet,'🎰 Казино — слоты (проигрыш');}
   saveMe();updateHdr();
   const r=document.getElementById('slotRes');if(r){r.textContent=msg+(win&&window._propCasinoBonus?' 🎰+'+Math.round(window._propCasinoBonus*100)+'%':'');r.style.color=win?'var(--gr)':'var(--r)';}
@@ -3911,11 +3931,16 @@ async function spinRoulette(){
   else if(roulPick==='black'&&bc==='black'){win=bet*2;msg+=' — Чёрное!';}
   else if(roulPick==='green'&&bc==='green'){win=bet*14;msg+=' — ЗЕРО!';}
   else msg+=' — Мимо';
-  if(win){win=Math.floor(win*(casinoBonus?2:1));me.money+=win;me.score+=Math.floor(win/30);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
-    addTx(win,'🎡 Рулетка');sfx('win');haptic('medium');checkAchievements();
-    if(win>=bet*10)await pushFeed('🎡','<b>'+me.name+'</b> выиграл в рулетку +'+win+'$!');
+  if(win){
+    win=Math.floor(win*(casinoBonus?2:1));
+    const tax=Math.floor(win*0.10);
+    const netWin=win-tax;
+    me.money+=netWin;me.score+=Math.floor(netWin/30);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
+    addTx(netWin,'🎡 Рулетка');if(tax>0)addTx(-tax,'🏛️ Налог на выигрыш');
+    sfx('win');haptic('medium');checkAchievements();
+    if(netWin>=bet*10)await pushFeed('🎡','<b>'+me.name+'</b> выиграл в рулетку +'+netWin+'$!');
+    msg+=' +'+netWin+'$ (−'+tax+'$ налог)';
   }else{sfx('fail');addTx(-bet,'🎡 Рулетка (проигрыш)');}
-  msg+=win?' +'+win+'$':'';
   saveMe();updateHdr();
   const r=document.getElementById('rouletteRes');if(r){r.textContent=msg;r.style.color=win?'var(--gr)':'var(--r)';}
 }
@@ -4580,58 +4605,89 @@ async function rLottery(){
   const el=document.getElementById('D_lottery');if(!el)return;
   const lotto=await ST.get('lottery')||{tickets:[],lastDraw:0,jackpot:5000};
   const now=Date.now();
-  const nextDraw=lotto.lastDraw+864e5; // 24h
+  const nextDraw=lotto.lastDraw+864e5;
   const myTickets=(lotto.tickets||[]).filter(t=>t.pid===PID).length;
   const totalTickets=(lotto.tickets||[]).length;
   const jackpot=lotto.jackpot||5000;
   const timeLeft=Math.max(0,nextDraw-now);
+  const MAX_TICKETS=20;
+  const canBuy=MAX_TICKETS-myTickets;
+  const taxRate=0.10; // 10% налог на выигрыш
+  const netPrize=Math.floor(jackpot*(1-taxRate));
   el.innerHTML=`
     <div class="card hi" style="text-align:center;padding:20px;margin-bottom:10px">
       <div style="font-size:48px;margin-bottom:6px">🎪</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px">ГОРОДСКАЯ ЛОТЕРЕЯ</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--g);margin:8px 0">${fmt(jackpot)}$</div>
-      <div style="font-size:10px;color:var(--dm)">ДЖЕКПОТ</div>
+      <div style="font-size:10px;color:var(--dm)">ДЖЕКПОТ · После налога: <span style="color:var(--g)">${fmt(netPrize)}$</span></div>
     </div>
     <div class="card mb8">
-      <div class="fb mb6"><span style="font-size:11px;color:var(--dm)">Участников</span><span class="tag tg">${totalTickets} билетов</span></div>
-      <div class="fb mb6"><span style="font-size:11px;color:var(--dm)">Твои билеты</span><span class="tag ${myTickets>0?'tgr':''}"> ${myTickets}</span></div>
-      <div class="fb"><span style="font-size:11px;color:var(--dm)">Следующий розыгрыш</span><span style="font-size:11px;color:var(--g)">${timeLeft>0?fmtS(Math.ceil(timeLeft/1000)):'Скоро!'}</span></div>
+      <div class="fb mb5"><span style="font-size:11px;color:var(--dm)">Участников</span><span class="tag tg">${totalTickets} билетов</span></div>
+      <div class="fb mb5">
+        <span style="font-size:11px;color:var(--dm)">Твои билеты</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="tag ${myTickets>0?'tgr':''}">${myTickets}/${MAX_TICKETS}</span>
+          ${myTickets>0?`<div style="background:var(--dk);border-radius:3px;height:4px;width:60px;overflow:hidden">
+            <div style="height:100%;width:${myTickets/MAX_TICKETS*100}%;background:var(--gr);border-radius:3px"></div>
+          </div>`:''}
+        </div>
+      </div>
+      <div class="fb mb5"><span style="font-size:11px;color:var(--dm)">Твой шанс</span>
+        <span style="font-size:11px;color:var(--g)">${totalTickets>0?Math.round(myTickets/totalTickets*100):0}%</span></div>
+      <div class="fb"><span style="font-size:11px;color:var(--dm)">Следующий розыгрыш</span>
+        <span style="font-size:11px;color:var(--g)">${timeLeft>0?fmtS(Math.ceil(timeLeft/1000)):'Скоро!'}</span></div>
+    </div>
+    <div class="card mb8" style="background:rgba(230,57,80,.05);border-color:rgba(230,57,80,.2)">
+      <div style="font-size:10px;color:var(--dm);line-height:1.6">
+        🏛️ <b style="color:var(--r)">Налог на выигрыш: 10%</b><br>
+        При выигрыше государство удержит ${fmt(jackpot-netPrize)}$ — на руки получишь ${fmt(netPrize)}$
+      </div>
     </div>
     <div class="card">
-      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">1 билет = 500$ · Чем больше билетов, тем выше шанс</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(1)">🎫 1 билет<br><span style="font-size:10px">500$</span></button>
-        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(3)">🎫 3 билета<br><span style="font-size:10px">1500$</span></button>
-        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(5)">🎫 5 билетов<br><span style="font-size:10px">2500$</span></button>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">
+        1 билет = 500$ · Макс <b>${MAX_TICKETS}</b> билетов · Осталось купить: <b style="color:${canBuy>0?'var(--g)':'var(--r)'}">${canBuy}</b>
       </div>
+      ${canBuy>0?`
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(1)" ${me.money<500?'disabled':''}>🎫 1<br><span style="font-size:10px">500$</span></button>
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(5)" ${me.money<2500||canBuy<5?'disabled':''}>🎫 5<br><span style="font-size:10px">2500$</span></button>
+        <button class="btn btn-g" style="flex:1" onclick="buyLotteryTicket(${Math.min(10,canBuy)})" ${me.money<5000||canBuy<10?'disabled':''}>🎫 10<br><span style="font-size:10px">5000$</span></button>
+      </div>`
+      :`<div style="text-align:center;padding:8px;color:var(--dm);font-size:11px">🔒 Достигнут лимит билетов (${MAX_TICKETS}/${MAX_TICKETS})</div>`}
     </div>`;
-  // Auto-draw if time is up
   if(timeLeft<=0&&totalTickets>0)drawLottery(lotto);
 }
 
 async function buyLotteryTicket(count){
-  const cost=count*500;
-  if(me.money<cost){toast('Нужно '+cost+'$!',1);return;}
-  me.money-=cost;addTx(-cost,'🎫 Лотерея — '+count+' билет(ов)');
-  saveMe();updateHdr();
+  const MAX_TICKETS=20;
   const lotto=await ST.get('lottery')||{tickets:[],lastDraw:Date.now(),jackpot:5000};
-  for(let i=0;i<count;i++)lotto.tickets.push({pid:PID,name:me.name,ts:Date.now()});
-  lotto.jackpot=(lotto.jackpot||5000)+cost; // each ticket adds to jackpot
+  const myTickets=(lotto.tickets||[]).filter(t=>t.pid===PID).length;
+  if(myTickets>=MAX_TICKETS){toast(`Лимит: макс ${MAX_TICKETS} билетов!`,1);return;}
+  const actual=Math.min(count,MAX_TICKETS-myTickets);
+  const cost=actual*500;
+  if(me.money<cost){toast('Нужно '+fmt(cost)+'$!',1);return;}
+  me.money-=cost;addTx(-cost,'🎫 Лотерея — '+actual+' билет(ов)');
+  saveMe();updateHdr();
+  for(let i=0;i<actual;i++)lotto.tickets.push({pid:PID,name:me.name,ts:Date.now()});
+  lotto.jackpot=(lotto.jackpot||5000)+cost;
   await ST.set('lottery',lotto);
   sfx('coins');haptic('light');
-  toast('🎫 '+count+' билет(ов) куплено! Удачи!');
+  toast('🎫 '+actual+' билет(ов) куплено! Удачи!');
   rLottery();
 }
 
 async function drawLottery(lotto){
   if(!lotto.tickets?.length)return;
   const winner=lotto.tickets[Math.floor(Math.random()*lotto.tickets.length)];
-  const prize=lotto.jackpot;
-  await pushFeed('🎪',`🎉 <b>ЛОТЕРЕЯ!</b> Победитель: <b>${winner.name}</b> выиграл <b>${fmt(prize)}$</b>!`);
+  const grossPrize=lotto.jackpot;
+  const tax=Math.floor(grossPrize*0.10);
+  const netPrize=grossPrize-tax;
+  await pushFeed('🎪',`🎉 <b>ЛОТЕРЕЯ!</b> Победитель: <b>${winner.name}</b> выиграл <b>${fmt(netPrize)}$</b> (налог ${fmt(tax)}$)!`);
   if(winner.pid===PID){
-    me.money+=prize;addTx(prize,'🎪 Лотерея — ДЖЕКПОТ!');
+    me.money+=netPrize;addTx(netPrize,'🎪 Лотерея — ДЖЕКПОТ!');addTx(-tax,'🏛️ Налог на выигрыш (10%)');
     saveMe();updateHdr();sfx('win');haptic('heavy');
-    toast(`🎉 ТЫ ВЫИГРАЛ ЛОТЕРЕЮ! +${fmt(prize)}$!!!`);
+    toast(`🎉 ТЫ ВЫИГРАЛ! +${fmt(netPrize)}$ (налог -${fmt(tax)}$)`);
+    notifyChannel('casino_win',{player:me.name,avatar:me.avatar,amount:netPrize});
   }
   await ST.set('lottery',{tickets:[],lastDraw:Date.now(),jackpot:5000});
   rLottery();
@@ -4707,15 +4763,18 @@ async function acceptDuel(duelId){
   const me_power=(me.power||5)*(0.7+Math.random()*0.6);
   const opp_power=(P[d.challenger]?.power||5)*(0.7+Math.random()*0.6);
   const iWin=me_power>opp_power;
-  const prize=d.bet*2;
+  const gross=d.bet*2;
+  const tax=Math.floor(gross*0.05); // 5% налог на переводы
+  const prize=gross-tax;
   d.done=true;d.winner=iWin?PID:d.challenger;
   await ST.set('duels',duels);
   if(iWin){
     me.money+=prize;me.rep+=20;me.score+=50;
-    addTx(prize,'🥊 Дуэль — победа!');
+    addTx(gross,'🥊 Дуэль — победа!');
+    addTx(-tax,'🏛️ Налог на перевод (5%)');
     sfx('win');haptic('heavy');
-    await pushFeed('🥊',`<b>${me.name}</b> победил <b>${P[d.challenger]?.name}</b> в дуэли и забрал ${fmt(prize)}$!`);
-    toast(`🏆 Победа! +${fmt(prize)}$`);
+    await pushFeed('🥊',`<b>${me.name}</b> победил <b>${P[d.challenger]?.name}</b> в дуэли! +${fmt(prize)}$`);
+    toast(`🏆 Победа! +${fmt(prize)}$ (−${fmt(tax)}$ налог)`);
   }else{
     sfx('fail');haptic('medium');
     await pushFeed('🥊',`<b>${P[d.challenger]?.name}</b> победил <b>${me.name}</b> в дуэли и забрал ${fmt(prize)}$!`);
@@ -6784,7 +6843,9 @@ async function collectIncome(){
     .reduce((s,d)=>{
       const bBonus=(d.buildings||[]).reduce((b,bid)=>b+(BUILDINGS[bid]?.incBonus||0),0);
       const ctrl=(d.control||100)/100;
-      return s+Math.floor((d.income+bBonus)*ctrl/60);
+      const raw=Math.floor((d.income+bBonus)*ctrl/60);
+      const tax=Math.floor(raw*(d.tax||0)/100); // district tax rate
+      return s+raw-tax;
     },0);
   const total=pInc+dInc;
   if(total>0){
