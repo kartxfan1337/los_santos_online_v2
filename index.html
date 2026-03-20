@@ -99,7 +99,7 @@ body{display:flex;flex-direction:column}
 .snav.on{color:var(--g);border-bottom-color:var(--g)}
 .subscreen{display:none}
 .subscreen.on{display:block}
-.pad{padding:10px}
+.pad{padding:12px 10px}
 
 /* CARDS / BUTTONS / ETC */
 .card{background:var(--d2);border:1px solid var(--br2);border-radius:9px;padding:11px 13px;margin-bottom:7px}
@@ -108,25 +108,26 @@ body{display:flex;flex-direction:column}
 .sec{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--g);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between}
 .sec-l{display:flex;align-items:center;gap:5px}
 .sec-l::before{content:'';display:block;width:3px;height:13px;background:var(--g);border-radius:2px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:7px;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;transition:all .15s;user-select:none}
-.btn:active{transform:scale(.96)}
-.btn-g{background:linear-gradient(135deg,var(--g),var(--g2));color:#000}
-.btn-r{background:linear-gradient(135deg,var(--r),#a01828);color:#fff}
-.btn-gr{background:linear-gradient(135deg,var(--gr),#107a50);color:#fff}
-.btn-bl{background:linear-gradient(135deg,var(--bl),#1a5a9a);color:#fff}
-.btn-gh{background:var(--d3);border:1px solid var(--br);color:var(--tx)}
-.btn-pu{background:linear-gradient(135deg,var(--pu),#6c3483);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:10px 18px;border-radius:10px;border:none;cursor:pointer;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;transition:all .15s;user-select:none;white-space:nowrap}
+.btn:active{transform:scale(.95);opacity:.85}
+.btn-g {background:linear-gradient(135deg,#f0b429,#c4911a);color:#000}
+.btn-r {background:linear-gradient(135deg,#e63950,#a01828);color:#fff}
+.btn-gr{background:linear-gradient(135deg,#1db87a,#107a50);color:#fff}
+.btn-bl{background:linear-gradient(135deg,#2e86de,#1a5a9a);color:#fff}
+.btn-pu{background:linear-gradient(135deg,#9b59b6,#6c3483);color:#fff}
+.btn-cy{background:linear-gradient(135deg,#00d2d3,#009899);color:#000;font-weight:700}
+.btn-gh{background:var(--d3);border:1.5px solid var(--br);color:var(--tx)}
 .btn-full{width:100%}
-.btn-sm{padding:5px 10px;font-size:11px}
+.btn-sm{padding:6px 12px;font-size:11px;border-radius:8px}
 .btn:disabled{opacity:.35;pointer-events:none}
-.tag{display:inline-flex;align-items:center;padding:2px 6px;border-radius:3px;font-size:9px;font-family:'Share Tech Mono',monospace}
-.tg{background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.25);color:var(--g)}
-.tr{background:rgba(230,57,80,.1);border:1px solid rgba(230,57,80,.25);color:var(--r)}
-.tgr{background:rgba(29,184,122,.1);border:1px solid rgba(29,184,122,.25);color:var(--gr)}
-.tbl{background:rgba(46,134,222,.1);border:1px solid rgba(46,134,222,.25);color:var(--bl)}
-.tpu{background:rgba(155,89,182,.1);border:1px solid rgba(155,89,182,.25);color:var(--pu)}
-.tcy{background:rgba(0,210,211,.1);border:1px solid rgba(0,210,211,.25);color:var(--cy)}
-.inp{width:100%;background:var(--d3);border:1px solid var(--br);border-radius:6px;padding:9px 11px;color:var(--tx);font-family:'Exo 2',sans-serif;font-size:13px;outline:none}
+.tag{display:inline-flex;align-items:center;padding:3px 7px;border-radius:5px;font-size:9px;font-family:'Share Tech Mono',monospace;font-weight:700}
+.tg {background:rgba(240,180,41,.12);border:1px solid rgba(240,180,41,.3);color:#f0b429}
+.tr {background:rgba(230,57,80,.12);border:1px solid rgba(230,57,80,.3);color:#e63950}
+.tgr{background:rgba(29,184,122,.12);border:1px solid rgba(29,184,122,.3);color:#1db87a}
+.tbl{background:rgba(46,134,222,.12);border:1px solid rgba(46,134,222,.3);color:#2e86de}
+.tpu{background:rgba(155,89,182,.12);border:1px solid rgba(155,89,182,.3);color:#9b59b6}
+.tcy{background:rgba(0,210,211,.12);border:1px solid rgba(0,210,211,.3);color:#00d2d3}
+.inp{width:100%;background:var(--d3);border:1.5px solid var(--br);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:'Exo 2',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
 .inp:focus{border-color:var(--g)}
 .inp::placeholder{color:var(--dm)}
 .fb{display:flex;align-items:center;justify-content:space-between}
@@ -136,8 +137,8 @@ body{display:flex;flex-direction:column}
 .mono{font-family:'Share Tech Mono',monospace}
 
 /* MAP */
-.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px}
-.dst{background:var(--d3);border:1px solid var(--br2);border-radius:7px;padding:9px 6px;text-align:center;cursor:pointer;position:relative;overflow:hidden;user-select:none}
+.mgrid{display:block;margin-bottom:4px}
+.dst{background:var(--d3);border:1px solid var(--br2);border-radius:10px;padding:9px 6px;text-align:center;cursor:pointer;position:relative;overflow:hidden;user-select:none}
 .dst::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
 .dst.mine::after{background:var(--g)}
 .dst.enemy::after{background:var(--r)}
@@ -152,16 +153,23 @@ body{display:flex;flex-direction:column}
 .ftime{font-size:9px;color:var(--dm);margin-top:1px;font-family:'Share Tech Mono',monospace}
 
 /* MISSIONS */
-.mcard{background:var(--d2);border:1px solid var(--br2);border-radius:9px;padding:11px;margin-bottom:7px;cursor:pointer;user-select:none}
-.mico{font-size:22px;width:38px;height:38px;background:var(--d3);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mcard{background:var(--d2);border:1px solid var(--br2);border-radius:12px;padding:13px 14px;margin-bottom:8px;cursor:pointer;user-select:none;transition:all .15s}
+.mcard:active{background:var(--d3);border-color:rgba(240,180,41,.4);transform:scale(.99)}
+.mico{font-size:24px;width:46px;height:46px;background:var(--d3);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--br2)}
+
+/* CARDS */
+.card{background:var(--d2);border:1px solid var(--br2);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.card.hi {border-color:rgba(240,180,41,.35);background:rgba(240,180,41,.04)}
+.card.rhi{border-color:rgba(230,57,80,.35);background:rgba(230,57,80,.04)}
+.card.ghi{border-color:rgba(29,184,122,.35);background:rgba(29,184,122,.04)}
 
 /* SKILLS */
-.sknode{background:var(--d2);border:1px solid var(--br2);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:7px;user-select:none}
-.sknode.on{border-color:rgba(240,180,41,.3)}
-.skico{font-size:22px;width:36px;height:36px;background:var(--d3);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sknode{background:var(--d2);border:1px solid var(--br2);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px;user-select:none;transition:all .15s}
+.sknode.on{border-color:rgba(240,180,41,.3);background:rgba(240,180,41,.04)}
+.skico{font-size:22px;width:38px;height:38px;background:var(--d3);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* PROPERTY */
-.propcard{background:var(--d2);border:1px solid var(--br2);border-radius:9px;padding:11px;margin-bottom:7px;position:relative;overflow:hidden}
+.propcard{background:var(--d2);border:1px solid var(--br2);border-radius:12px;padding:12px 14px;margin-bottom:8px;position:relative;overflow:hidden}
 .propcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
 .propcard.t1::before{background:var(--bl)}
 .propcard.t2::before{background:var(--g)}
@@ -169,7 +177,7 @@ body{display:flex;flex-direction:column}
 
 /* DAILY */
 .dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
-.dbox{background:var(--d3);border:1px solid var(--br2);border-radius:7px;padding:7px 4px;text-align:center}
+.dbox{background:var(--d3);border:1px solid var(--br2);border-radius:8px;padding:7px 4px;text-align:center}
 .dbox.done{border-color:rgba(29,184,122,.3);background:rgba(29,184,122,.05)}
 .dbox.today{border-color:var(--g);background:rgba(240,180,41,.06)}
 
@@ -408,7 +416,7 @@ body{display:flex;flex-direction:column}
   </div>
   <div class="subscreen on pad" id="ss-map">
     <div class="sec"><div class="sec-l">Карта</div><span class="tag tgr" id="D_online">0 онлайн</span></div>
-    <div class="mgrid" id="D_map"></div>
+    <div class="mgrid" id="D_map" style="width:100%;box-sizing:border-box;overflow:hidden"></div>
     <div class="sec"><div class="sec-l">Лента</div></div>
     <div class="card" style="padding:0"><div id="D_feed"></div></div>
   </div>
@@ -592,7 +600,7 @@ body{display:flex;flex-direction:column}
 <script>
 // ── CONFIG ──
 const ADMINS=[{id:'658117827',pin:'1337',name:'Главный',role:'superadmin'}];
-const OB_KEY='lso_ob_v4'; // v4 = updated onboarding with all features
+const OB_KEY='lso_ob_v5'; // v5 = updated onboarding with all features
 const AVTS=['😎','🤠','👊','🥷','🎩','😈','🦁','🐺','🐉','🔥','🎯','💀'];
 const EMBLEMS=['🔫','💀','🐉','🦅','🐺','🦁','⚡','🔥','💎','🕷️','🎯','👑','🌊','🗡️','🛡️','🎪','🌹','☠️','🦈','🔱'];
 const OTYPES={gang:'Банда',corp:'Корпорация',mafia:'Мафия',police:'Полиция'};
@@ -620,6 +628,27 @@ let adminUnlocked=false;
 const SUPA_URL = 'https://qymwpvmdcojdvlwnoweg.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5bXdwdm1kY29qZHZsd25vd2VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzM0NTQsImV4cCI6MjA4OTUwOTQ1NH0.QSegU-r9CPtzFxhg2L8wJsSx1_BH5S0exgMTo9flIVw';
 const SUPA_HDR = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+
+// ── Bot notifications ──────────────────
+const BOT_NOTIFY_URL    = 'https://los-santos-bot-back.vercel.app/api/notify';
+const BOT_NOTIFY_SECRET = 'lso_secret_2025';
+
+function notifyPlayer(tgId, type, data){
+  if(!tgId) return;
+  fetch(BOT_NOTIFY_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-notify-secret':BOT_NOTIFY_SECRET},
+    body:JSON.stringify({type, chatId:String(tgId), data}),
+  }).catch(()=>{});
+}
+
+function notifyChannel(type, data){
+  fetch(BOT_NOTIFY_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-notify-secret':BOT_NOTIFY_SECRET},
+    body:JSON.stringify({type, channel:true, data}),
+  }).catch(()=>{});
+}
 
 // Local memory cache — reads are instant, writes go to Supabase
 const _mem = {};
@@ -835,6 +864,7 @@ function defElection(){return{candidates:[
   {id:'c3',name:'Мисс Тан',avatar:'👩‍💼',party:'Бизнес',motto:'Развитие и прогресс',votes:0},
 ],voters:[],end:Date.now()+7*864e5,mayor:null};}
 function defPlayer(){return{id:PID,name:PNAME,avatar:PAVA,orgId:null,
+  tgId: tgu?.id ? String(tgu.id) : null,
   money:500,power:5,rep:0,score:0,wanted:0,
   level:1,xp:0,energy:10,energyMax:10,lastEnergy:Date.now(),
   skills:{},skillPoints:1,cooldowns:{},props:[],
@@ -863,6 +893,7 @@ async function syncAll(){
   try{ FEED = (await loadFeed()) || []; }catch{ FEED=[]; }
   me = P[PID] || defPlayer();
   me.lastSeen = Date.now(); me.name = PNAME;
+  if(tgu?.id) me.tgId = String(tgu.id); // always keep tgId fresh
   P[PID] = me;
 }
 async function saveAll(){P[PID]=me;await Promise.all([ST.set('world',W),ST.set('players',P)]);}
@@ -1035,35 +1066,37 @@ function rCity(){
           const ownerClr=isOwn?'#f0b429':isEnemy?'#e63950':'#5a5a80';
           return`
           <div onclick="openDist('${id}')" style="
-            display:flex;align-items:center;gap:10px;
+            display:flex;align-items:center;gap:8px;
             background:${bg};
             border:1px solid ${accentClr}33;
             border-left:3px solid ${accentClr};
-            border-radius:9px;padding:9px 11px;
-            cursor:pointer;transition:background .15s"
+            border-radius:9px;padding:9px 10px;
+            cursor:pointer;transition:background .15s;
+            overflow:hidden;box-sizing:border-box;width:100%"
             onmouseenter="this.style.background='var(--d3)'"
             onmouseleave="this.style.background='${bg}'">
 
             <!-- Icon -->
-            <div style="font-size:22px;flex-shrink:0;width:32px;text-align:center">${d.icon}</div>
+            <div style="font-size:20px;flex-shrink:0;width:28px;text-align:center">${d.icon}</div>
 
             <!-- Main info -->
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-                <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:.5px">${d.name}</span>
-                ${d.police>0?`<span style="font-size:9px;color:#5a5a80">👮${d.police}</span>`:''}
-                ${(d.buildings||[]).length?`<span style="font-size:9px;color:#5a5a80">🏗️${d.buildings.length}</span>`:''}
+            <div style="flex:1;min-width:0;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
+                <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.name}</span>
+                ${d.police>0?`<span style="font-size:9px;color:#5a5a80;flex-shrink:0">👮${d.police}</span>`:''}
+                ${(d.buildings||[]).length?`<span style="font-size:9px;color:#5a5a80;flex-shrink:0">🏗️${(d.buildings||[]).length}</span>`:''}
               </div>
-              <!-- Control bar -->
-              <div style="background:rgba(255,255,255,.07);border-radius:2px;height:3px;width:100%;overflow:hidden">
-                <div style="height:100%;width:${ctrl}%;background:${accentClr};border-radius:2px;transition:width .4s"></div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="background:rgba(255,255,255,.07);border-radius:2px;height:3px;flex:1;overflow:hidden">
+                  <div style="height:100%;width:${ctrl}%;background:${accentClr};border-radius:2px;transition:width .4s"></div>
+                </div>
+                <span style="font-size:9px;color:${ownerClr};white-space:nowrap;flex-shrink:0;max-width:70px;overflow:hidden;text-overflow:ellipsis">${ownerTxt}</span>
               </div>
             </div>
 
-            <!-- Right side -->
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:11px;font-weight:700;color:#1db87a;margin-bottom:2px">+${income}$</div>
-              <div style="font-size:9px;color:${ownerClr};max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ownerTxt}</div>
+            <!-- Income -->
+            <div style="flex-shrink:0;text-align:right;padding-left:4px">
+              <div style="font-size:11px;font-weight:700;color:#1db87a;white-space:nowrap">+${income}$</div>
             </div>
           </div>`;
         }).join('')}
@@ -1184,6 +1217,14 @@ async function captDist(id){
     gainXP(80);checkBP();
     addTx(reward,'⚔️ Захват района '+d.name);sfx('win');haptic('heavy');checkAchievements();
     await pushFeed('⚔️','<b>'+me.name+'</b> захватил <b>'+d.name+'</b>'+(prev?' у '+prev.emblem+prev.name:'')+'!');
+    // Notify defender org members
+    if(prev){
+      Object.values(P).filter(p=>p.orgId===d.orgId&&p.tgId&&p.tgId!==String(tgu?.id)).forEach(p=>{
+        notifyPlayer(p.tgId,'attack',{district:d.name,attacker:me.name});
+      });
+    }
+    // Notify channel about war
+    notifyChannel('war_declared',{attacker:me.name,defender:prev?prev.emblem+prev.name:'Свободный',district:d.name});
     toast('🏆 '+d.name+' захвачен! +'+reward+'$');
     // Police wanted if high police district
     if(d.police>=3){me.wanted=(me.wanted||0)+1;toast('🚔 Полиция заметила!',1);}
@@ -1458,11 +1499,11 @@ function rProp(){
           </div>
           ${!hasEvent?`<div style="display:flex;gap:6px;flex-wrap:wrap">
             ${nextUpgrade?`<button class="btn btn-sm" style="flex:1;background:${canUpgrade?'rgba(240,180,41,.15)':'var(--d3)'};border-color:${canUpgrade?'var(--g)':'var(--br2)'};color:${canUpgrade?'var(--g)':'var(--dm)'}"
-              onclick="upgradeProp('${p.id}')" ${!canUpgrade?'disabled':''}>
+              onclick="event.stopPropagation();upgradeProp('${p.id}')" ${!canUpgrade?'disabled':''}>
               🔧 ${nextUpgrade} · ${fmt(nextCost)}$
             </button>`:'<span class="tag tg" style="flex:1;text-align:center">✅ Макс уровень</span>'}
             <button class="btn btn-sm" style="background:${p.manager?'rgba(0,210,211,.15)':'var(--d3)'};border-color:${p.manager?'var(--cy)':'var(--br2)'};color:${p.manager?'var(--cy)':'var(--dm)'};min-width:80px"
-              onclick="toggleManager('${p.id}')">
+              onclick="event.stopPropagation();toggleManager('${p.id}')">
               ${p.manager?'👔 Менеджер':'👔 Нанять'}
             </button>
           </div>
@@ -1480,32 +1521,49 @@ function rProp(){
     const available=PROPS.filter(p=>!owned.includes(p.id));
     const grouped={t1:[],t2:[],t3:[]};
     available.forEach(p=>grouped[p.tier]?.push(p));
-    const tierNames={t1:'⭐ Малый бизнес',t2:'⭐⭐ Средний',t3:'⭐⭐⭐ Крупный'};
-    el2.innerHTML=Object.entries(grouped).map(([tier,props])=>props.length?`
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dm);text-transform:uppercase;margin:10px 0 6px;padding:0 2px">${tierNames[tier]}</div>
+    const tierColors={t1:'#2e86de',t2:'#f0b429',t3:'#1db87a'};
+    const tierNames={t1:'⭐ Малый бизнес',t2:'⭐⭐ Средний бизнес',t3:'⭐⭐⭐ Крупный бизнес'};
+    el2.innerHTML=Object.entries(grouped).map(([tier,props])=>!props.length?'':` 
+      <div style="display:flex;align-items:center;gap:8px;margin:14px 0 8px">
+        <div style="width:3px;height:14px;border-radius:2px;background:${tierColors[tier]};flex-shrink:0"></div>
+        <span style="font-size:10px;font-weight:800;letter-spacing:1px;color:${tierColors[tier]};text-transform:uppercase">${tierNames[tier]}</span>
+        <div style="height:1px;flex:1;background:${tierColors[tier]}33"></div>
+      </div>
       ${props.map(p=>{
         const lvlOk=(me.level||1)>=(p.minLevel||1);
         const canBuy=me.money>=p.price&&lvlOk;
         const specEmoji={home:'🏠',boost:'⚡',drug:'💊',rep:'⭐',social:'🤝',passive:'💤',bank:'💰',casino:'🎰',police:'🛡️',prestige:'👑'}[p.spec?.type]||'✨';
         return`
-        <div class="card mb6" style="opacity:${lvlOk?1:.5}">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="font-size:26px;width:42px;height:42px;background:var(--d3);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
+        <div style="background:var(--d2);border:1.5px solid ${canBuy?tierColors[tier]+'55':'var(--br2)'};
+             border-left:3px solid ${canBuy?tierColors[tier]:'var(--br2)'};
+             border-radius:10px;padding:11px 12px;margin-bottom:7px;
+             opacity:${lvlOk?1:.45}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+            <div style="font-size:26px;width:42px;height:42px;background:var(--d3);border-radius:9px;
+                 display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:13px;margin-bottom:1px">${p.name}</div>
-              <div style="font-size:9px;color:var(--dm);margin-bottom:2px">${p.desc}</div>
-              <div style="font-size:9px;color:var(--cy)">${specEmoji} ${p.spec?.bonus}</div>
+              <div style="font-size:9px;color:var(--dm)">${p.desc}</div>
+              <div style="font-size:9px;color:var(--cy);margin-top:2px">${specEmoji} ${p.spec?.bonus||''}</div>
             </div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="display:flex;gap:5px;flex-wrap:wrap">
-              <span class="tag tgr">+${p.income}$/ч</span>
-              ${!lvlOk?`<span class="tag tr">Lvl${p.minLevel}</span>`:''}
+            <div style="display:flex;gap:6px;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:var(--gr)">+${p.income}$/ч</span>
+              ${!lvlOk?`<span class="tag tr" style="font-size:9px">Lvl${p.minLevel}</span>`:''}
             </div>
-            <button class="btn btn-g btn-sm" onclick="buyProp('${p.id}')" ${!canBuy?'disabled':''}>${fmt(p.price)}$</button>
+            ${!lvlOk
+              ?`<span style="font-size:10px;color:var(--dm)">🔒 Нужен уровень ${p.minLevel}</span>`
+              :`<button onclick="event.stopPropagation();buyProp('${p.id}')" ${!canBuy?'disabled':''}
+                 style="background:${canBuy?tierColors[tier]:'var(--d3)'};
+                        color:${canBuy?'#000':'var(--dm)'};border:none;border-radius:8px;
+                        padding:7px 14px;font-size:11px;font-weight:700;
+                        cursor:${canBuy?'pointer':'default'};white-space:nowrap;min-width:80px">
+                 ${canBuy?fmt(p.price)+'$':'Нет денег'}
+               </button>`}
           </div>
         </div>`;
-      }).join('')}`:'').join('');
+      }).join('')}`).join('');
   }
 }
 
@@ -2076,7 +2134,7 @@ function rWork(){
           ${!lvlOk?`<span style="font-size:10px;color:var(--dm)">🔒</span>`
           :!ready?`<span class="tag tr cd-timer" data-until="${cd}">${fmtS(remain)}</span>`
           :noEn?`<span class="tag tr">Нет ⚡</span>`
-          :`<button class="btn btn-sm" style="background:linear-gradient(135deg,var(--cy),#009899);color:#000;font-weight:700;padding:7px 14px"
+          :`<button class="btn btn-cy btn-sm"
               onclick="startJob('${j.id}')">РАБОТАТЬ</button>`}
         </div>
       </div>`;
@@ -2464,25 +2522,26 @@ function rMissions(){
     const lvlLocked=(m.minLevel||1)>(me.level||1);
     const noEn=(me.energy||0)<m.en;
     const blocked=!ready||locked||lvlLocked||noEn;
-    const dc={EASY:'gr',MEDIUM:'g',HARD:'r'}[m.diff]||'g';
-    return`<div class="mcard" style="${blocked?'opacity:.5':''}" onclick="${!blocked?`openMission('${m.id}')`:''}" >
-      <div class="fc" style="gap:8px;margin-bottom:6px">
+    const dc={EASY:'gr',MEDIUM:'g',HARD:'r',INSANE:'r'}[m.diff]||'g';
+    const actionLabel=!ready?`<span class="tag tr cd-timer" data-until="${cd}">${fmtS(remain)}</span>`
+      :locked?`<span class="tag tpu">Нужна орга</span>`
+      :lvlLocked?`<span class="tag tr">Lvl${m.minLevel}</span>`
+      :noEn?`<span class="tag tr">Нет ⚡</span>`
+      :`<button class="btn btn-cy btn-sm" onclick="event.stopPropagation();openMission('${m.id}')">НАЧАТЬ</button>`;
+    return`<div class="mcard" style="${blocked&&!(!ready||noEn)?'opacity:.5':''}">
+      <div style="display:flex;align-items:center;gap:11px">
         <div class="mico">${m.ico}</div>
-        <div><div style="font-weight:700;font-size:13px;margin-bottom:2px">${m.name}</div><div style="font-size:10px;color:var(--dm)">${m.desc}</div></div>
-      </div>
-      <div class="fb">
-        <div class="fc" style="gap:5px">
-          <span class="tag tgr">+${fmt(m.r.m)}$</span>
-          <span class="tag tcy">-${m.en}⚡</span>
-          <span class="tag t${m.type==='org'?'pu':'bl'}">${m.type==='org'?'👥':'👤'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;margin-bottom:3px">${m.name}</div>
+          <div style="font-size:10px;color:var(--dm);margin-bottom:6px">${m.desc}</div>
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+            <span class="tag tgr">+${fmt(m.r.m)}$</span>
+            <span class="tag tcy">-${m.en}⚡</span>
+            <span class="tag t${m.type==='org'?'pu':'bl'}">${m.type==='org'?'👥':'👤'}</span>
+            <span class="tag t${dc}">${m.diff}</span>
+          </div>
         </div>
-        <div class="fc" style="gap:4px">
-          <span class="tag t${dc}">${m.diff}</span>
-          ${lvlLocked?`<span class="tag tr">Lvl${m.minLevel}</span>`:''}
-          ${!ready?`<span class="tag tr cd-timer" data-until="${cd}">${fmtS(remain)}</span>`:''}
-          ${locked&&!lvlLocked?`<span class="tag tr">Орга</span>`:''}
-          ${noEn&&!locked&&!lvlLocked&&ready?`<span class="tag tr">Нет⚡</span>`:''}
-        </div>
+        <div style="flex-shrink:0">${actionLabel}</div>
       </div>
     </div>`;
   }).join('');
@@ -3604,8 +3663,7 @@ async function rBets(){
         </select>
         <div id="betContextPicker"></div>
         <input class="inp" id="betSeed" type="number" placeholder="Начальный банк $ (мин 200$)">
-        <button class="btn btn-full" style="background:linear-gradient(135deg,#f0b429,#c4911a);color:#000;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;padding:9px;border-radius:6px;border:none;cursor:pointer"
-          onclick="createSmartBet()">💰 СОЗДАТЬ СТАВКУ</button>
+        <button class="btn btn-g btn-full" onclick="createSmartBet()">💰 СОЗДАТЬ СТАВКУ</button>
       </div>
     </div>`;
   // Populate context picker
@@ -3617,19 +3675,20 @@ function updateBetPicker(){
   const picker=document.getElementById('betContextPicker');if(!picker)return;
   if(type==='war'){
     const wars=Object.entries(W.wars||{});
-    if(!wars.length){picker.innerHTML='<div style="font-size:10px;color:var(--dm)">Нет активных войн</div>';return;}
+    if(!wars.length){picker.innerHTML='<div style="font-size:10px;color:var(--dm);padding:6px 0">Нет активных войн</div>';return;}
     picker.innerHTML=`<select class="inp" id="betContext">
-      ${wars.map(([id,w])=>`<option value="${id}">${W.orgs[w.attacker]?.name||'?'} vs ${W.orgs[w.defender]?.name||'?'}</option>`).join('')}
+      ${wars.map(([id,w])=>`<option value="${id}">${(W.orgs[w.attacker]?.name)||'?'} vs ${(W.orgs[w.defender]?.name)||'?'}</option>`).join('')}
     </select>`;
   }else if(type==='election'){
-    const cands=ELEC?.candidates||[];
+    const cands=(typeof ELEC!=='undefined'&&ELEC?.candidates)||[];
+    if(!cands.length){picker.innerHTML='<div style="font-size:10px;color:var(--dm);padding:6px 0">Нет кандидатов</div>';return;}
     picker.innerHTML=`<select class="inp" id="betContext">
-      ${cands.map(c=>`<option value="${c.id}">${c.avatar} ${c.name}</option>`).join('')}
+      ${cands.map(c=>`<option value="${c.id}">${c.avatar||''} ${c.name}</option>`).join('')}
     </select>`;
   }else{
     const dists=Object.entries(W.districts||{});
     picker.innerHTML=`<select class="inp" id="betContext">
-      ${dists.map(([id,d])=>`<option value="${id}">${d.icon} ${d.name}</option>`).join('')}
+      ${dists.map(([id,d])=>`<option value="${id}">${d.icon||''} ${d.name}</option>`).join('')}
     </select>`;
   }
 }
@@ -3786,7 +3845,10 @@ async function spinSlots(){
   if(win){me.money+=Math.floor(win*(1+(window._propCasinoBonus||0)));me.score+=Math.floor(win/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
     const realWin=Math.floor(win*(1+(window._propCasinoBonus||0)));
     addTx(realWin,'🎰 Казино — слоты');sfx('win');haptic('medium');checkAchievements();
-    if(realWin>=bet*10)await pushFeed('🎰','<b>'+me.name+'</b> выиграл в казино +'+realWin+'$!');
+    if(realWin>=bet*10){
+      await pushFeed('🎰','<b>'+me.name+'</b> выиграл в казино +'+realWin+'$!');
+      notifyChannel('casino_win',{player:me.name,avatar:me.avatar,amount:realWin});
+    }
   }else{sfx('fail');addTx(-bet,'🎰 Казино — слоты (проигрыш');}
   saveMe();updateHdr();
   const r=document.getElementById('slotRes');if(r){r.textContent=msg+(win&&window._propCasinoBonus?' 🎰+'+Math.round(window._propCasinoBonus*100)+'%':'');r.style.color=win?'var(--gr)':'var(--r)';}
@@ -4583,6 +4645,9 @@ async function challengeDuel(tid){
   duels.push({id:'d'+Date.now(),challenger:PID,chalName:me.name,target:tid,bet,done:false,accepted:false,ts:Date.now()});
   await ST.set('duels',duels.slice(-20));
   sfx('click');haptic('medium');
+  // Notify target player
+  const target=P[tid];
+  if(target?.tgId) notifyPlayer(target.tgId,'duel',{challenger:me.name,bet});
   toast('⚔️ Вызов отправлен '+P[tid]?.name+'!');rDuel();
 }
 
@@ -4819,28 +4884,64 @@ function admEdit(pid){
   admTid=pid;const p=P[pid];if(!p)return;
   const banned=JSON.parse(lsGet('lso_banned','[]'));const ib=banned.includes(pid);
   document.getElementById('mAdmPT').textContent=p.avatar+' '+p.name;
+  const vip=p.premium;
+  const vipUntil=p.premiumUntil||0;
+  const vipActive=vip&&vipUntil>Date.now();
   document.getElementById('mAdmPB').innerHTML=`
+    <!-- Stats -->
     <div class="card mb8">
-      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">Lvl</span><span>${p.level||1}</span></div>
-      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">💵</span><span>${fmt(p.money)}</span></div>
-      <div class="fb mb4"><span style="color:var(--dm);font-size:10px">⚡</span><span>${p.power}</span></div>
-      <div class="fb"><span style="color:var(--dm);font-size:10px">🚔</span><span style="color:var(--r)">${p.wanted||0}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <div class="fb"><span style="color:var(--dm);font-size:10px">🏆 Lvl</span><span style="font-size:12px;font-weight:700">${p.level||1}</span></div>
+        <div class="fb"><span style="color:var(--dm);font-size:10px">💵 $</span><span style="font-size:12px;font-weight:700">${fmt(p.money)}</span></div>
+        <div class="fb"><span style="color:var(--dm);font-size:10px">⚡ Сила</span><span style="font-size:12px;font-weight:700">${p.power}</span></div>
+        <div class="fb"><span style="color:var(--dm);font-size:10px">🔋 Энергия</span><span style="font-size:12px;font-weight:700">${p.energy||0}/${p.energyMax||10}</span></div>
+        <div class="fb"><span style="color:var(--dm);font-size:10px">🚔 Розыск</span><span style="font-size:12px;font-weight:700;color:var(--r)">${p.wanted||0}★</span></div>
+        <div class="fb"><span style="color:var(--dm);font-size:10px">💎 VIP</span><span style="font-size:12px;font-weight:700;color:${vipActive?'var(--g)':'var(--dm)'}">${vipActive?(vip==='diamond'?'💎':'⭐')+' '+vip.toUpperCase():'—'}</span></div>
+      </div>
     </div>
-    <div class="admt">💰 Выдать</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+
+    <!-- Give resources -->
+    <div class="admt">💰 Выдать ресурсы</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
       <div><div style="font-size:9px;color:var(--dm);margin-bottom:3px">Деньги $</div><input class="inp" id="ag_m" type="number" value="1000"></div>
       <div><div style="font-size:9px;color:var(--dm);margin-bottom:3px">Сила ⚡</div><input class="inp" id="ag_p" type="number" value="50"></div>
       <div><div style="font-size:9px;color:var(--dm);margin-bottom:3px">Репа ⭐</div><input class="inp" id="ag_r" type="number" value="100"></div>
       <div><div style="font-size:9px;color:var(--dm);margin-bottom:3px">SP 🧬</div><input class="inp" id="ag_sp" type="number" value="1"></div>
     </div>
     <button class="btn btn-g btn-full mb8" onclick="admGive()">✅ ВЫДАТЬ</button>
+
+    <!-- Energy -->
+    <div class="admt">🔋 Энергия</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-sm" style="flex:1;background:rgba(0,210,211,.15);border-color:var(--cy);color:var(--cy)" onclick="admSetEnergy(5)">+5⚡</button>
+      <button class="btn btn-sm" style="flex:1;background:rgba(0,210,211,.15);border-color:var(--cy);color:var(--cy)" onclick="admSetEnergy(10)">+10⚡</button>
+      <button class="btn btn-sm" style="flex:1;background:rgba(0,210,211,.15);border-color:var(--cy);color:var(--cy)" onclick="admSetEnergy(99)">MAX⚡</button>
+    </div>
+
+    <!-- Premium -->
+    <div class="admt">💎 Премиум статус</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <button class="btn btn-sm" style="flex:1;background:rgba(240,180,41,.15);border-color:var(--g);color:var(--g)" onclick="admSetPremium('gold',7)">⭐ Gold 7д</button>
+      <button class="btn btn-sm" style="flex:1;background:rgba(240,180,41,.15);border-color:var(--g);color:var(--g)" onclick="admSetPremium('gold',30)">⭐ Gold 30д</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-sm" style="flex:1;background:rgba(155,89,182,.15);border-color:#9b59b6;color:#e056fd" onclick="admSetPremium('diamond',7)">💎 Diamond 7д</button>
+      <button class="btn btn-sm" style="flex:1;background:rgba(155,89,182,.15);border-color:#9b59b6;color:#e056fd" onclick="admSetPremium('diamond',30)">💎 Diamond 30д</button>
+    </div>
+    ${vipActive?`<button class="btn btn-r btn-full mb10" onclick="admRemovePremium()">✕ Снять премиум</button>`:''}
+
+    <!-- Level -->
     <div class="admt">🎯 Уровень</div>
     <div style="display:flex;gap:6px;margin-bottom:10px"><input class="inp" id="ag_lvl" type="number" value="${p.level||1}" style="flex:1"><button class="btn btn-bl btn-sm" onclick="admSetLvl()">SET</button></div>
+
+    <!-- Wanted -->
     <div class="admt">🚔 Розыск</div>
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <button class="btn btn-gr btn-sm" style="flex:1" onclick="admClearW()">✅ Снять</button>
       <button class="btn btn-r btn-sm" style="flex:1" onclick="admMaxW()">🚔 MAX</button>
     </div>
+
+    <!-- Danger zone -->
     <div class="admt" style="color:var(--r)">🛡️ Управление</div>
     <div style="display:flex;gap:6px">
       <button class="btn btn-sm" style="flex:1;background:rgba(230,57,80,.12);border:1px solid rgba(230,57,80,.3);color:var(--r)" onclick="admBan()">${ib?'✅ РАЗБАН':'🚫 БАН'}</button>
@@ -4877,6 +4978,57 @@ async function admReset(){
   P[admTid]={...defPlayer(),id:p.id,name:p.name,avatar:p.avatar};
   if(admTid===PID)me=P[admTid];
   await ST.set('players',P);cm('mAdmP');rAPlayers();updateHdr();toast('♻️ Сброшен');
+}
+
+async function admSetEnergy(amt){
+  if(!canDo('players')){toast('Нет прав!',1);return;}
+  const p=P[admTid];if(!p)return;
+  if(amt===99){
+    p.energy=p.energyMax||10;
+  }else{
+    p.energy=Math.min(p.energyMax||10,(p.energy||0)+amt);
+  }
+  if(admTid===PID)me.energy=p.energy;
+  await ST.set('players',P);
+  updateHdr();admEdit(admTid);
+  toast(`🔋 Энергия выдана: ${p.name}`);sfx('coins');
+}
+
+async function admSetPremium(plan,days){
+  if(!canDo('players')){toast('Нет прав!',1);return;}
+  const p=P[admTid];if(!p)return;
+  const now=Date.now();
+  const current=p.premium===plan&&p.premiumUntil>now?p.premiumUntil:now;
+  p.premium=plan;
+  p.premiumUntil=current+days*864e5;
+  // Apply plan bonuses
+  if(plan==='gold'){
+    p.energyMax=Math.max(15,(p.energyMax||10));
+  }else if(plan==='diamond'){
+    p.energyMax=Math.max(20,(p.energyMax||10));
+    p.titles=p.titles||[];
+    if(!p.titles.includes('BOSS'))p.titles.push('BOSS');
+  }
+  if(admTid===PID){
+    me.premium=p.premium;me.premiumUntil=p.premiumUntil;
+    me.energyMax=p.energyMax;
+  }
+  await ST.set('players',P);
+  const planIcon=plan==='diamond'?'💎':'⭐';
+  await pushFeed(planIcon,`<b>[ADMIN]</b> ${planIcon} <b>${p.name}</b> получил ${plan.toUpperCase()} на ${days} дней!`);
+  updateHdr();admEdit(admTid);
+  toast(`${planIcon} ${plan.toUpperCase()} выдан ${p.name} на ${days}д!`);sfx('win');haptic('heavy');
+}
+
+async function admRemovePremium(){
+  if(!canDo('players')){toast('Нет прав!',1);return;}
+  const p=P[admTid];if(!p)return;
+  p.premium=null;p.premiumUntil=0;
+  p.energyMax=10;
+  if(admTid===PID){me.premium=null;me.premiumUntil=0;me.energyMax=10;}
+  await ST.set('players',P);
+  updateHdr();admEdit(admTid);
+  toast(`✕ Премиум снят с ${p.name}`);
 }
 const ADM_EVS=[
   {ico:'💸',name:'Денежный дождь',desc:'+500$ всем онлайн',fn:async()=>{const n=Date.now();Object.values(P).forEach(p=>{if(n-p.lastSeen<3e5)p.money+=500;});await ST.set('players',P);await pushFeed('💸','🎉 <b>Денежный дождь!</b> Все онлайн получили +500$!');}},
@@ -5280,6 +5432,7 @@ function rASeason(){
 
 async function adminExtendSeason(days){
   if(!canDo('season'))return;
+  if(!W.season)W.season={num:1,start:Date.now(),end:Date.now()+30*864e5};
   W.season.end+=days*864e5;
   await saveAll();
   toast(`📅 Сезон продлён на ${days} дней`);rASeason();
@@ -5287,9 +5440,9 @@ async function adminExtendSeason(days){
 
 async function adminEndSeason(){
   if(!canDo('season'))return;
-  // Give rewards to top 3 orgs
   const orgScores=Object.values(W.orgs||{}).map(o=>({
-    id:o.id,sc:Object.values(P||{}).filter(p=>p.orgId===o.id).reduce((s,p)=>s+(p.score||0),0)
+    id:o.id,name:(o.emblem||'')+' '+(o.name||''),
+    sc:Object.values(P||{}).filter(p=>p.orgId===o.id).reduce((s,p)=>s+(p.score||0),0)
   })).sort((a,b)=>b.sc-a.sc);
   const rewards=[{m:10000,r:500},{m:5000,r:250},{m:2500,r:100}];
   orgScores.slice(0,3).forEach((org,i)=>{
@@ -5298,14 +5451,15 @@ async function adminEndSeason(){
       p.rep=(p.rep||0)+rewards[i].r;
     });
   });
-  // New season
-  W.season={num:(W.season?.num||1)+1,start:Date.now(),end:Date.now()+30*864e5};
-  // Reset scores
+  if(!W.season)W.season={num:1};
+  W.season={num:(W.season.num||1)+1,start:Date.now(),end:Date.now()+30*864e5};
   Object.values(P).forEach(p=>{p.score=0;});
-  Object.values(W.orgs).forEach(o=>{o.score=0;});
+  Object.values(W.orgs||{}).forEach(o=>{o.score=0;});
   await saveAll();
+  const top3=orgScores.slice(0,3);
+  notifyChannel('season_results',{num:W.season.num-1,first:top3[0]?.name||'—',second:top3[1]?.name||'—',third:top3[2]?.name||'—'});
   await pushFeed('🏆',`<b>Сезон ${W.season.num-1} завершён!</b> Начинается новый сезон #${W.season.num}!`);
-  toast(`🏆 Сезон завершён! Начат сезон #${W.season.num}`);sfx('win');haptic('heavy');
+  toast(`🏆 Сезон завершён! Начат сезон #${W.season.num}`);sfx('win');haptic('heavy');rASeason();
 }
 
 // ════════════════════════════════════════
@@ -5372,27 +5526,28 @@ function rAPolice(){
 
 async function adminPoliceRaid(){
   if(!canDo('police'))return;
-  Object.values(P).forEach(p=>{p.wanted=(p.wanted||0)+2;});
+  Object.values(P||{}).forEach(p=>{p.wanted=(p.wanted||0)+2;});
   await saveAll();
-  await pushFeed('🚨','<b>[ADMIN]</b> 🚨 Полицейский рейд по всему городу! Все получили +2★ розыска!');
+  await pushFeed('🚨','<b>[ADMIN]</b> 🚨 Полицейский рейд! Все получили +2★ розыска!');
   toast('🚨 Рейд объявлен! +2★ всем');sfx('fail');haptic('heavy');rAPolice();
 }
 async function adminPoliceAmnesty(){
   if(!canDo('police'))return;
-  Object.values(P).forEach(p=>{p.wanted=0;p.inJail=false;p.jailUntil=0;});
+  Object.values(P||{}).forEach(p=>{p.wanted=0;p.inJail=false;p.jailUntil=0;});
   await saveAll();
-  await pushFeed('🕊️','<b>[ADMIN]</b> 🕊️ Объявлена амнистия! Все розыски сняты, все освобождены!');
+  await pushFeed('🕊️','<b>[ADMIN]</b> 🕊️ Амнистия! Все розыски сняты!');
   toast('🕊️ Амнистия! Все чисты');sfx('win');haptic('heavy');rAPolice();
 }
 async function adminClearWanted(pid){
   if(!canDo('police'))return;
   const p=P[pid];if(!p)return;
   p.wanted=0;p.inJail=false;p.jailUntil=0;
+  if(pid===PID){me.wanted=0;me.inJail=false;}
   await saveAll();toast('✅ Розыск снят с '+p.name);rAPolice();
 }
 async function adminSetPolice(distId,level){
   if(!canDo('police'))return;
-  if(W.districts[distId])W.districts[distId].police=level;
+  if(W.districts[distId])W.districts[distId].police=Math.max(0,Math.min(5,level));
   await saveAll();rAPolice();
 }
 
@@ -5402,7 +5557,6 @@ async function adminSetPolice(distId,level){
 function rALogs(){
   const el=document.getElementById('D_alogs');if(!el)return;
   if(!canDo('logs')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
-  // Collect logs from all players tx history
   const allLogs=[];
   Object.values(P||{}).forEach(p=>{
     (p.txHistory||[]).slice(0,10).forEach(tx=>{
@@ -5410,7 +5564,7 @@ function rALogs(){
     });
   });
   allLogs.sort((a,b)=>b.ts-a.ts);
-  const feed=FEED||[];
+  const feed=Array.isArray(FEED)?FEED:[];
   el.innerHTML=`
     <div class="admt">📋 Лента событий (${feed.length})</div>
     <div class="card mb10" style="padding:8px 0;max-height:280px;overflow-y:auto">
@@ -5717,53 +5871,71 @@ function getRefLink(){
   return `https://t.me/${botName}?start=ref_${PID}`;
 }
 
-// Called on boot — check if launched with ?start=ref_XXX
-function checkRefParam(){
+// ── РЕФЕРАЛЬНАЯ СИСТЕМА ──────────────────
+function getRefLink(){
+  const botName='los_santos_online_bot';
+  return `https://t.me/${botName}?start=ref_${PID}`;
+}
+
+// Called on boot AFTER syncAll — check if launched with ref param
+async function checkRefParam(){
   const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param || '';
   if(!startParam.startsWith('ref_')) return;
   const refId = startParam.replace('ref_','');
-  if(refId === PID) return; // can't refer yourself
-  if(me.refBy) return;     // already used referral
+  if(!refId || refId === PID) return;    // can't refer yourself
+  if(me.refBy) return;                   // already used a referral link
+
   me.refBy = refId;
   // Give joiner bonus
-  me.money += 1500; me.energy = Math.min((me.energyMax||10),(me.energy||0)+5);
+  me.money += 1500;
+  me.energy = Math.min((me.energyMax||10),(me.energy||0)+5);
   me.skillPoints = (me.skillPoints||0)+1;
   addTx(1500,'👥 Реферальный бонус за вступление');
   saveMe();
-  // Give referrer their reward (stored in shared data, applied on their next sync)
-  ST.get('ref_rewards').then(async rr=>{
-    rr = rr||{};
-    if(!rr[refId]) rr[refId]=[];
-    rr[refId].push({from:PID,fromName:me.name,ts:Date.now()});
-    await ST.set('ref_rewards',rr);
-  });
-  toast('🎉 Бонус за реферал: +1500$ +5⚡ +1 SP!');
+  toast('🎉 Ты пришёл по реферальной ссылке: +1500$ +5⚡ +1 SP!');
   sfx('win'); haptic('heavy');
+
+  // Queue referrer reward in Supabase
+  try{
+    const rr = (await ST.get('ref_rewards')) || {};
+    if(!rr[refId]) rr[refId]=[];
+    // Don't add duplicate
+    if(!rr[refId].find(r=>r.from===PID)){
+      rr[refId].push({from:PID, fromName:me.name, ts:Date.now(), collected:false});
+      await ST.set('ref_rewards', rr);
+    }
+  }catch(e){console.warn('ref reward write failed',e);}
+
+  // Track in referrer's friends list too
+  if(!me.refFriends) me.refFriends=[];
+  saveMe();
 }
 
-// Called every sync — collect pending referral rewards for me
+// Called every autoSync — give referrer their pending rewards
 async function collectRefRewards(){
   if(!me) return;
-  const rr = await ST.get('ref_rewards') || {};
-  const mine = rr[PID];
-  if(!mine||!mine.length) return;
-  // Process uncollected
-  const uncollected = mine.filter(r=>!r.collected);
-  if(!uncollected.length) return;
-  uncollected.forEach(r=>{
-    r.collected = true;
-    me.money += 2000; me.skillPoints=(me.skillPoints||0)+1;
-    addTx(2000,'👥 Реферальный бонус за друга '+r.fromName);
-    toast(`👥 Друг ${r.fromName} вступил! +2000$ +1 SP`);
-    sfx('coins'); haptic('medium');
-  });
-  rr[PID] = mine;
-  await ST.set('ref_rewards', rr);
-  saveMe(); updateHdr();
+  try{
+    const rr = (await ST.get('ref_rewards')) || {};
+    const mine = rr[PID];
+    if(!mine||!mine.length) return;
+    const uncollected = mine.filter(r=>!r.collected);
+    if(!uncollected.length) return;
+    uncollected.forEach(r=>{
+      r.collected = true;
+      me.money += 2000;
+      me.skillPoints=(me.skillPoints||0)+1;
+      if(!me.refFriends) me.refFriends=[];
+      if(!me.refFriends.includes(r.from)) me.refFriends.push(r.from);
+      addTx(2000,'👥 Реферал: '+r.fromName+' вступил!');
+      toast(`👥 ${r.fromName} вступил по твоей ссылке! +2000$ +1 SP`);
+      sfx('coins'); haptic('medium');
+    });
+    rr[PID] = mine;
+    await ST.set('ref_rewards', rr);
+    saveMe(); updateHdr();
+  }catch(e){console.warn('collectRefRewards failed',e);}
 }
 
-// Ongoing passive bonus: +5% from referred friends' earnings
-// (applied in doMission via soloMult enhancement — tracked in me.refBy chain)
 function getRefBonus(){
   return (me.refFriends||[]).length > 0 ? 0.05 : 0;
 }
@@ -5998,7 +6170,7 @@ function rShopPremium(){
           <div class="plan-price">${p.price} <span>/ мес</span></div>
         </div>
         <div class="plan-perks">${p.perks.map(([i,t])=>`${i} <b>${t}</b>`).join('<br>')}</div>
-        <button class="btn btn-full mt8" style="background:linear-gradient(135deg,${p.cls==='gold'?'var(--g2),var(--g)':'#9b59b6,#e056fd'});color:${p.cls==='gold'?'#000':'#fff'};font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px" onclick="buyPremium('${p.id}')">
+        <button class="btn btn-full mt8 ${p.cls==='gold'?'btn-g':'btn-pu'}" onclick="buyPremium('${p.id}')">
           ${isVip&&me.premium===p.id?'✅ АКТИВЕН':'КУПИТЬ ЗА '+p.price}
         </button>
       </div>`).join('')}
@@ -6084,74 +6256,75 @@ let obStep=0,obAva=PAVA;
 const OB_SLIDES=[
   // 0 — Welcome
   {tag:'ДОБРО ПОЖАЛОВАТЬ',title:'Los Santos\nOnline',ico:'🌆',next:'НАЧАТЬ →',
-    body:'Живой криминальный мир в Telegram.<br>Реальные игроки, реальные войны, настоящая борьба за власть.',
+    body:'Живой криминальный мир в Telegram.<br>Реальные игроки, настоящие войны, борьба за власть.',
     cards:[
-      {ico:'🌍',t:'Мультиплеер',s:'Все в одном живом мире'},
-      {ico:'⚡',t:'Прогрессия',s:'Уровни, скиллы, бизнес, титулы'},
+      {ico:'🌍',t:'Мультиплеер',s:'Все игроки в одном живом мире'},
+      {ico:'⚡',t:'Прогрессия',s:'Уровни, скиллы, бизнес, премиум, титулы'},
       {ico:'🏆',t:'Борьба за власть',s:'Захватывай районы, воюй с оргами'},
     ]},
 
   // 1 — Avatar
   {tag:'ШАГ 1 из 7 — ПЕРСОНАЖ',title:'Выбери\nаватар',ico:null,next:'ВЫБРАТЬ →',
-    body:'Это будет твоё лицо в игре',isAvaPicker:true},
+    body:'Это будет твоё лицо в Los Santos',isAvaPicker:true},
 
-  // 2 — Navigation (NEW)
+  // 2 — Navigation (updated)
   {tag:'ШАГ 2 из 7 — НАВИГАЦИЯ',title:'5 разделов\nигры',ico:'🗂️',next:'ПОНЯЛ →',
     body:'Всё управление через нижнее меню.',
     cards:[
-      {ico:'👤',t:'Я — твой штаб',s:'Профиль, скиллы, бизнес, задания, ачивки, рефералы, премиум',hi:true},
+      {ico:'👤',t:'Я — твой штаб',s:'Профиль, скиллы, бизнес, ачивки, рефералы, премиум',hi:true},
       {ico:'🗺️',t:'Город',s:'Карта районов, газета, выборы, топ игроков'},
       {ico:'🏢',t:'Орга',s:'Твоя банда, войны, турниры, альянсы'},
-      {ico:'💀',t:'Крим',s:'Задания, угон, трафик, контракты, ставки'},
-      {ico:'🎲',t:'Досуг',s:'Казино, покер, чат, личные сообщения'},
+      {ico:'💵',t:'Работа',s:'Легальная работа, крим задания, угон, трафик, ставки'},
+      {ico:'🎲',t:'Досуг',s:'Казино, покер, мины, скачки, чат, DM'},
     ]},
 
-  // 3 — Energy & missions
-  {tag:'ШАГ 3 из 7 — ЭНЕРГИЯ',title:'Трать\nс умом',ico:'⚡',next:'ЯСНО →',
-    body:'Энергия тратится на каждое действие.<br>+1 в час автоматически.',
+  // 3 — Income ways (updated)
+  {tag:'ШАГ 3 из 7 — ЗАРАБОТОК',title:'Много\nпутей дохода',ico:'💰',next:'ПОНЯЛ →',
+    body:'Зарабатывай легально и нелегально — выбор за тобой.',
     cards:[
-      {ico:'🎯',t:'Задания — главный доход',s:'Патруль −1⚡ · Сделка −2⚡ · Ограбление −3⚡',hi:true},
-      {ico:'🔒',t:'Контент открывается по уровням',s:'Казино Lvl3 · Угон Lvl4 · Покер Lvl5 · Трафик Lvl6'},
-      {ico:'🏢',t:'Вступи в оргу',s:'Соло = −35% к наградам. Орга = полный доход'},
+      {ico:'💼',t:'Легальная работа',s:'Таксист, курьер, механик, адвокат, хирург — без розыска',hi:true},
+      {ico:'💀',t:'Крим задания',s:'Патруль, ограбление, взлом — выше риск, выше доход'},
+      {ico:'🏠',t:'Бизнес',s:'12 видов — купи, прокачай, найми менеджера'},
+      {ico:'🎰',t:'Казино и игры',s:'Слоты, покер, мины, скачки, лотерея'},
     ]},
 
-  // 4 — Crime & jail (NEW)
+  // 4 — Crime & jail
   {tag:'ШАГ 4 из 7 — ЗАКОН',title:'Следи\nза розыском',ico:'🚔',next:'ПОНЯТНО →',
-    body:'За каждый провал полиция тебя замечает.<br>5 звёзд = <b>арест</b>.',
+    body:'За преступления полиция тебя замечает.<br>5 звёзд = <b>арест</b>.',
     cards:[
-      {ico:'⭐',t:'Розыск растёт',s:'Провалы миссий, угоны, трафик — +звёзды'},
-      {ico:'🚔',t:'5 звёзд — тюрьма',s:'5 минут отсидки. Можно откупиться или сбежать (50%)'},
-      {ico:'⏳',t:'Розыск сам снижается',s:'−1 звезда каждые 5 минут если сидишь тихо'},
+      {ico:'⭐',t:'Розыск растёт',s:'Угон, трафик, провалы миссий — +★'},
+      {ico:'🚔',t:'5★ — тюрьма на 5 минут',s:'Можно откупиться деньгами или сбежать (50%)'},
+      {ico:'⏳',t:'Сам снижается',s:'−1★ каждые 5 мин если сидишь тихо. ЧОП ускоряет x2'},
     ]},
 
-  // 5 — Org, wars, bets (NEW)
-  {tag:'ШАГ 5 из 7 — ОРГА',title:'Один —\nслабее',ico:'🏢',next:'ДАЛЕЕ →',
-    body:'Орга даёт бонусы, районы и защиту.<br>Без орги теряешь 35% дохода.',
+  // 5 — Org & biz events
+  {tag:'ШАГ 5 из 7 — ОРГА И БИЗНЕС',title:'Один —\nслабее',ico:'🏢',next:'ДАЛЕЕ →',
+    body:'Орга даёт +35% к доходу и доступ к сильным миссиям.',
     cards:[
-      {ico:'⚔️',t:'Войны за районы',s:'Захватывай — получай пассивный доход'},
-      {ico:'💰',t:'Ставки',s:'Делай пари на войны и события — выигрывай деньги',hi:true},
-      {ico:'🏆',t:'Еженедельный турнир',s:'Топ орга недели получает 5000$ + бонусы'},
+      {ico:'⚔️',t:'Захватывай районы',s:'Районы приносят пассивный доход каждую минуту',hi:true},
+      {ico:'⚡',t:'События бизнеса',s:'Пожар, рейд, поломка — бот пришлёт уведомление. Реши мини-игру!'},
+      {ico:'💰',t:'Ставки на события',s:'Пари на войны и выборы — ставки закрываются автоматически'},
     ]},
 
-  // 6 — Money, achievements, referrals (NEW)
-  {tag:'ШАГ 6 из 7 — ЗАРАБОТОК',title:'Зарабатывай\nвсеми путями',ico:'💰',next:'ОТЛИЧНО →',
-    body:'В игре много способов заработать — используй все.',
+  // 6 — Bonuses & referrals
+  {tag:'ШАГ 6 из 7 — БОНУСЫ',title:'Зарабатывай\nбольше',ico:'🎁',next:'ОТЛИЧНО →',
+    body:'Используй все способы получить преимущество.',
     cards:[
       {ico:'🏅',t:'Ачивки',s:'20 достижений с наградами — открывай их все',hi:true},
-      {ico:'📺',t:'Спонсорские задания',s:'Подпишись на канал → получи деньги и энергию'},
-      {ico:'👥',t:'Рефералы',s:'Приведи друга — ты +2000$, друг +1500$, +SP обоим'},
-      {ico:'💎',t:'Премиум',s:'Gold/Diamond — x1.5–x2 к доходу и спецбонусы'},
+      {ico:'👥',t:'Рефералы',s:'Приведи друга → ты +2000$, друг +1500$, +SP обоим'},
+      {ico:'📺',t:'Спонсорские задания',s:'Подпишись на канал → деньги и энергия бесплатно'},
+      {ico:'💎',t:'Gold / Diamond',s:'x1.5–x2 к доходу, +энергия, казино-бонусы, иммунитет'},
     ]},
 
-  // 7 — First steps
+  // 7 — First steps (updated paths)
   {tag:'ШАГ 7 из 7 — СТАРТ',title:'Первые\nшаги',ico:'🚀',next:'В ИГРУ! 🔥',
     body:'Следуй плану — быстро встанешь на ноги.',
     steps:[
       {n:1,t:'Забери ежедневную награду',s:'👤 Я → 🎁 Награды'},
-      {n:2,t:'Выполни 3 задания',s:'💀 Крим → 🎯 Задания'},
-      {n:3,t:'Вступи в организацию',s:'🏢 Орга → найди или создай свою'},
-      {n:4,t:'Сделай спонсорское задание',s:'👤 Я → 📺 Задания → бесплатный бонус'},
-      {n:5,t:'Поделись реферальной ссылкой',s:'👤 Я → 👥 Рефералы → +2000$ за друга'},
+      {n:2,t:'Выполни 2–3 лёгкие работы',s:'💵 Работа → Таксист или Курьер'},
+      {n:3,t:'Сделай крим задание',s:'💵 Работа → 💀 Крим → Патруль'},
+      {n:4,t:'Вступи в организацию',s:'🏢 Орга → найди или создай банду'},
+      {n:5,t:'Поделись реф-ссылкой',s:'👤 Я → 👥 Рефералы → +2000$ за каждого друга'},
     ]},
 ];
 function obRender(){
@@ -6528,6 +6701,8 @@ function checkBizEvents(){
       newEvent=true;
       // Notify
       toast(`${ev.ico} ${propName}: ${ev.name}`,1);
+      // Push bot notification
+      if(me.tgId) notifyPlayer(me.tgId,'biz_event',{ico:ev.ico,biz:propName,event:ev.name});
       saveMe();
     }
   });
@@ -6664,7 +6839,7 @@ async function autoSync(){
 }
 
 // ── LAUNCH ──
-function launch(){
+async function launch(){
   ['hdr','tabs','main'].forEach(id=>document.getElementById(id).style.display='');
   setupEmblems();refillEnergy();initAdmin();updateHdr();
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -6675,8 +6850,8 @@ function launch(){
   // Make sure chat badge is hidden on fresh start
   const fb=document.getElementById('funBadge');if(fb)fb.style.display='none';
   rProfile();
-  checkRefParam();
-  applyPropBonuses(); // apply business bonuses on load
+  await checkRefParam(); // await so me.refBy is saved before next sync
+  applyPropBonuses();
   // Restore jail if player was arrested before closing app
   if(me?.inJail && (me.jailUntil||0) > Date.now()) showJail();
   startRealtime();
