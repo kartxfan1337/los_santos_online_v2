@@ -352,7 +352,7 @@ body{display:flex;flex-direction:column}
   <div class="tab on"  onclick="goHub('me',this)"><i>👤</i>Я</div>
   <div class="tab"     onclick="goHub('city',this)"><i>🗺️</i>ГОРОД</div>
   <div class="tab"     onclick="goHub('org',this)"><i>🏢</i>ОРГА</div>
-  <div class="tab"     onclick="goHub('crime',this)"><i>💀</i>КРИМ</div>
+  <div class="tab"     onclick="goHub('crime',this)"><i>💵</i>РАБОТА</div>
   <div class="tab"     onclick="goHub('fun',this)"><i>🎲</i>ДОСУГ<div class="tbadge" id="funBadge">!</div></div>
   <div class="tab"     id="adminTab" style="display:none" onclick="goHub('admin',this)"><i>⚙️</i>ADM</div>
 </div>
@@ -450,57 +450,21 @@ body{display:flex;flex-direction:column}
 <!-- CRIME -->
 <div class="screen" id="s-crime">
   <div class="subnav" id="sn-crime">
-    <div class="snav on" onclick="goSub('crime','missions',this)">🎯 Задания</div>
+    <div class="snav on" onclick="goSub('crime','work',this)">💼 Работа</div>
+    <div class="snav"    onclick="goSub('crime','missions',this)">💀 Крим</div>
     <div class="snav"    onclick="goSub('crime','carjack',this)">🚗 Угон</div>
     <div class="snav"    onclick="goSub('crime','drugs',this)">💊 Трафик</div>
-    <div class="snav"    onclick="goSub('crime','contracts',this)">📋 Контракты</div>
     <div class="snav"    onclick="goSub('crime','bets',this)">💰 Ставки</div>
   </div>
-  <div class="subscreen on pad" id="ss-missions">
-    <div class="sec"><div class="sec-l">Задания</div><span class="tag tcy" id="D_enDisplay">⚡10</span></div>
+  <div class="subscreen on pad" id="ss-work"><div id="D_work"></div></div>
+  <div class="subscreen pad" id="ss-missions">
+    <div class="sec"><div class="sec-l">Криминальные задания</div><span class="tag tcy" id="D_enDisplay">⚡10</span></div>
     <div id="D_missions"></div>
   </div>
   <div class="subscreen pad" id="ss-carjack"><div id="D_carjack"></div></div>
   <div class="subscreen pad" id="ss-drugs"><div id="D_drugs"></div></div>
-  <div class="subscreen pad" id="ss-contracts">
-    <div class="sec"><div class="sec-l">Контракты</div></div>
-    <div id="D_contracts"></div>
-    <div class="sec mt8"><div class="sec-l">Создать</div></div>
-    <div class="card">
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <input class="inp" id="ctrTitle" placeholder="Название" maxlength="40">
-        <input class="inp" id="ctrDesc" placeholder="Описание" maxlength="100">
-        <div style="display:flex;gap:6px">
-          <input class="inp" id="ctrReward" type="number" placeholder="Награда $" style="flex:1">
-          <select class="inp" id="ctrType" style="flex:1">
-            <option value="delivery">📦 Доставка</option>
-            <option value="protect">🛡️ Охрана</option>
-            <option value="hit">💀 Устранение</option>
-            <option value="info">🕵️ Разведка</option>
-          </select>
-        </div>
-        <button class="btn btn-full" style="background:linear-gradient(135deg,var(--cy),#009899);color:#000;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;padding:9px;border-radius:6px;border:none;cursor:pointer" onclick="postContract()">📋 РАЗМЕСТИТЬ</button>
-      </div>
-    </div>
-  </div>
   <div class="subscreen pad" id="ss-bets">
-    <div class="sec"><div class="sec-l">Активные ставки</div></div>
     <div id="D_bets"></div>
-    <div class="sec mt8"><div class="sec-l">Создать ставку</div></div>
-    <div class="card">
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <input class="inp" id="betTitle" placeholder="Событие (напр: Орга А победит Б)" maxlength="60">
-        <div style="display:flex;gap:6px">
-          <input class="inp" id="betAmount" type="number" placeholder="Размер банка $" style="flex:1">
-          <select class="inp" id="betType" style="flex:1">
-            <option value="war">⚔️ Война</option>
-            <option value="district">🏙️ Захват района</option>
-            <option value="custom">🎯 Своё событие</option>
-          </select>
-        </div>
-        <button class="btn btn-full" style="background:linear-gradient(135deg,#f0b429,#c4911a);color:#000;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;padding:9px;border-radius:6px;border:none;cursor:pointer" onclick="createBet()">💰 СОЗДАТЬ СТАВКУ</button>
-      </div>
-    </div>
   </div>
 </div>
 <div class="screen" id="s-fun">
@@ -553,12 +517,22 @@ body{display:flex;flex-direction:column}
       <div class="snav"    onclick="goSub('admin','aworld',this)">🏙️ Мир</div>
       <div class="snav"    onclick="goSub('admin','aannounce',this)">📢 Анонс</div>
       <div class="snav"    onclick="goSub('admin','astats',this)">📊 Стата</div>
+      <div class="snav"    onclick="goSub('admin','asponsors',this)">📺 Спонсоры</div>
+      <div class="snav"    onclick="goSub('admin','aeconomy',this)">💎 Экономика</div>
+      <div class="snav"    onclick="goSub('admin','aseason',this)">🏆 Сезон</div>
+      <div class="snav"    onclick="goSub('admin','apolice',this)">🚔 Полиция</div>
+      <div class="snav"    onclick="goSub('admin','alogs',this)">📋 Логи</div>
     </div>
     <div class="subscreen on pad" id="ss-aplayers"><div id="D_aplayers"></div></div>
     <div class="subscreen pad"    id="ss-aevents"><div id="D_aevents"></div></div>
     <div class="subscreen pad"    id="ss-aworld"><div id="D_aworld"></div></div>
     <div class="subscreen pad"    id="ss-aannounce"><div id="D_aannounce"></div></div>
     <div class="subscreen pad"    id="ss-astats"><div id="D_astats"></div></div>
+    <div class="subscreen pad"    id="ss-asponsors"><div id="D_asponsors"></div></div>
+    <div class="subscreen pad"    id="ss-aeconomy"><div id="D_aeconomy"></div></div>
+    <div class="subscreen pad"    id="ss-aseason"><div id="D_aseason"></div></div>
+    <div class="subscreen pad"    id="ss-apolice"><div id="D_apolice"></div></div>
+    <div class="subscreen pad"    id="ss-alogs"><div id="D_alogs"></div></div>
   </div>
 </div>
 
@@ -824,7 +798,7 @@ const TITLES=[
 // ── STATE ──
 let W,P,FEED,CHAT,ELEC,me;
 let bonusXP=false,casinoBonus=false,drugBonus=false;
-let curHub='me',curSub={me:'profile',city:'map',org:'orgmain',crime:'missions',fun:'casino',admin:'aplayers'};
+let curHub='me',curSub={me:'profile',city:'map',org:'orgmain',crime:'work',fun:'casino',admin:'aplayers'};
 
 // ── WORLD DEFAULTS ──
 function defWorld(){return{orgs:{},districts:{
@@ -938,11 +912,12 @@ const RENDERS={
       sponsor:rShopSponsor,refer:rShopRefer,premium:rShopPremium},
   city:{map:rCity,news:rNews,election:rElection,top:rTop},
   org:{orgmain:rOrg,wars:rWars,tourn:rTournament,allies:rAlliances},
-  crime:{missions:rMissions,carjack:rCarjack,drugs:rDrugs,contracts:rContracts,bets:rBets},
+  crime:{work:rWork,missions:rMissions,carjack:rCarjack,drugs:rDrugs,bets:rBets},
   fun:{casino:rCasino,poker:rPoker,chat:rChat,dm:rDM,
        mines:rMines,wheel:rWheel,horses:rHorses,
        lottery:rLottery,duel:rDuel,blackjack:rBlackjack},
-  admin:{aplayers:rAPlayers,aevents:rAEvents,aworld:rAWorld,aannounce:rAAnnounce,astats:rAStats},
+  admin:{aplayers:rAPlayers,aevents:rAEvents,aworld:rAWorld,aannounce:rAAnnounce,astats:rAStats,
+         asponsors:rASponsors,aeconomy:rAEconomy,aseason:rASeason,apolice:rAPolice,alogs:rALogs},
 };
 function goHub(hub,el){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -1756,6 +1731,424 @@ function rTop(){
       <div class="mono" style="font-size:12px;color:var(--g)">${fmt(p.score)}pts</div>
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════
+// 💼 РАБОТА — легальный заработок
+// ══════════════════════════════════════
+const JOBS=[
+  {id:'taxi',     ico:'🚕', name:'Таксист',      desc:'Развози пассажиров по городу',   pay:[80,150],   cd:60,  en:1, minLevel:1, mini:'route'},
+  {id:'delivery', ico:'📦', name:'Курьер',        desc:'Доставляй посылки вовремя',      pay:[120,200],  cd:90,  en:1, minLevel:1, mini:'memory'},
+  {id:'security', ico:'🛡️', name:'Охранник',      desc:'Дежурь на объекте',              pay:[200,300],  cd:120, en:1, minLevel:2, mini:'click'},
+  {id:'mechanic', ico:'🔧', name:'Механик',       desc:'Чини машины в мастерской',       pay:[250,400],  cd:150, en:2, minLevel:3, mini:'sequence'},
+  {id:'trader',   ico:'📈', name:'Трейдер',       desc:'Играй на бирже',                 pay:[300,800],  cd:180, en:2, minLevel:5, mini:'trade'},
+  {id:'hacker',   ico:'💻', name:'IT-специалист', desc:'Легальный сисадмин',             pay:[500,900],  cd:240, en:2, minLevel:7, mini:'typer'},
+  {id:'lawyer',   ico:'⚖️', name:'Адвокат',       desc:'Защищай клиентов в суде',        pay:[700,1500], cd:300, en:3, minLevel:10,mini:'argue'},
+  {id:'surgeon',  ico:'🏥', name:'Хирург',        desc:'Проводи операции',               pay:[1000,2000],cd:360, en:3, minLevel:15,mini:'steady'},
+];
+
+let _jobState=null;
+
+function rWork(){
+  const el=document.getElementById('D_work');if(!el)return;
+  if(_jobState?.phase){renderJobGame(el);return;}
+  const now=Date.now();
+  el.innerHTML=`
+    <div style="margin-bottom:10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--cy);margin-bottom:2px">💼 РАБОТА</div>
+      <div style="font-size:10px;color:var(--dm)">Честный заработок — без розыска и риска</div>
+    </div>
+    ${JOBS.map(j=>{
+      const cd=me.cooldowns?.['job_'+j.id]||0;
+      const ready=now>cd;
+      const lvlOk=(me.level||1)>=j.minLevel;
+      const noEn=(me.energy||0)<j.en;
+      const blocked=!ready||!lvlOk||noEn;
+      const remain=Math.max(0,Math.ceil((cd-now)/1000));
+      const payStr=j.pay[0]+'–'+j.pay[1]+'$';
+      return`
+      <div class="card mb6" style="opacity:${blocked&&!ready?'.55':'1'}">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+          <div style="font-size:28px;width:44px;height:44px;background:var(--d3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${j.ico}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;margin-bottom:1px">${j.name}</div>
+            <div style="font-size:10px;color:var(--dm)">${j.desc}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span class="tag tgr">${payStr}</span>
+            <span class="tag tcy">-${j.en}⚡</span>
+            ${!lvlOk?`<span class="tag tr">Lvl${j.minLevel}</span>`:''}
+          </div>
+          ${!lvlOk?`<span style="font-size:10px;color:var(--dm)">🔒</span>`
+          :!ready?`<span class="tag tr cd-timer" data-until="${cd}">${fmtS(remain)}</span>`
+          :noEn?`<span class="tag tr">Нет ⚡</span>`
+          :`<button class="btn btn-sm" style="background:linear-gradient(135deg,var(--cy),#009899);color:#000;font-weight:700;padding:7px 14px"
+              onclick="startJob('${j.id}')">РАБОТАТЬ</button>`}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function startJob(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  if(!useEnergy(j.en))return;
+  if(Date.now()<(me.cooldowns?.['job_'+j.id]||0)){toast('Кулдаун!',1);return;}
+  _jobState={id,j,phase:'game',score:0};
+  rWork();
+}
+
+function renderJobGame(el){
+  const {j}=_jobState;
+  const games={route:jobRoute,memory:jobMemory,click:jobClick,sequence:jobSequence,trade:jobTrade,typer:jobTyper,argue:jobArgue,steady:jobSteady};
+  (games[j.mini]||jobClick)(el);
+}
+
+async function finishJob(success, bonus=1){
+  if(!_jobState)return;
+  const {j}=_jobState; _jobState=null;
+  if(!me.cooldowns)me.cooldowns={};
+  me.cooldowns['job_'+j.id]=Date.now()+j.cd*1000;
+  if(success){
+    const base=j.pay[0]+Math.floor(Math.random()*(j.pay[1]-j.pay[0]));
+    const pay=Math.floor(base*bonus*getPremiumMoneyMult());
+    me.money+=pay;me.score+=Math.floor(pay/20);me.rep+=3;
+    gainXP(30);checkBP();
+    addTx(pay,j.ico+' '+j.name+(bonus>1?' ⭐':''));
+    sfx('coins');haptic('medium');
+    saveMe();updateHdr();checkAchievements();
+    toast('✅ '+j.name+': +'+fmt(pay)+'$'+(bonus>1?' ОТЛИЧНО!':''));
+  }else{
+    saveMe();
+    toast('😓 Не получилось, попробуй снова',1);
+  }
+  rWork();
+}
+
+// ── МИНИ-ИГРЫ ДЛЯ РАБОТ ──
+
+// 🚕 МАРШРУТ — выбери правильный путь за 3 хода
+function jobRoute(el){
+  const districts=Object.values(W.districts);
+  const target=districts[Math.floor(Math.random()*districts.length)];
+  const choices=()=>[...districts].sort(()=>Math.random()-.5).slice(0,3).map(d=>({d,correct:d.name===target.name}));
+  let step=0,score=0;
+  const totalSteps=3;
+  function render(){
+    const opts=choices();opts[Math.floor(Math.random()*3)].correct=true;
+    // ensure exactly one correct
+    opts.forEach(o=>o.correct=false);
+    const ri=Math.floor(Math.random()*3);opts[ri].correct=true;opts[ri].d=target;
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🚕 ТАКСИ</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Пассажир: ${step+1}/${totalSteps}</div>
+        <div style="font-size:13px;margin-bottom:4px">Везти в: <b style="color:var(--g)">${target.icon} ${target.name}</b></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${opts.map(o=>`
+          <button onclick="jobRoutePick(${o.correct})"
+            style="padding:13px;background:var(--d3);border:1.5px solid var(--br2);border-radius:10px;
+                   font-size:13px;cursor:pointer;text-align:left;color:var(--tx)">
+            ${o.d.icon} ${o.d.name}
+          </button>`).join('')}
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--dm)">✅ ${score} доставлено</div>`;
+  }
+  window.jobRoutePick=function(correct){
+    if(!_jobState)return;
+    if(correct){score++;sfx('coins');haptic('light');toast('✅ Правильно!');}
+    else{sfx('fail');haptic('light');toast('❌ Не туда!',1);}
+    step++;
+    if(step>=totalSteps)finishJob(score>=2,score===3?1.3:1);
+    else{const nd=districts[Math.floor(Math.random()*districts.length)];_jobState._target=nd;render();}
+  };
+  render();
+}
+
+// 📦 ПАМЯТЬ — запомни порядок посылок
+function jobMemory(){
+  const icons=['📦','📫','📮','🗃️','📂','📁'];
+  const seq=Array(4).fill(0).map(()=>icons[Math.floor(Math.random()*icons.length)]);
+  let showing=true,input=[];
+  const el=document.getElementById('D_work');
+  function render(){
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">📦 КУРЬЕР</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:8px">${showing?'Запомни порядок посылок!':'Повтори порядок!'}</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
+          ${(showing?seq:input.concat(Array(seq.length-input.length).fill('❓'))).map((ico,i)=>`
+            <div style="width:46px;height:46px;background:${!showing&&i<input.length?'rgba(0,210,211,.2)':'var(--d3)'};
+              border:1.5px solid ${!showing&&i<input.length?'var(--cy)':'var(--br2)'};
+              border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px">${ico}</div>
+          `).join('')}
+        </div>
+        ${showing
+          ?`<button class="btn btn-g btn-full" onclick="jobMemGo()">✅ Запомнил!</button>`
+          :`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+              ${icons.map(ico=>`<button onclick="jobMemTap('${ico}')"
+                style="padding:12px;background:var(--d3);border:1px solid var(--br2);border-radius:8px;font-size:22px;cursor:pointer">${ico}</button>`).join('')}
+            </div>`}
+      </div>`;
+  }
+  window.jobMemGo=function(){showing=false;render();};
+  window.jobMemTap=function(ico){
+    if(!_jobState||showing)return;
+    input.push(ico);sfx('click');haptic('light');
+    if(input[input.length-1]!==seq[input.length-1]){sfx('fail');haptic('medium');finishJob(false);return;}
+    if(input.length===seq.length){sfx('win');haptic('heavy');finishJob(true,1.2);}
+    else render();
+  };
+  render();
+}
+
+// 🛡️ РЕАКЦИЯ — тапай по вспышкам
+function jobClick(el){
+  let score=0,timeLeft=10,targets=[];
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🛡️ ОХРАННИК</div>
+      <div style="font-size:11px;color:var(--dm)">Тапай по нарушителям как можно быстрее!</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span id="jwTime" style="font-size:12px;color:var(--dm)">⏱️ 10с</span>
+      <span id="jwScore" style="font-size:12px;color:var(--cy)">👊 0</span>
+    </div>
+    <div id="jwGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;height:200px;align-content:start"></div>`;
+  function spawnTarget(){
+    const grid=document.getElementById('jwGrid');if(!grid)return;
+    const btn=document.createElement('button');
+    const icons=['😤','🦹','🤬','👿','😈'];
+    btn.textContent=icons[Math.floor(Math.random()*icons.length)];
+    btn.style.cssText=`font-size:28px;padding:8px;background:rgba(230,57,80,.15);border:1.5px solid var(--r);
+      border-radius:10px;cursor:pointer;transition:all .1s`;
+    btn.onclick=()=>{
+      btn.remove();score++;sfx('click');haptic('light');
+      const s=document.getElementById('jwScore');if(s)s.textContent='👊 '+score;
+    };
+    grid.appendChild(btn);
+    targets.push(btn);
+    setTimeout(()=>{if(btn.parentNode){btn.remove();}},1500);
+  }
+  const spawnInt=setInterval(spawnTarget,600);
+  const timerInt=setInterval(()=>{
+    timeLeft--;const t=document.getElementById('jwTime');if(t)t.textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){clearInterval(spawnInt);clearInterval(timerInt);
+      finishJob(score>=5,score>=10?1.4:score>=7?1.2:1);}
+  },1000);
+  if(_jobState)_jobState._cleanup=()=>{clearInterval(spawnInt);clearInterval(timerInt);};
+}
+
+// 🔧 ПОСЛЕДОВАТЕЛЬНОСТЬ — собери детали в правильном порядке
+function jobSequence(el){
+  const parts=['🔩','🔧','⚙️','🔨','🪛','🔑'];
+  const order=parts.slice(0,5).sort(()=>Math.random()-.5);
+  let idx=0;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🔧 МЕХАНИК</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">Собери детали в нужном порядке</div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:12px">
+        ${order.map((p,i)=>`<div id="seq${i}" style="width:40px;height:40px;background:var(--dk);border-radius:8px;
+          border:1.5px solid var(--br2);display:flex;align-items:center;justify-content:center;font-size:20px">${p}</div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--g);margin-bottom:10px">Следующая: <span style="font-size:22px">${order[0]}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+      ${[...order].sort(()=>Math.random()-.5).map(p=>`
+        <button onclick="jobSeqTap('${p}')"
+          style="padding:10px;background:var(--d3);border:1px solid var(--br2);border-radius:8px;font-size:22px;cursor:pointer">${p}</button>
+      `).join('')}
+    </div>`;
+  window.jobSeqTap=function(p){
+    if(!_jobState)return;
+    if(p===order[idx]){
+      const sq=document.getElementById('seq'+idx);
+      if(sq)sq.style.background='rgba(29,184,122,.3)',sq.style.borderColor='var(--gr)';
+      idx++;sfx('click');haptic('light');
+      const nxt=document.querySelector('#D_work div[style*="Следующая"]');
+      if(nxt&&idx<order.length)nxt.innerHTML=`Следующая: <span style="font-size:22px">${order[idx]}</span>`;
+      if(idx>=order.length){sfx('win');haptic('heavy');finishJob(true,1.3);}
+    }else{sfx('fail');haptic('medium');toast('❌ Не та деталь!',1);}
+  };
+}
+
+// 📈 ТРЕЙДЕР — угадай движение рынка 3 раза
+function jobTrade(el){
+  let round=0,score=0;
+  const assets=['BTC','ETH','GOLD','OIL','AAPL'];
+  function render(){
+    const asset=assets[Math.floor(Math.random()*assets.length)];
+    const price=Math.floor(1000+Math.random()*9000);
+    const trend=Math.random()>.5;
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">📈 БИРЖА</div>
+        <div style="font-size:11px;color:var(--dm)">Раунд ${round+1}/3 · Угадай: вверх или вниз?</div>
+      </div>
+      <div class="card" style="text-align:center;margin-bottom:14px;padding:18px">
+        <div style="font-size:14px;color:var(--dm);margin-bottom:4px">${asset}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--g);margin-bottom:6px">$${fmt(price)}</div>
+        <div style="font-size:11px;color:var(--dm)">Куда пойдёт цена?</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="jobTradePick(${trend})"
+          style="padding:16px;background:rgba(29,184,122,.15);border:1.5px solid var(--gr);border-radius:10px;
+                 font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gr);cursor:pointer">
+          📈 ВВЕРХ
+        </button>
+        <button onclick="jobTradePick(${!trend})"
+          style="padding:16px;background:rgba(230,57,80,.15);border:1.5px solid var(--r);border-radius:10px;
+                 font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--r);cursor:pointer">
+          📉 ВНИЗ
+        </button>
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--dm)">✅ ${score}/3</div>`;
+  }
+  window.jobTradePick=function(correct){
+    if(!_jobState)return;
+    if(correct){score++;sfx('coins');haptic('light');toast('📈 Угадал!');}
+    else{sfx('fail');haptic('light');toast('📉 Мимо!',1);}
+    round++;
+    if(round>=3)finishJob(score>=2,score===3?1.5:1);
+    else render();
+  };
+  render();
+}
+
+// 💻 ТАЙПЕР — набери код быстро
+function jobTyper(el){
+  const codes=['git commit','npm install','sudo chmod','ping localhost','ssh root@','cd /var/www'];
+  const target=codes[Math.floor(Math.random()*codes.length)];
+  let startTs=Date.now();
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">💻 IT-СПЕЦИАЛИСТ</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:10px">Введи команду точно как показано</div>
+      <div style="background:var(--dk);border-radius:8px;padding:12px;font-family:'Share Tech Mono',monospace;
+                  font-size:16px;color:var(--g);margin-bottom:14px;letter-spacing:2px">${target}</div>
+    </div>
+    <input id="typerInp" class="inp" placeholder="Введи сюда..." autocomplete="off" autocorrect="off"
+           style="font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:1px;margin-bottom:8px">
+    <button class="btn btn-g btn-full" onclick="jobTyperSubmit()">⌨️ ВВЕСТИ</button>
+    <div id="typerFeedback" style="text-align:center;min-height:20px;margin-top:8px;font-size:12px"></div>`;
+  setTimeout(()=>document.getElementById('typerInp')?.focus(),100);
+  window.jobTyperSubmit=function(){
+    const inp=document.getElementById('typerInp');
+    const val=inp?.value.trim();
+    const elapsed=(Date.now()-startTs)/1000;
+    if(val===target){
+      sfx('win');haptic('heavy');
+      const bonus=elapsed<5?1.5:elapsed<10?1.2:1;
+      finishJob(true,bonus);
+    }else{
+      sfx('fail');haptic('light');
+      const fb=document.getElementById('typerFeedback');
+      if(fb)fb.innerHTML='<span style="color:var(--r)">❌ Не совпадает, попробуй снова</span>';
+      if(inp)inp.value='';
+    }
+  };
+  document.addEventListener('keydown',function handler(e){
+    if(e.key==='Enter'&&document.activeElement?.id==='typerInp'){jobTyperSubmit();}
+    if(!_jobState)document.removeEventListener('keydown',handler);
+  });
+}
+
+// ⚖️ АРГУМЕНТЫ — выбери правильный аргумент в суде
+function jobArgue(el){
+  const cases=[
+    {q:'Клиент обвиняется в краже. Ключевой аргумент?',opts:[{t:'У него не было мотива',c:true},{t:'Он хороший человек',c:false},{t:'Прокурор ошибается',c:false}]},
+    {q:'Свидетель изменил показания. Что делаешь?',opts:[{t:'Оспариваешь достоверность',c:true},{t:'Просишь перенос',c:false},{t:'Игнорируешь',c:false}]},
+    {q:'Нет алиби. Как защищаешься?',opts:[{t:'Разрушаешь доказательную базу',c:true},{t:'Просишь помилования',c:false},{t:'Признаёшь вину',c:false}]},
+    {q:'Судья против тебя. Что делаешь?',opts:[{t:'Апелляция к закону',c:true},{t:'Споришь с судьёй',c:false},{t:'Сдаёшься',c:false}]},
+  ];
+  let round=0,score=0;
+  function render(){
+    const c=cases[Math.floor(Math.random()*cases.length)];
+    const opts=[...c.opts].sort(()=>Math.random()-.5);
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">⚖️ АДВОКАТ</div>
+        <div style="font-size:11px;color:var(--dm)">Дело ${round+1}/3</div>
+      </div>
+      <div class="card" style="margin-bottom:12px;padding:14px">
+        <div style="font-size:12px;line-height:1.5;font-weight:600">${c.q}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${opts.map(o=>`
+          <button onclick="jobArguePick(${o.c})"
+            style="padding:12px 14px;background:var(--d3);border:1.5px solid var(--br2);border-radius:9px;
+                   text-align:left;font-size:12px;cursor:pointer;color:var(--tx)">
+            ${o.t}
+          </button>`).join('')}
+      </div>`;
+  }
+  window.jobArguePick=function(correct){
+    if(!_jobState)return;
+    if(correct){score++;sfx('coins');haptic('light');toast('⚖️ Убедительно!');}
+    else{sfx('fail');haptic('light');toast('❌ Слабый аргумент',1);}
+    round++;
+    if(round>=3)finishJob(score>=2,score===3?1.6:score===2?1.2:1);
+    else render();
+  };
+  render();
+}
+
+// 🏥 ХИРУРГ — удержи руку стабильно
+function jobSteady(el){
+  let stability=100,timeLeft=8,raf=null;
+  let targetX=0,targetY=0,cursorX=0,cursorY=0,pressed=false;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🏥 ХИРУРГ</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Веди точку по маршруту не дрожа!</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span id="ssTime" style="font-size:12px;color:var(--dm)">⏱️ 8с</span>
+        <span id="ssStab" style="font-size:12px;color:var(--gr)">💚 100%</span>
+      </div>
+    </div>
+    <div id="ssArena" style="background:var(--d3);border-radius:12px;height:200px;position:relative;
+      border:1.5px solid var(--br2);overflow:hidden;touch-action:none;cursor:crosshair">
+      <div id="ssTarget" style="position:absolute;width:24px;height:24px;background:rgba(29,184,122,.4);
+        border:2px solid var(--gr);border-radius:50%;transform:translate(-50%,-50%);transition:top .8s,left .8s"></div>
+      <div id="ssCursor" style="position:absolute;width:16px;height:16px;background:rgba(240,180,41,.8);
+        border:2px solid var(--g);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none"></div>
+    </div>
+    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:8px">Двигай пальцем по зелёной точке</div>`;
+
+  function moveTarget(){
+    const arena=document.getElementById('ssArena');if(!arena)return;
+    targetX=20+Math.random()*60;targetY=20+Math.random()*60;
+    const t=document.getElementById('ssTarget');
+    if(t){t.style.left=targetX+'%';t.style.top=targetY+'%';}
+    setTimeout(moveTarget,900);
+  }
+  moveTarget();
+
+  const arena=document.getElementById('ssArena');
+  function handleMove(cx,cy){
+    const rect=arena?.getBoundingClientRect();if(!rect)return;
+    cursorX=(cx-rect.left)/rect.width*100;
+    cursorY=(cy-rect.top)/rect.height*100;
+    const c=document.getElementById('ssCursor');
+    if(c){c.style.left=cursorX+'%';c.style.top=cursorY+'%';}
+    const dist=Math.sqrt((cursorX-targetX)**2+(cursorY-targetY)**2);
+    if(dist>15){stability=Math.max(0,stability-1.5);}
+    else{stability=Math.min(100,stability+0.5);}
+    const s=document.getElementById('ssStab');
+    if(s){s.textContent='💚 '+Math.round(stability)+'%';s.style.color=stability>60?'var(--gr)':stability>30?'var(--g)':'var(--r)';}
+  }
+  arena?.addEventListener('mousemove',e=>handleMove(e.clientX,e.clientY));
+  arena?.addEventListener('touchmove',e=>{e.preventDefault();handleMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+
+  const timerInt=setInterval(()=>{
+    timeLeft--;const t=document.getElementById('ssTime');if(t)t.textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){clearInterval(timerInt);finishJob(stability>=40,stability>=80?1.5:stability>=60?1.2:1);}
+    if(stability<=0){clearInterval(timerInt);finishJob(false);}
+  },1000);
+  if(_jobState)_jobState._cleanup=()=>clearInterval(timerInt);
 }
 
 // ── MISSIONS ──
@@ -2837,40 +3230,216 @@ async function deliverDrugs(idx){startDrugDelivery(idx);}
 
 
 // ── CONTRACTS ──
-async function rContracts(){
-  const el=document.getElementById('D_contracts');if(!el)return;
-  const ctrs=await ST.get('contracts')||[];
-  const CICO={delivery:'📦',protect:'🛡️',hit:'💀',info:'🕵️'};
-  el.innerHTML=ctrs.filter(c=>!c.done).slice(-20).map(c=>`<div class="card">
-    <div style="font-size:10px;color:var(--dm);margin-bottom:3px">${CICO[c.type]||'📋'} от <b style="color:var(--g)">${c.creator}</b> · ${fmtT(c.ts)}</div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:2px">${c.title}</div>
-    <div style="font-size:11px;color:var(--dm);margin-bottom:7px">${c.desc||''}</div>
-    <div class="fb"><span class="tag tgr">+${c.reward}$</span>
-    ${c.pid===PID?'<span class="tag tr">Ваш</span>':`<button class="btn btn-g btn-sm" onclick="acceptCtr('${c.id}')">ПРИНЯТЬ</button>`}
-    </div>
-  </div>`).join('')||'<div class="empty">Нет контрактов</div>';
+// ══════════════════════════════════════
+// 💰 СТАВКИ — только на реальные события
+// Автозакрытие по итогам войн и выборов
+// ══════════════════════════════════════
+async function rBets(){
+  const el=document.getElementById('D_bets');if(!el)return;
+  const bets=await ST.get('bets')||[];
+  // Auto-resolve war bets
+  await autoResolveBets(bets);
+  const active=bets.filter(b=>!b.closed);
+  const closed=bets.filter(b=>b.closed).slice(0,5);
+
+  el.innerHTML=`
+    ${active.length?`
+      <div class="admt">Активные ставки</div>
+      ${active.map(b=>{
+        const myBet=b.bettors?.find(x=>x.pid===PID);
+        const totalA=b.bettors?.filter(x=>x.side==='A').reduce((s,x)=>s+x.amount,0)||b.seedA||0;
+        const totalB=b.bettors?.filter(x=>x.side==='B').reduce((s,x)=>s+x.amount,0)||b.seedB||0;
+        const pool=totalA+totalB||1;
+        const oddsA=Math.max(1.05,(pool/Math.max(totalA,1)*.95)).toFixed(2);
+        const oddsB=Math.max(1.05,(pool/Math.max(totalB,1)*.95)).toFixed(2);
+        return`<div class="card mb8">
+          <div style="font-size:10px;color:var(--dm);margin-bottom:4px">
+            ${b.type==='war'?'⚔️ Война':b.type==='election'?'🗳️ Выборы':'🏙️ Захват'} · Банк: ${fmt(pool)}$
+          </div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px">${b.title}</div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px">
+            <button onclick="placeBet('${b.id}','A')"
+              style="padding:10px 6px;background:${myBet?.side==='A'?'rgba(29,184,122,.2)':'var(--d3)'};
+                border:1.5px solid ${myBet?.side==='A'?'var(--gr)':'var(--br2)'};border-radius:9px;cursor:pointer">
+              <div style="font-size:10px;font-weight:700;margin-bottom:2px">${b.labelA||'ДА'}</div>
+              <div style="font-size:16px;font-weight:700;color:var(--gr)">x${oddsA}</div>
+              <div style="font-size:9px;color:var(--dm)">${fmt(totalA)}$</div>
+            </button>
+            <div style="font-size:11px;color:var(--dm);font-weight:700">VS</div>
+            <button onclick="placeBet('${b.id}','B')"
+              style="padding:10px 6px;background:${myBet?.side==='B'?'rgba(230,57,80,.15)':'var(--d3)'};
+                border:1.5px solid ${myBet?.side==='B'?'var(--r)':'var(--br2)'};border-radius:9px;cursor:pointer">
+              <div style="font-size:10px;font-weight:700;margin-bottom:2px">${b.labelB||'НЕТ'}</div>
+              <div style="font-size:16px;font-weight:700;color:var(--r)">x${oddsB}</div>
+              <div style="font-size:9px;color:var(--dm)">${fmt(totalB)}$</div>
+            </button>
+          </div>
+          ${myBet?`<div style="font-size:10px;color:var(--g);text-align:center;padding:4px 0">
+            ✅ Твоя ставка: ${fmt(myBet.amount)}$ на «${myBet.side==='A'?(b.labelA||'ДА'):(b.labelB||'НЕТ')}»
+          </div>`:''}
+          <div style="font-size:9px;color:var(--dm);text-align:center">🔒 Закрывается автоматически по итогу события</div>
+        </div>`;
+      }).join('')}`
+    :`<div class="empty">Нет активных ставок</div>`}
+
+    ${closed.length?`
+      <div class="admt">Завершённые</div>
+      ${closed.map(b=>{
+        const myBet=b.bettors?.find(x=>x.pid===PID);
+        const iWon=myBet&&myBet.side===b.winner;
+        return`<div class="card mb5" style="opacity:.7">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:11px;font-weight:600">${b.title}</div>
+              <div style="font-size:9px;color:var(--dm)">Победитель: ${b.winner==='A'?(b.labelA||'А'):(b.labelB||'Б')}</div>
+            </div>
+            ${myBet?`<span class="tag ${iWon?'tgr':'tr'}">${iWon?'🏆 ВЫИГРАЛ':'💸 ПРОИГРАЛ'}</span>`:'<span class="tag">Не участвовал</span>'}
+          </div>
+        </div>`;
+      }).join('')}`:''}
+
+    <div class="admt">Создать ставку на событие</div>
+    <div class="card">
+      <div style="font-size:10px;color:var(--dm);margin-bottom:10px">
+        Создай ставку на войну между оргами или захват района.<br>
+        Результат определяется <b>автоматически</b> по итогу события.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <select class="inp" id="betType">
+          <option value="war">⚔️ Ставка на войну (кто победит)</option>
+          <option value="election">🗳️ Ставка на выборы (кто станет мэром)</option>
+          <option value="district">🏙️ Ставка на захват района</option>
+        </select>
+        <div id="betContextPicker"></div>
+        <input class="inp" id="betSeed" type="number" placeholder="Начальный банк $ (мин 200$)">
+        <button class="btn btn-full" style="background:linear-gradient(135deg,#f0b429,#c4911a);color:#000;font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;padding:9px;border-radius:6px;border:none;cursor:pointer"
+          onclick="createSmartBet()">💰 СОЗДАТЬ СТАВКУ</button>
+      </div>
+    </div>`;
+  // Populate context picker
+  updateBetPicker();
 }
-async function postContract(){
-  const title=document.getElementById('ctrTitle')?.value.trim();
-  const reward=parseInt(document.getElementById('ctrReward')?.value)||0;
-  if(!title||reward<50){toast('Заполни поля (мин 50$)!',1);return;}
-  if(me.money<reward){toast('Нет денег!',1);return;}
-  const ctrs=await ST.get('contracts')||[];
-  ctrs.push({id:'c'+Date.now(),pid:PID,creator:me.name,title,desc:document.getElementById('ctrDesc')?.value.trim()||'',reward,type:document.getElementById('ctrType')?.value||'delivery',ts:Date.now(),done:false});
-  me.money-=reward;await ST.set('contracts',ctrs.slice(-30));saveMe();updateHdr();rContracts();
-  const ti=document.getElementById('ctrTitle');const ri=document.getElementById('ctrReward');
-  if(ti)ti.value='';if(ri)ri.value='';
-  toast('📋 Контракт размещён!');
+
+function updateBetPicker(){
+  const type=document.getElementById('betType')?.value;
+  const picker=document.getElementById('betContextPicker');if(!picker)return;
+  if(type==='war'){
+    const wars=Object.entries(W.wars||{});
+    if(!wars.length){picker.innerHTML='<div style="font-size:10px;color:var(--dm)">Нет активных войн</div>';return;}
+    picker.innerHTML=`<select class="inp" id="betContext">
+      ${wars.map(([id,w])=>`<option value="${id}">${W.orgs[w.attacker]?.name||'?'} vs ${W.orgs[w.defender]?.name||'?'}</option>`).join('')}
+    </select>`;
+  }else if(type==='election'){
+    const cands=ELEC?.candidates||[];
+    picker.innerHTML=`<select class="inp" id="betContext">
+      ${cands.map(c=>`<option value="${c.id}">${c.avatar} ${c.name}</option>`).join('')}
+    </select>`;
+  }else{
+    const dists=Object.entries(W.districts||{});
+    picker.innerHTML=`<select class="inp" id="betContext">
+      ${dists.map(([id,d])=>`<option value="${id}">${d.icon} ${d.name}</option>`).join('')}
+    </select>`;
+  }
 }
-async function acceptCtr(id){
-  const ctrs=await ST.get('contracts')||[];const c=ctrs.find(x=>x.id===id);
-  if(!c||c.done){toast('Недоступен',1);return;}
-  if(c.pid===PID){toast('Нельзя свой!',1);return;}
-  c.done=true;me.money+=c.reward;me.score+=50;me.contractsDone=(me.contractsDone||0)+1;gainXP(60);
-  addTx(c.reward,'📋 Контракт: '+c.title);sfx('coins');haptic('light');checkAchievements();
-  await ST.set('contracts',ctrs);saveMe();updateHdr();rContracts();
-  await pushFeed('📋','<b>'+me.name+'</b> выполнил контракт «'+c.title+'» +'+c.reward+'$');
-  toast('✅ +'+c.reward+'$');
+document.addEventListener('change',e=>{if(e.target?.id==='betType')updateBetPicker();});
+
+async function createSmartBet(){
+  const type=document.getElementById('betType')?.value;
+  const context=document.getElementById('betContext')?.value;
+  const seed=parseInt(document.getElementById('betSeed')?.value)||0;
+  if(seed<200){toast('Минимум 200$!',1);return;}
+  if(me.money<seed){toast('Нет денег!',1);return;}
+  let title='',labelA='',labelB='',eventRef='';
+  if(type==='war'&&context){
+    const w=W.wars[context];if(!w){toast('Война не найдена',1);return;}
+    const a=W.orgs[w.attacker]?.name||'Атакующий';
+    const d=W.orgs[w.defender]?.name||'Защищающий';
+    title=`${a} победит ${d}?`;labelA=`✅ Да, ${a}`;labelB=`❌ Нет, ${d}`;eventRef=context;
+  }else if(type==='election'){
+    const cand=ELEC?.candidates.find(c=>c.id===context);
+    title=`${cand?.name||'?'} станет мэром?`;labelA='✅ Да';labelB='❌ Нет';eventRef=context;
+  }else if(type==='district'&&context){
+    const d=W.districts[context];
+    title=`${d?.icon} ${d?.name} сменит владельца?`;labelA='✅ Сменит';labelB='❌ Не сменит';eventRef=context;
+  }else{toast('Выбери событие!',1);return;}
+  me.money-=seed;
+  addTx(-seed,'💰 Создана ставка: '+title);
+  saveMe();updateHdr();
+  const bets=await ST.get('bets')||[];
+  bets.unshift({id:'b'+Date.now(),title,type,labelA,labelB,creatorId:PID,
+    creatorName:me.name,eventRef,bettors:[{pid:PID,name:me.name,side:'A',amount:Math.floor(seed/2)}],
+    seedA:Math.floor(seed/2),seedB:Math.floor(seed/2),created:Date.now(),closed:false});
+  await ST.set('bets',bets.slice(0,20));
+  await pushFeed('💰',`<b>${me.name}</b> открыл ставку: «${title}» Банк: ${fmt(seed)}$`);
+  document.getElementById('betSeed').value='';
+  sfx('coins');haptic('light');toast('✅ Ставка создана!');rBets();
+}
+
+async function autoResolveBets(bets){
+  let changed=false;
+  for(const b of bets){
+    if(b.closed)continue;
+    let winner=null;
+    if(b.type==='war'&&b.eventRef){
+      const w=W.wars[b.eventRef];
+      if(!w){// war ended — check who owns district
+        winner='A'; // attacker wins if war is gone and district changed
+      }
+    }else if(b.type==='election'&&b.eventRef){
+      if(ELEC?.mayor&&(Date.now()>ELEC.end)){
+        winner=ELEC.mayor===b.eventRef?'A':'B';
+      }
+    }
+    if(winner){
+      b.closed=true;b.winner=winner;changed=true;
+      const pool=b.bettors?.reduce((s,x)=>s+x.amount,0)||0;
+      const winners=b.bettors?.filter(x=>x.side===winner)||[];
+      const winPool=winners.reduce((s,x)=>s+x.amount,1);
+      winners.forEach(w=>{
+        const payout=Math.floor(pool*(w.amount/winPool)*0.95);
+        if(w.pid===PID){me.money+=payout;addTx(payout,`🎲 Ставка выиграла: ${b.title}`);
+          me.betsWon=(me.betsWon||0)+1;saveMe();updateHdr();
+          toast(`🏆 Ставка сыграла! +${fmt(payout)}$`);}
+      });
+      await pushFeed('🎲',`Ставка «${b.title}» завершена! Победила сторона ${winner==='A'?b.labelA:b.labelB}`);
+    }
+  }
+  if(changed)await ST.set('bets',bets);
+}
+
+async function placeBet(betId, side){
+  const bets=await ST.get('bets')||[];
+  const b=bets.find(x=>x.id===betId);
+  if(!b||b.closed){toast('Ставка закрыта!',1);return;}
+  if(b.bettors?.find(x=>x.pid===PID)){toast('Ты уже поставил!',1);return;}
+  _betPending={betId,side,bets,title:b.title,labelA:b.labelA,labelB:b.labelB};
+  const sideLabel=side==='A'?(b.labelA||'ДА'):(b.labelB||'НЕТ');
+  document.getElementById('mBetBody').innerHTML=`
+    <div style="font-size:12px;color:var(--dm);margin-bottom:6px">${b.title}</div>
+    <div class="tag tg" style="margin-bottom:10px;display:block;text-align:center">Твой выбор: ${sideLabel}</div>
+    <div style="font-size:11px;color:var(--dm)">Баланс: <b style="color:var(--g)">${fmt(me.money)}$</b></div>`;
+  const inp=document.getElementById('betAmtInp');
+  if(inp){inp.value='';inp.max=me.money;}
+  om('mBet');haptic('light');
+}
+
+async function confirmBet(){
+  if(!_betPending){cm('mBet');return;}
+  const amount=parseInt(document.getElementById('betAmtInp')?.value)||0;
+  if(amount<50){toast('Минимум 50$!',1);return;}
+  if(me.money<amount){toast('Нет денег!',1);return;}
+  const {betId,side,bets,title}=_betPending;
+  const b=bets.find(x=>x.id===betId);
+  if(!b){toast('Не найдено!',1);cm('mBet');return;}
+  me.money-=amount;
+  addTx(-amount,`💰 Ставка на «${title}»`);
+  saveMe();updateHdr();
+  if(!b.bettors)b.bettors=[];
+  b.bettors.push({pid:PID,name:me.name,side,amount});
+  await ST.set('bets',bets);
+  _betPending=null;cm('mBet');
+  sfx('coins');haptic('medium');
+  toast('✅ Ставка '+fmt(amount)+'$ принята! Ждём результата...');rBets();
 }
 
 // ── CASINO ──
@@ -3360,10 +3929,10 @@ function rWheel(){
     <div class="card mt8">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--dm);letter-spacing:1px;margin-bottom:8px">ВОЗМОЖНЫЕ ПРИЗЫ</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-        ${WHEEL_SEGMENTS.map(s=>`
-          <div style="background:${s.color}18;border:1px solid ${s.color}44;border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:6px">
-            <div style="width:8px;height:8px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
-            <span style="font-size:11px;font-weight:700;color:${s.color}">${s.label}</span>
+        ${WHEEL_SEGMENTS.map(ws=>`
+          <div style="background:${ws.color}18;border:1px solid ${ws.color}44;border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${ws.color};flex-shrink:0"></div>
+            <span style="font-size:11px;font-weight:700;color:${ws.color}">${ws.label}</span>
           </div>`).join('')}
       </div>
     </div>`;
@@ -3447,10 +4016,9 @@ async function spinWheel(){
   const dur=5000;
   let startTs=null;
 
-  function frame(ts){
+  const frame=(ts)=>{
     if(!startTs)startTs=ts;
     const prog=Math.min((ts-startTs)/dur,1);
-    // Ease out cubic
     const ease=1-Math.pow(1-prog,3);
     drawWheel(targetRotation*ease);
     if(prog<1){requestAnimationFrame(frame);}
@@ -3461,7 +4029,7 @@ async function spinWheel(){
       saveMe();
       applyWheelResult(seg);
     }
-  }
+  };
   requestAnimationFrame(frame);
 }
 
@@ -3888,8 +4456,8 @@ function initAdmin(){if(IS_ADMIN){const t=document.getElementById('adminTab');if
 function canDo(a){
   if(!adminUnlocked||!IS_ADMIN)return false;const r=CUR_ADMIN?.role;
   if(r==='superadmin')return true;
-  if(r==='moderator')return['players','events','announce','stats'].includes(a);
-  if(r==='helper')return['events','announce','stats'].includes(a);
+  if(r==='moderator')return['players','events','announce','stats','sponsors','police','logs'].includes(a);
+  if(r==='helper')return['events','announce','stats','logs'].includes(a);
   return false;
 }
 // PIN
@@ -4153,6 +4721,442 @@ function rAStats(){
 }
 
 // ════════════════════════════════════════
+// 📺 ADMIN — СПОНСОРЫ
+// ════════════════════════════════════════
+async function rASponsors(){
+  const el=document.getElementById('D_asponsors');if(!el)return;
+  if(!canDo('sponsors')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
+  const tasks=await ST.get('sponsorTasks')||[];
+  el.innerHTML=`
+    <div class="admt">📺 Спонсорские каналы</div>
+    <div style="font-size:10px;color:var(--dm);margin-bottom:10px">Игроки видят эти задания в разделе Я → Спонсоры</div>
+
+    <!-- Existing tasks -->
+    ${tasks.length?tasks.map((t,i)=>`
+      <div class="card mb6">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="font-size:28px;flex-shrink:0">${t.ico||'📢'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px">${t.name}</div>
+            <div style="font-size:10px;color:var(--dm)">${t.url||'нет ссылки'}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:12px;color:var(--gr)">+${fmt(t.reward)}$</div>
+            <div style="font-size:9px;color:var(--dm)">${t.active!==false?'✅ Активен':'⏸️ Пауза'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" style="flex:1;background:${t.active!==false?'rgba(230,57,80,.2)':'rgba(29,184,122,.2)'};border:1px solid ${t.active!==false?'var(--r)':'var(--gr)'};color:${t.active!==false?'var(--r)':'var(--gr)'}"
+            onclick="adminToggleSponsor(${i})">${t.active!==false?'⏸ Пауза':'▶ Активировать'}</button>
+          <button class="btn btn-r btn-sm" onclick="adminDeleteSponsor(${i})">🗑 Удалить</button>
+        </div>
+      </div>`).join('')
+    :`<div class="empty" style="margin-bottom:12px">Нет спонсорских заданий</div>`}
+
+    <!-- Add new task -->
+    <div class="admt" style="margin-top:4px">Добавить канал</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;gap:6px">
+          <input class="inp" id="spIco" placeholder="Иконка" style="width:60px;text-align:center;font-size:20px">
+          <input class="inp" id="spName" placeholder="Название канала" style="flex:1">
+        </div>
+        <input class="inp" id="spUrl" placeholder="Ссылка (https://t.me/channel)">
+        <div style="display:flex;gap:6px">
+          <input class="inp" id="spReward" type="number" placeholder="Награда $" style="flex:1" value="500">
+          <select class="inp" id="spType" style="flex:1">
+            <option value="channel">📢 Telegram канал</option>
+            <option value="group">👥 Группа</option>
+            <option value="bot">🤖 Бот</option>
+            <option value="other">🔗 Другое</option>
+          </select>
+        </div>
+        <input class="inp" id="spDesc" placeholder="Описание (необязательно)" maxlength="80">
+        <button class="btn btn-g btn-full" onclick="adminAddSponsor()">➕ ДОБАВИТЬ КАНАЛ</button>
+      </div>
+    </div>`;
+}
+
+async function adminAddSponsor(){
+  if(!canDo('sponsors'))return;
+  const ico=document.getElementById('spIco')?.value.trim()||'📢';
+  const name=document.getElementById('spName')?.value.trim();
+  const url=document.getElementById('spUrl')?.value.trim();
+  const reward=parseInt(document.getElementById('spReward')?.value)||500;
+  const type=document.getElementById('spType')?.value||'channel';
+  const desc=document.getElementById('spDesc')?.value.trim()||'';
+  if(!name){toast('Введи название!',1);return;}
+  if(!url){toast('Введи ссылку!',1);return;}
+  const tasks=await ST.get('sponsorTasks')||[];
+  tasks.push({id:'sp'+Date.now(),ico,name,url,reward,type,desc,active:true,done:[]});
+  await ST.set('sponsorTasks',tasks);
+  sfx('coins');haptic('medium');
+  toast('✅ Канал добавлен!');rASponsors();
+}
+
+async function adminToggleSponsor(i){
+  if(!canDo('sponsors'))return;
+  const tasks=await ST.get('sponsorTasks')||[];
+  if(!tasks[i])return;
+  tasks[i].active=tasks[i].active===false?true:false;
+  await ST.set('sponsorTasks',tasks);
+  rASponsors();toast(tasks[i].active?'▶ Активирован':'⏸ На паузе');
+}
+
+async function adminDeleteSponsor(i){
+  if(!canDo('sponsors'))return;
+  const tasks=await ST.get('sponsorTasks')||[];
+  const name=tasks[i]?.name||'канал';
+  tasks.splice(i,1);
+  await ST.set('sponsorTasks',tasks);
+  toast('🗑 «'+name+'» удалён');rASponsors();
+}
+
+// ════════════════════════════════════════
+// 💎 ADMIN — ЭКОНОМИКА
+// ════════════════════════════════════════
+let _bonusXPActive=false,_bonusMoneyActive=false;
+async function rAEconomy(){
+  const el=document.getElementById('D_aeconomy');if(!el)return;
+  if(!canDo('economy')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
+  const eco=await ST.get('economy')||{moneyMult:1,xpMult:1,bonusUntil:0};
+  const now=Date.now();
+  const bonusActive=eco.bonusUntil>now;
+  const bonusLeft=bonusActive?fmtS(Math.ceil((eco.bonusUntil-now)/1000)):'';
+  el.innerHTML=`
+    <div class="admt">💎 Глобальная экономика</div>
+
+    <!-- Current state -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div class="card" style="text-align:center;padding:14px;border-color:${bonusActive?'var(--g)':'var(--br2)'}">
+        <div style="font-size:28px;margin-bottom:4px">${bonusActive?'🔥':'💤'}</div>
+        <div style="font-size:11px;font-weight:700;color:${bonusActive?'var(--g)':'var(--dm)'}">
+          ${bonusActive?'БОНУС АКТИВЕН':'Нет бонуса'}
+        </div>
+        ${bonusActive?`<div style="font-size:10px;color:var(--dm);margin-top:4px">Осталось: ${bonusLeft}</div>`:''}
+      </div>
+      <div class="card" style="text-align:center;padding:14px">
+        <div style="font-size:20px;font-weight:700;color:var(--g);margin-bottom:4px">x${eco.moneyMult||1}</div>
+        <div style="font-size:10px;color:var(--dm)">Множитель денег</div>
+      </div>
+    </div>
+
+    <!-- Double income -->
+    <div class="card mb8">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">🔥 Двойной доход</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[1,2,4,6,12,24].map(h=>`
+          <button class="btn btn-sm" style="background:rgba(240,180,41,.15);border-color:var(--g);color:var(--g)"
+            onclick="adminSetBonus(${h})">+${h}ч</button>`).join('')}
+        ${bonusActive?`<button class="btn btn-r btn-sm" onclick="adminClearBonus()">✕ Отменить</button>`:''}
+      </div>
+    </div>
+
+    <!-- Money multiplier -->
+    <div class="card mb8">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">💵 Множитель денег (глобальный)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[1,1.5,2,3,5].map(m=>`
+          <button class="btn btn-sm" style="background:${(eco.moneyMult||1)===m?'rgba(240,180,41,.2)':'var(--d3)'};border-color:${(eco.moneyMult||1)===m?'var(--g)':'var(--br2)'}"
+            onclick="adminSetMult(${m})">x${m}</button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Give money to all -->
+    <div class="card mb8">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">💸 Раздать всем</div>
+      <div style="display:flex;gap:6px">
+        <input class="inp" id="ecoGiveAmt" type="number" placeholder="Сумма $" style="flex:1">
+        <button class="btn btn-g" onclick="adminGiveAll()">💸 РАЗДАТЬ</button>
+      </div>
+    </div>
+
+    <!-- Reset casino -->
+    <div class="card">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">🎰 Сброс казино</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:8px">Сбрасывает историю выигрышей, возобновляет джекпот лотереи</div>
+      <button class="btn btn-r btn-full" onclick="adminResetCasino()">⚠️ СБРОСИТЬ КАЗИНО</button>
+    </div>`;
+}
+
+async function adminSetBonus(hours){
+  if(!canDo('economy'))return;
+  const eco=await ST.get('economy')||{moneyMult:1};
+  eco.bonusUntil=Date.now()+hours*3600000;
+  eco.bonusHours=hours;
+  await ST.set('economy',eco);
+  window.drugBonus=true;window.bonusXP=true;
+  await pushFeed('🔥',`<b>[ADMIN]</b> 🔥 Двойной доход на ${hours} ч! Зарабатывайте больше!`);
+  toast(`🔥 Двойной доход активирован на ${hours}ч!`);sfx('win');haptic('heavy');rAEconomy();
+}
+async function adminClearBonus(){
+  const eco=await ST.get('economy')||{};eco.bonusUntil=0;
+  await ST.set('economy',eco);window.drugBonus=false;window.bonusXP=false;
+  toast('Бонус отменён');rAEconomy();
+}
+async function adminSetMult(m){
+  if(!canDo('economy'))return;
+  const eco=await ST.get('economy')||{};eco.moneyMult=m;
+  await ST.set('economy',eco);
+  await pushFeed('💎',`<b>[ADMIN]</b> Множитель денег установлен: x${m}`);
+  toast(`💵 Множитель x${m} активирован`);rAEconomy();
+}
+async function adminGiveAll(){
+  if(!canDo('economy'))return;
+  const amt=parseInt(document.getElementById('ecoGiveAmt')?.value)||0;
+  if(amt<1){toast('Введи сумму!',1);return;}
+  const players=await ST.get('players')||{};
+  Object.values(players).forEach(p=>{p.money=(p.money||0)+amt;});
+  await ST.set('players',players);
+  await pushFeed('💸',`<b>[ADMIN]</b> Всем игрокам выдано ${fmt(amt)}$! 🎁`);
+  toast(`💸 ${fmt(amt)}$ выдано всем!`);sfx('win');haptic('heavy');
+}
+async function adminResetCasino(){
+  if(!canDo('economy'))return;
+  await ST.set('lottery',{tickets:[],lastDraw:Date.now(),jackpot:10000});
+  toast('🎰 Казино сброшено, джекпот = 10 000$');rAEconomy();
+}
+
+// ════════════════════════════════════════
+// 🏆 ADMIN — СЕЗОН
+// ════════════════════════════════════════
+function rASeason(){
+  const el=document.getElementById('D_aseason');if(!el)return;
+  if(!canDo('season')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
+  const season=W.season||{num:1,start:Date.now(),end:Date.now()+30*864e5};
+  const now=Date.now();
+  const daysLeft=Math.max(0,Math.ceil((season.end-now)/864e5));
+  const daysTotal=Math.ceil((season.end-season.start)/864e5);
+  const pct=Math.min(100,Math.floor((now-season.start)/(season.end-season.start)*100));
+  // Top orgs
+  const orgScores=Object.values(W.orgs||{}).map(o=>({
+    ...o, sc:Object.values(P||{}).filter(p=>p.orgId===o.id).reduce((s,p)=>s+(p.score||0),0)
+  })).sort((a,b)=>b.sc-a.sc).slice(0,5);
+  el.innerHTML=`
+    <div class="admt">🏆 Сезон #${season.num}</div>
+    <div class="card mb8">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:11px;color:var(--dm)">Прогресс сезона</span>
+        <span style="font-size:11px;color:var(--g)">${pct}%</span>
+      </div>
+      <div style="background:var(--dk);border-radius:3px;height:6px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--g),var(--cy));border-radius:3px"></div>
+      </div>
+      <div class="fb">
+        <span style="font-size:10px;color:var(--dm)">📅 ${new Date(season.start).toLocaleDateString('ru')}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--g)">🗓️ Осталось: ${daysLeft} дн.</span>
+        <span style="font-size:10px;color:var(--dm)">${new Date(season.end).toLocaleDateString('ru')}</span>
+      </div>
+    </div>
+
+    <!-- Top orgs -->
+    <div class="card mb8">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--dm);margin-bottom:8px">ТОП ОРГАНИЗАЦИЙ</div>
+      ${orgScores.length?orgScores.map((o,i)=>`
+        <div class="fb mb5">
+          <div class="fc" style="gap:8px">
+            <span style="font-size:16px;width:24px;text-align:center">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
+            <span style="font-size:13px;font-weight:700">${o.emblem} ${o.name}</span>
+          </div>
+          <span class="tag tg">${fmt(o.sc)} очков</span>
+        </div>`).join(''):'<div class="empty">Нет орг</div>'}
+    </div>
+
+    <!-- Season rewards -->
+    <div class="card mb8">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--dm);margin-bottom:8px">НАГРАДЫ СЕЗОНА</div>
+      <div style="font-size:11px;color:var(--dm)">При завершении сезона выдаётся автоматически</div>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
+        <div class="fb"><span>🥇 1 место</span><span class="tag tg">+10 000$ · +500 репы</span></div>
+        <div class="fb"><span>🥈 2 место</span><span class="tag tg">+5 000$ · +250 репы</span></div>
+        <div class="fb"><span>🥉 3 место</span><span class="tag tg">+2 500$ · +100 репы</span></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card mb8">
+      <div style="font-weight:700;font-size:13px;margin-bottom:8px">⏰ Продлить сезон</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[7,14,30].map(d=>`<button class="btn btn-sm btn-g" onclick="adminExtendSeason(${d})">+${d} дней</button>`).join('')}
+      </div>
+    </div>
+    <button class="btn btn-r btn-full" onclick="adminEndSeason()" style="margin-bottom:8px">
+      ⚠️ ЗАВЕРШИТЬ СЕЗОН СЕЙЧАС (с выдачей наград)
+    </button>`;
+}
+
+async function adminExtendSeason(days){
+  if(!canDo('season'))return;
+  W.season.end+=days*864e5;
+  await saveAll();
+  toast(`📅 Сезон продлён на ${days} дней`);rASeason();
+}
+
+async function adminEndSeason(){
+  if(!canDo('season'))return;
+  // Give rewards to top 3 orgs
+  const orgScores=Object.values(W.orgs||{}).map(o=>({
+    id:o.id,sc:Object.values(P||{}).filter(p=>p.orgId===o.id).reduce((s,p)=>s+(p.score||0),0)
+  })).sort((a,b)=>b.sc-a.sc);
+  const rewards=[{m:10000,r:500},{m:5000,r:250},{m:2500,r:100}];
+  orgScores.slice(0,3).forEach((org,i)=>{
+    Object.values(P).filter(p=>p.orgId===org.id).forEach(p=>{
+      p.money=(p.money||0)+rewards[i].m;
+      p.rep=(p.rep||0)+rewards[i].r;
+    });
+  });
+  // New season
+  W.season={num:(W.season?.num||1)+1,start:Date.now(),end:Date.now()+30*864e5};
+  // Reset scores
+  Object.values(P).forEach(p=>{p.score=0;});
+  Object.values(W.orgs).forEach(o=>{o.score=0;});
+  await saveAll();
+  await pushFeed('🏆',`<b>Сезон ${W.season.num-1} завершён!</b> Начинается новый сезон #${W.season.num}!`);
+  toast(`🏆 Сезон завершён! Начат сезон #${W.season.num}`);sfx('win');haptic('heavy');
+}
+
+// ════════════════════════════════════════
+// 🚔 ADMIN — ПОЛИЦИЯ
+// ════════════════════════════════════════
+function rAPolice(){
+  const el=document.getElementById('D_apolice');if(!el)return;
+  if(!canDo('police')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
+  const players=Object.values(P||{});
+  const wanted=players.filter(p=>(p.wanted||0)>0).sort((a,b)=>b.wanted-a.wanted);
+  el.innerHTML=`
+    <div class="admt">🚔 Полицейское управление</div>
+
+    <!-- Quick actions -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="btn btn-r" onclick="adminPoliceRaid()" style="padding:14px;font-size:12px">
+        🚨 ГОРОДСКОЙ РЕЙД<br><span style="font-size:10px;font-weight:400">+2★ всем</span>
+      </button>
+      <button class="btn btn-g" onclick="adminPoliceAmnesty()" style="padding:14px;font-size:12px">
+        🕊️ АМНИСТИЯ<br><span style="font-size:10px;font-weight:400">★=0 всем</span>
+      </button>
+    </div>
+
+    <!-- Wanted players -->
+    <div class="card mb8">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--r);margin-bottom:8px">
+        В РОЗЫСКЕ (${wanted.length})
+      </div>
+      ${wanted.length?wanted.slice(0,10).map(p=>`
+        <div class="fb mb6" style="padding:6px 0;border-bottom:1px solid var(--br2)">
+          <div class="fc" style="gap:8px">
+            <span style="font-size:16px">${p.avatar||'👤'}</span>
+            <div>
+              <div style="font-size:12px;font-weight:700">${p.name}</div>
+              <div style="font-size:10px;color:var(--dm)">Lvl${p.level||1}</div>
+            </div>
+          </div>
+          <div class="fc" style="gap:6px">
+            <span style="color:var(--r);font-weight:700">★${p.wanted}</span>
+            <button class="btn btn-g btn-sm" onclick="adminClearWanted('${p.id}')">Снять</button>
+          </div>
+        </div>`).join('')
+      :'<div class="empty">Все чисты ✅</div>'}
+    </div>
+
+    <!-- District police level -->
+    <div class="card">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--dm);margin-bottom:8px">
+        УРОВЕНЬ ПОЛИЦИИ В РАЙОНАХ
+      </div>
+      ${Object.entries(W.districts||{}).map(([id,d])=>`
+        <div class="fb mb5">
+          <span style="font-size:11px">${d.icon} ${d.name}</span>
+          <div class="fc" style="gap:4px">
+            <button onclick="adminSetPolice('${id}',Math.max(0,${d.police||0}-1))"
+              style="width:26px;height:26px;background:var(--d3);border:1px solid var(--br2);border-radius:6px;cursor:pointer">−</button>
+            <span style="font-size:12px;font-weight:700;width:20px;text-align:center;color:${(d.police||0)>3?'var(--r)':(d.police||0)>1?'var(--g)':'var(--dm)'}">${d.police||0}</span>
+            <button onclick="adminSetPolice('${id}',Math.min(5,${d.police||0}+1))"
+              style="width:26px;height:26px;background:var(--d3);border:1px solid var(--br2);border-radius:6px;cursor:pointer">+</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function adminPoliceRaid(){
+  if(!canDo('police'))return;
+  Object.values(P).forEach(p=>{p.wanted=(p.wanted||0)+2;});
+  await saveAll();
+  await pushFeed('🚨','<b>[ADMIN]</b> 🚨 Полицейский рейд по всему городу! Все получили +2★ розыска!');
+  toast('🚨 Рейд объявлен! +2★ всем');sfx('fail');haptic('heavy');rAPolice();
+}
+async function adminPoliceAmnesty(){
+  if(!canDo('police'))return;
+  Object.values(P).forEach(p=>{p.wanted=0;p.inJail=false;p.jailUntil=0;});
+  await saveAll();
+  await pushFeed('🕊️','<b>[ADMIN]</b> 🕊️ Объявлена амнистия! Все розыски сняты, все освобождены!');
+  toast('🕊️ Амнистия! Все чисты');sfx('win');haptic('heavy');rAPolice();
+}
+async function adminClearWanted(pid){
+  if(!canDo('police'))return;
+  const p=P[pid];if(!p)return;
+  p.wanted=0;p.inJail=false;p.jailUntil=0;
+  await saveAll();toast('✅ Розыск снят с '+p.name);rAPolice();
+}
+async function adminSetPolice(distId,level){
+  if(!canDo('police'))return;
+  if(W.districts[distId])W.districts[distId].police=level;
+  await saveAll();rAPolice();
+}
+
+// ════════════════════════════════════════
+// 📋 ADMIN — ЛОГИ
+// ════════════════════════════════════════
+function rALogs(){
+  const el=document.getElementById('D_alogs');if(!el)return;
+  if(!canDo('logs')){el.innerHTML='<div class="empty">Нет прав</div>';return;}
+  // Collect logs from all players tx history
+  const allLogs=[];
+  Object.values(P||{}).forEach(p=>{
+    (p.txHistory||[]).slice(0,10).forEach(tx=>{
+      allLogs.push({...tx,player:p.name,avatar:p.avatar||'👤',pid:p.id});
+    });
+  });
+  allLogs.sort((a,b)=>b.ts-a.ts);
+  const feed=FEED||[];
+  el.innerHTML=`
+    <div class="admt">📋 Лента событий (${feed.length})</div>
+    <div class="card mb10" style="padding:8px 0;max-height:280px;overflow-y:auto">
+      ${feed.slice(0,30).map(f=>`
+        <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid var(--br2);align-items:flex-start">
+          <span style="font-size:16px;flex-shrink:0">${f.icon}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;line-height:1.4">${f.text}</div>
+            <div style="font-size:9px;color:var(--dm);margin-top:2px">${fmtAge(f.ts)} назад</div>
+          </div>
+        </div>`).join('')||'<div class="empty">Лента пуста</div>'}
+    </div>
+
+    <div class="admt">💸 Последние транзакции игроков</div>
+    <div class="card" style="padding:8px 0;max-height:300px;overflow-y:auto">
+      ${allLogs.slice(0,40).map(t=>`
+        <div style="display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid var(--br2);align-items:center">
+          <span style="font-size:14px">${t.avatar}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:10px;font-weight:700;color:var(--dm)">${t.player}</div>
+            <div style="font-size:11px">${t.label}</div>
+          </div>
+          <span style="font-size:12px;font-weight:700;flex-shrink:0;color:${t.amount>0?'var(--gr)':'var(--r)'}">
+            ${t.amount>0?'+':''}${fmt(t.amount)}$
+          </span>
+          <span style="font-size:9px;color:var(--dm);white-space:nowrap">${fmtAge(t.ts)}</span>
+        </div>`).join('')||'<div class="empty">Нет транзакций</div>'}
+    </div>
+
+    <button class="btn btn-r btn-full mt8" onclick="adminClearFeed()">🗑 Очистить ленту событий</button>`;
+}
+
+async function adminClearFeed(){
+  if(!canDo('logs'))return;
+  FEED=[];await ST.set('feed',[]);
+  toast('🗑 Лента очищена');rALogs();
+}
+
+// ════════════════════════════════════════
 // 🚔 JAIL SYSTEM
 // ════════════════════════════════════════
 const JAIL_DURATION = 5 * 60 * 1000; // 5 min
@@ -4286,20 +5290,39 @@ function rHistory(){
   if(!txs.length){
     el.innerHTML = '<div class="empty">Нет транзакций</div>'; return;
   }
-  const total = txs.reduce((s,t) => s + t.amount, 0);
+  const income = txs.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+  const expense = txs.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0);
+  const net = income+expense;
   el.innerHTML = `
-    <div class="card mb8" style="display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:11px;color:var(--dm)">Всего транзакций: ${txs.length}</span>
-      <span class="${total>=0?'tx-plus':'tx-minus'}">${total>=0?'+':''}${fmt(total)}$</span>
+    <!-- Summary card -->
+    <div class="card mb8">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--br2);border-radius:8px;overflow:hidden;margin-bottom:0">
+        <div style="background:var(--d2);padding:10px 8px;text-align:center">
+          <div style="font-size:9px;color:var(--dm);letter-spacing:.5px;margin-bottom:4px">ПРИХОД</div>
+          <div style="font-size:14px;font-weight:700;color:var(--gr)">+${fmt(income)}$</div>
+        </div>
+        <div style="background:var(--d2);padding:10px 8px;text-align:center;border-left:1px solid var(--br2);border-right:1px solid var(--br2)">
+          <div style="font-size:9px;color:var(--dm);letter-spacing:.5px;margin-bottom:4px">РАСХОД</div>
+          <div style="font-size:14px;font-weight:700;color:var(--r)">${fmt(expense)}$</div>
+        </div>
+        <div style="background:var(--d2);padding:10px 8px;text-align:center">
+          <div style="font-size:9px;color:var(--dm);letter-spacing:.5px;margin-bottom:4px">ИТОГО</div>
+          <div style="font-size:14px;font-weight:700;color:${net>=0?'var(--g)':'var(--r)'}">${net>=0?'+':''}${fmt(net)}$</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:9px;color:var(--dm);margin-top:8px">
+        ${txs.length} транзакций · последние 100
+      </div>
     </div>
-    <div class="card" style="padding:8px 12px">
+    <!-- Transaction list -->
+    <div class="card" style="padding:4px 0">
       ${txs.map(t=>`
-        <div class="tx-row">
-          <span class="${t.amount>=0?'tx-plus':'tx-minus'}" style="min-width:70px;text-align:right">
-            ${t.amount>=0?'+':''}${fmt(t.amount)}$
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--br2)">
+          <span style="font-size:13px;font-weight:700;min-width:72px;text-align:right;color:${t.amount>0?'var(--gr)':t.amount<0?'var(--r)':'var(--dm)'}">
+            ${t.amount>0?'+':t.amount<0?'':''}${fmt(t.amount)}$
           </span>
-          <span style="flex:1;color:var(--tx)">${t.label}</span>
-          <span style="font-size:9px;color:var(--dm);font-family:'Share Tech Mono',monospace">${fmtAge(t.ts)}</span>
+          <span style="flex:1;font-size:11px;color:var(--tx);line-height:1.3">${t.label}</span>
+          <span style="font-size:9px;color:var(--dm);white-space:nowrap;font-family:'Share Tech Mono',monospace">${fmtAge(t.ts)}</span>
         </div>`).join('')}
     </div>`;
 }
@@ -4384,143 +5407,6 @@ function rAchieve(){
 // ════════════════════════════════════════
 // 💰 BETS SYSTEM
 // ════════════════════════════════════════
-async function rBets(){
-  const el = document.getElementById('D_bets'); if(!el) return;
-  const bets = await ST.get('bets') || [];
-  if(!bets.length){
-    el.innerHTML = '<div class="empty">Нет активных ставок</div>'; return;
-  }
-  el.innerHTML = bets.map(b=>{
-    const myBet = b.bettors?.find(x=>x.pid===PID);
-    const totalA = b.bettors?.filter(x=>x.side==='A').reduce((s,x)=>s+x.amount,0)||0;
-    const totalB = b.bettors?.filter(x=>x.side==='B').reduce((s,x)=>s+x.amount,0)||0;
-    const oddsA = totalB>0 ? (totalA+totalB)/Math.max(totalA,1) : 2;
-    const oddsB = totalA>0 ? (totalA+totalB)/Math.max(totalB,1) : 2;
-    const isCreator = b.creatorId === PID;
-    const isClosed = b.closed;
-    return `<div class="bet-card">
-      <div style="font-weight:700;font-size:13px;margin-bottom:4px">${b.title}</div>
-      <div style="font-size:9px;color:var(--dm);margin-bottom:8px">
-        Банк: ${fmt(totalA+totalB)}$ · ${b.type==='war'?'⚔️ Война':b.type==='district'?'🏙️ Район':'🎯 Событие'}
-        ${isClosed?'· <span style="color:var(--r)">ЗАКРЫТА</span>':''}
-      </div>
-      <div class="bet-vs">
-        <div class="bet-side${myBet?.side==='A'?' sel':''}" onclick="placeBet('${b.id}','A')">
-          <div>ДА / А</div>
-          <div class="bet-odds">x${oddsA.toFixed(2)}</div>
-          <div style="font-size:10px;color:var(--dm)">${fmt(totalA)}$</div>
-        </div>
-        <div style="font-size:12px;color:var(--dm);flex-shrink:0">VS</div>
-        <div class="bet-side${myBet?.side==='B'?' sel':''}" onclick="placeBet('${b.id}','B')">
-          <div>НЕТ / Б</div>
-          <div class="bet-odds">x${oddsB.toFixed(2)}</div>
-          <div style="font-size:10px;color:var(--dm)">${fmt(totalB)}$</div>
-        </div>
-      </div>
-      ${myBet?`<div style="font-size:10px;color:var(--g);text-align:center">✅ Твоя ставка: ${fmt(myBet.amount)}$ на ${myBet.side}</div>`:''}
-      ${isCreator&&!isClosed?`<div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn btn-g btn-sm" style="flex:1" onclick="resolveBet('${b.id}','A')">✅ А победил</button>
-        <button class="btn btn-g btn-sm" style="flex:1" onclick="resolveBet('${b.id}','B')">✅ Б победил</button>
-        <button class="btn btn-r btn-sm" onclick="cancelBet('${b.id}')">✕</button>
-      </div>`:''}
-    </div>`;
-  }).join('');
-}
-
-async function createBet(){
-  const title = document.getElementById('betTitle')?.value.trim();
-  const amount = parseInt(document.getElementById('betAmount')?.value)||0;
-  const type = document.getElementById('betType')?.value||'custom';
-  if(!title){ toast('Введи название!',1); return; }
-  if(amount < 100){ toast('Минимум 100$!',1); return; }
-  if(me.money < amount){ toast('Недостаточно денег!',1); return; }
-  me.money -= amount;
-  addTx(-amount, '💰 Ставка: '+title);
-  saveMe(); updateHdr();
-  const bets = await ST.get('bets') || [];
-  const bet = {
-    id: 'b'+Date.now(), title, type, creatorId: PID, creatorName: me.name,
-    bettors:[{pid:PID, name:me.name, side:'A', amount}],
-    created: Date.now(), closed: false
-  };
-  bets.unshift(bet);
-  await ST.set('bets', bets.slice(0,30));
-  await pushFeed('💰', `<b>${me.name}</b> открыл ставку: «${title}»`);
-  document.getElementById('betTitle').value='';
-  document.getElementById('betAmount').value='';
-  sfx('coins'); haptic('light');
-  toast('✅ Ставка создана!'); rBets();
-}
-
-let _betPending = null; // {betId, side, bets}
-
-async function placeBet(betId, side){
-  const bets = await ST.get('bets') || [];
-  const b = bets.find(x=>x.id===betId);
-  if(!b||b.closed){ toast('Ставка закрыта!',1); return; }
-  if(b.bettors?.find(x=>x.pid===PID)){ toast('Ты уже сделал ставку!',1); return; }
-  _betPending = {betId, side, bets, title:b.title};
-  const sideLabel = side==='A' ? '✅ ДА / А победит' : '❌ НЕТ / Б победит';
-  document.getElementById('mBetBody').innerHTML=`
-    <div style="font-size:13px;margin-bottom:6px;color:var(--dm)">${b.title}</div>
-    <div class="tag tg" style="margin-bottom:10px">Твоя сторона: ${sideLabel}</div>
-    <div style="font-size:11px;color:var(--dm)">Баланс: <b style="color:var(--g)">${fmt(me.money)}$</b></div>`;
-  const inp = document.getElementById('betAmtInp');
-  if(inp){ inp.value=''; inp.max=me.money; }
-  om('mBet');
-  haptic('light');
-}
-
-async function confirmBet(){
-  if(!_betPending){ cm('mBet'); return; }
-  const amount = parseInt(document.getElementById('betAmtInp')?.value)||0;
-  if(amount<50){ toast('Минимум 50$!',1); return; }
-  if(me.money<amount){ toast('Недостаточно денег!',1); return; }
-  const {betId, side, bets, title} = _betPending;
-  const b = bets.find(x=>x.id===betId);
-  if(!b){ toast('Ставка не найдена!',1); cm('mBet'); return; }
-  me.money -= amount;
-  addTx(-amount, `💰 Ставка ${side} на «${title}»`);
-  saveMe(); updateHdr();
-  if(!b.bettors) b.bettors=[];
-  b.bettors.push({pid:PID, name:me.name, side, amount});
-  await ST.set('bets', bets);
-  _betPending = null;
-  cm('mBet');
-  sfx('coins'); haptic('medium');
-  toast('✅ Ставка '+amount+'$ принята!'); rBets();
-}
-
-async function resolveBet(betId, winner){
-  const bets = await ST.get('bets') || [];
-  const b = bets.find(x=>x.id===betId);
-  if(!b||b.creatorId!==PID){ toast('Нет прав!',1); return; }
-  b.closed = true; b.winner = winner;
-  const totalPool = b.bettors.reduce((s,x)=>s+x.amount,0);
-  const winners = b.bettors.filter(x=>x.side===winner);
-  const winPool = winners.reduce((s,x)=>s+x.amount,0)||1;
-  // Pay out winners
-  winners.forEach(w=>{
-    const payout = Math.floor(totalPool * (w.amount/winPool));
-    if(w.pid===PID){ me.money+=payout; addTx(payout,`🎲 Выигрыш ставки «${b.title}»`); me.betsWon=(me.betsWon||0)+1; saveMe(); updateHdr(); }
-  });
-  await ST.set('bets', bets);
-  await pushFeed('🎲', `Ставка «${b.title}» завершена! Победитель: <b>${winner}</b>. Банк: ${fmt(totalPool)}$`);
-  sfx('win'); haptic('medium');
-  toast('✅ Ставка завершена!'); rBets(); checkAchievements();
-}
-
-async function cancelBet(betId){
-  const bets = await ST.get('bets') || [];
-  const b = bets.find(x=>x.id===betId);
-  if(!b||b.creatorId!==PID){ toast('Нет прав!',1); return; }
-  // Refund all
-  b.bettors?.forEach(w=>{ if(w.pid===PID){ me.money+=w.amount; addTx(w.amount,'↩️ Возврат ставки'); saveMe(); updateHdr(); } });
-  b.closed=true; b.cancelled=true;
-  await ST.set('bets', bets);
-  toast('↩️ Ставка отменена, деньги возвращены'); rBets();
-}
-
 // ── HOOK SOUNDS & ACHIEVEMENTS INTO EXISTING FLOWS ──
 const _origGainXP = typeof gainXP === 'function' ? gainXP : null;
 function gainXPWithSfx(amount){
@@ -4670,6 +5556,9 @@ const DEFAULT_SPONSOR_TASKS = [
 ];
 
 async function getSponsorTasks(){
+  // Admin-managed tasks take priority, fall back to defaults
+  const adminTasks = await ST.get('sponsorTasks') || [];
+  if(adminTasks.length) return adminTasks.filter(t=>t.active!==false);
   const custom = await ST.get('sponsor_tasks') || [];
   return [...DEFAULT_SPONSOR_TASKS, ...custom];
 }
