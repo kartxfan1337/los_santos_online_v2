@@ -851,8 +851,14 @@ async function syncAll(){
   W    = worldData   || defWorld();
   P    = playersData || {};
   ELEC = elecData    || defElection();
-  // First run — save world to Supabase so all players share it
-  if(isNewWorld) await ST.set('world', W);
+  // Repair: merge missing districts and fix missing zone fields
+  const def=defWorld();
+  let worldChanged=isNewWorld;
+  Object.entries(def.districts).forEach(([id,d])=>{
+    if(!W.districts[id]){W.districts[id]=d;worldChanged=true;}
+    else if(!W.districts[id].zone){W.districts[id].zone=d.zone;worldChanged=true;}
+  });
+  if(worldChanged) await ST.set('world', W);
   try{ CHAT = (await loadChat()) || []; }catch{ CHAT=[]; }
   try{ FEED = (await loadFeed()) || []; }catch{ FEED=[]; }
   me = P[PID] || defPlayer();
@@ -986,10 +992,17 @@ const BUILDINGS={
 function rCity(){
   const mg=document.getElementById('D_map');if(!mg)return;
 
-  // Group districts by zone in defined order
+  // Safety: ensure all districts exist and have zone field
+  const def=defWorld();
+  Object.entries(def.districts).forEach(([id,d])=>{
+    if(!W.districts[id])W.districts[id]=d;
+    else if(!W.districts[id].zone)W.districts[id].zone=d.zone; // fix missing zone
+  });
+
   const zoneOrder=['city','coast','suburb','industry'];
   const distByZone={};
   Object.entries(W.districts).forEach(([id,d])=>{
+    if(!d.zone)d.zone='city'; // fallback zone
     if(!distByZone[d.zone])distByZone[d.zone]=[];
     distByZone[d.zone].push([id,d]);
   });
@@ -5700,7 +5713,7 @@ function gainXPWithSfx(amount){
 
 // Build referral link using Telegram start param
 function getRefLink(){
-  const botName = 'LOS_SANTOS_BOT'; // замени на имя своего бота
+  const botName = 'los_santos_online_bot'; // замени на имя своего бота
   return `https://t.me/${botName}?start=ref_${PID}`;
 }
 
@@ -5827,8 +5840,8 @@ function shareRefLink(){
 const DEFAULT_SPONSOR_TASKS = [
   {
     id:'st_example1', icon:'📢', title:'Канал разработчика',
-    desc:'Подпишись на канал @kartxfan_games',
-    url:'https://t.me/kartxfan_games',
+    desc:'Подпишись на канал @los_santos_online',
+    url:'https://t.me/los_santos_online',
     reward:{money:3000, energy:5, sp:1},
     active:true
   },
