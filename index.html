@@ -541,6 +541,12 @@ body{display:flex;flex-direction:column}
 <div id="toast"></div>
 
 <!-- MODALS -->
+<div class="mo" id="mBizEvent" onclick="cm('mBizEvent');bizEventCleanup()">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mtitle" id="mBizEventT">⚡ Событие</div>
+    <div id="mBizEventB"></div>
+  </div>
+</div>
 <div class="mo" id="mBet" onclick="cm('mBet')">
   <div class="mbox" onclick="event.stopPropagation()">
     <div class="mtitle">💰 Сделать ставку</div>
@@ -1279,39 +1285,312 @@ function upgradeSkill(id){
 }
 
 // ── PROPERTY ──
+// ══════════════════════════════════════
+// 🏠 БИЗНЕС — полноценная система
+// ══════════════════════════════════════
 const PROPS=[
-  {id:'apt',ico:'🏠',name:'Квартира',desc:'Стартовое жильё',price:1500,income:50,tier:'t1'},
-  {id:'garage',ico:'🏎️',name:'Гараж',desc:'+10% к гонкам',price:2500,income:80,tier:'t1'},
-  {id:'bar',ico:'🍺',name:'Бар «Котёл»',desc:'Легальный бизнес',price:4000,income:150,tier:'t2'},
-  {id:'warehouse',ico:'🏭',name:'Склад',desc:'Контрабандный бизнес',price:7000,income:250,tier:'t2'},
-  {id:'casino_share',ico:'🎰',name:'Доля в казино',desc:'% от ставок',price:15000,income:400,tier:'t3'},
-  {id:'mansion',ico:'🏰',name:'Особняк',desc:'Статус + доход',price:25000,income:600,tier:'t3'},
+  // TIER 1 — стартовые
+  {id:'apt',      ico:'🏠', name:'Квартира',     desc:'Стартовое жильё',           price:1500,  income:50,  tier:'t1', minLevel:1,
+   spec:{type:'home',    bonus:'−10% налог на имущество'},
+   upgrades:['Ремонт','Мебель','Охрана'],  upgradeCost:[800,1500,2500],   upgradeInc:[20,35,50]},
+  {id:'garage',   ico:'🏎️', name:'Гараж',         desc:'+15% к наградам за угон',   price:2500,  income:80,  tier:'t1', minLevel:1,
+   spec:{type:'boost',   bonus:'+15% к наградам угона'},
+   upgrades:['Подъёмник','Мастерская','Тюнинг'], upgradeCost:[1200,2200,4000], upgradeInc:[30,50,80]},
+  {id:'pharmacy', ico:'💊', name:'Аптека',         desc:'Легальная/нелегальная',     price:3500,  income:120, tier:'t1', minLevel:2,
+   spec:{type:'drug',    bonus:'−20% риск трафика'},
+   upgrades:['Запасы','Лаборатория','Сеть'], upgradeCost:[1500,3000,5000], upgradeInc:[40,80,120]},
+
+  // TIER 2 — средний бизнес
+  {id:'restaurant',ico:'🍕',name:'Ресторан',       desc:'Доход растёт с репутацией', price:6000,  income:150, tier:'t2', minLevel:4,
+   spec:{type:'rep',     bonus:'Доход × репа/100 (макс x3)'},
+   upgrades:['Кухня','Зал','Звёздный шеф'], upgradeCost:[2500,4000,7000], upgradeInc:[60,100,160]},
+  {id:'bar',      ico:'🍺', name:'Бар «Котёл»',    desc:'Легальный бизнес',          price:4000,  income:150, tier:'t2', minLevel:3,
+   spec:{type:'social',  bonus:'+20 репы в день'},
+   upgrades:['Ремонт','Музыка','VIP зал'], upgradeCost:[1800,3200,5500], upgradeInc:[50,90,140]},
+  {id:'taxipark',  ico:'🚕', name:'Таксопарк',      desc:'Пассивный доход от трафика',price:8000,  income:200, tier:'t2', minLevel:5,
+   spec:{type:'passive', bonus:'+30$ за каждую работу таксиста'},
+   upgrades:['Машины','Диспетчер','Приложение'], upgradeCost:[3000,5000,8000], upgradeInc:[70,120,180]},
+
+  // TIER 3 — крупный бизнес
+  {id:'warehouse', ico:'🏭', name:'Склад',          desc:'Контрабандный бизнес',      price:7000,  income:250, tier:'t2', minLevel:6,
+   spec:{type:'drug',    bonus:'+1 слот для груза'},
+   upgrades:['Стеллажи','Безопасность','Холодильники'], upgradeCost:[3500,6000,10000], upgradeInc:[90,150,220]},
+  {id:'bank',      ico:'🏦', name:'Банк',           desc:'% на хранящиеся деньги',    price:20000, income:300, tier:'t3', minLevel:10,
+   spec:{type:'bank',    bonus:'+0.5% к балансу каждый час'},
+   upgrades:['Сейфы','IT-система','Отмывание'], upgradeCost:[8000,15000,25000], upgradeInc:[100,200,350]},
+  {id:'casino_share',ico:'🎰',name:'Доля в казино', desc:'% от всех ставок',          price:15000, income:400, tier:'t3', minLevel:8,
+   spec:{type:'casino',  bonus:'+25% к выигрышам казино'},
+   upgrades:['Автоматы','Покерный зал','VIP столы'], upgradeCost:[6000,12000,20000], upgradeInc:[150,250,400]},
+  {id:'gameclub',  ico:'🎮', name:'Игровой клуб',   desc:'Бонус к казино и досугу',   price:12000, income:280, tier:'t3', minLevel:7,
+   spec:{type:'casino',  bonus:'+10% к выигрышам всех игр'},
+   upgrades:['Консоли','VR зал','Турниры'], upgradeCost:[5000,9000,15000], upgradeInc:[100,180,280]},
+  {id:'security_co',ico:'🛡️',name:'ЧОП',           desc:'Снижает розыск',            price:18000, income:350, tier:'t3', minLevel:9,
+   spec:{type:'police',  bonus:'Розыск снижается в 2 раза быстрее'},
+   upgrades:['Снаряжение','Транспорт','Связи в полиции'], upgradeCost:[7000,12000,20000], upgradeInc:[120,200,300]},
+  {id:'mansion',   ico:'🏰', name:'Особняк',         desc:'Статус + макс доход',       price:30000, income:600, tier:'t3', minLevel:15,
+   spec:{type:'prestige','bonus':'Все бонусы +10%'},
+   upgrades:['Бассейн','Охрана','Вертолётная площадка'], upgradeCost:[10000,18000,30000], upgradeInc:[200,350,500]},
 ];
-function rProp(){
-  const owned=me.props||[];
-  const totalInc=PROPS.filter(p=>owned.includes(p.id)).reduce((s,p)=>s+p.income,0);
-  const pi=document.getElementById('D_propInc');if(pi)pi.textContent='+'+totalInc+'$/ч';
-  const el=document.getElementById('D_myProps');if(el)el.innerHTML=owned.length?PROPS.filter(p=>owned.includes(p.id)).map(p=>`
-    <div class="propcard ${p.tier}">
-      <div class="fc" style="gap:8px;margin-bottom:5px"><div style="font-size:24px">${p.ico}</div>
-      <div><div style="font-weight:700;font-size:13px">${p.name}</div><div style="font-size:10px;color:var(--dm)">${p.desc}</div></div></div>
-      <span class="tag tgr">+${p.income}$/ч</span>
-    </div>`).join(''):'<div class="empty">Нет бизнеса</div>';
-  const el2=document.getElementById('D_propShop');if(el2)el2.innerHTML=PROPS.filter(p=>!owned.includes(p.id)).map(p=>`
-    <div class="propcard ${p.tier}">
-      <div class="fc" style="gap:8px;margin-bottom:8px"><div style="font-size:24px">${p.ico}</div>
-      <div><div style="font-weight:700;font-size:13px">${p.name}</div><div style="font-size:10px;color:var(--dm)">${p.desc}</div></div></div>
-      <div class="fb"><span class="tag tgr">+${p.income}$/ч</span>
-      <button class="btn btn-g btn-sm" onclick="buyProp('${p.id}')" ${me.money<p.price?'disabled':''}>${fmt(p.price)}$</button></div>
-    </div>`).join('');
+
+// Manager salaries per business
+const MANAGER_COST=500; // per 24h
+const MANAGER_BONUS=0.4; // +40% to income when manager hired
+
+function getPropData(id){
+  const base=PROPS.find(p=>p.id===id);
+  if(!base)return null;
+  const propState=me.propData?.[id]||{level:0,manager:false,managerHired:0};
+  let income=base.income;
+  (base.upgradeInc||[]).slice(0,propState.level).forEach(inc=>{income+=inc;});
+  if(propState.manager)income=Math.floor(income*(1+MANAGER_BONUS));
+  // Reputation bonus for restaurant
+  if(base.spec?.type==='rep'){
+    const repMult=Math.min(3,1+(me.rep||0)/100);
+    income=Math.floor(income*repMult);
+  }
+  // Bank interest
+  if(base.spec?.type==='bank'){
+    const bankBonus=Math.floor(me.money*0.005);
+    income+=bankBonus;
+  }
+  return{...base,income,level:propState.level,manager:propState.manager,managerHired:propState.managerHired};
 }
+
+function rProp(){
+  clearBizBadge();
+  const owned=me.props||[];
+  const ownedData=owned.map(id=>getPropData(id)).filter(Boolean);
+  const totalInc=ownedData.reduce((s,p)=>{
+    const pd=me.propData?.[p.id];
+    const hasEvent=pd?.event&&pd?.eventUntil>Date.now();
+    return s+(hasEvent?0:p.income);
+  },0);
+  const pi=document.getElementById('D_propInc');if(pi)pi.textContent='+'+fmt(totalInc)+'$/ч';
+
+  // Show active events at top as urgent banners
+  const eventProps=owned.filter(id=>{
+    const pd=me.propData?.[id];
+    return pd?.event&&pd?.eventUntil>Date.now();
+  });
+
+  const el=document.getElementById('D_myProps');
+  if(el){
+    let html='';
+
+    // Event banners first
+    if(eventProps.length){
+      html+=`<div style="margin-bottom:10px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--r);letter-spacing:1px;margin-bottom:6px">⚠️ ТРЕБУЕТ ВНИМАНИЯ</div>
+        ${eventProps.map(id=>{
+          const p=PROPS.find(x=>x.id===id);
+          const pd=me.propData?.[id];
+          const ev=BIZ_EVENTS.find(e=>e.id===pd?.event);
+          if(!p||!ev)return'';
+          const timeLeft=Math.max(0,Math.ceil((pd.eventUntil-Date.now())/60000));
+          return`<div style="background:rgba(230,57,80,.1);border:1.5px solid var(--r);border-radius:10px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div style="font-size:28px;flex-shrink:0">${ev.ico}</div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:13px;color:var(--r)">${ev.name}</div>
+                <div style="font-size:10px;color:var(--dm);margin-bottom:2px">${p.ico} ${p.name}</div>
+                <div style="font-size:10px;color:var(--dm)">${ev.desc}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div style="flex:1;background:var(--dk);border-radius:3px;height:4px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(100,timeLeft/180*100)}%;background:var(--r);border-radius:3px"></div>
+              </div>
+              <span style="font-size:9px;color:var(--r);white-space:nowrap">⏸ Стоит ~${timeLeft}м</span>
+            </div>
+            <button class="btn btn-r btn-full" onclick="startBizEvent('${id}')"
+              style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;padding:11px">
+              ${ev.ico} РАЗОБРАТЬСЯ!
+            </button>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    if(!ownedData.length){html+='<div class="empty">Нет бизнеса</div>';}
+    else{
+      html+=ownedData.map(p=>{
+        const pd=me.propData?.[p.id];
+        const hasEvent=pd?.event&&pd?.eventUntil>Date.now();
+        const maxLvl=(p.upgrades||[]).length;
+        const lvl=p.level||0;
+        const nextUpgrade=p.upgrades?.[lvl];
+        const nextCost=p.upgradeCost?.[lvl];
+        const canUpgrade=lvl<maxLvl&&me.money>=(nextCost||0)&&!hasEvent;
+        const tierClr={t1:'var(--bl)',t2:'var(--g)',t3:'var(--g)'}[p.tier]||'var(--g)';
+        const specEmoji={home:'🏠',boost:'⚡',drug:'💊',rep:'⭐',social:'🤝',passive:'💤',bank:'💰',casino:'🎰',police:'🛡️',prestige:'👑'}[p.spec?.type]||'✨';
+        return`
+        <div class="card mb8" style="border-left:3px solid ${hasEvent?'var(--r)':tierClr};opacity:${hasEvent?.7:1}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:28px;width:46px;height:46px;background:var(--d3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;margin-bottom:1px">${p.name}${hasEvent?' ⚠️':''}</div>
+              <div style="font-size:9px;color:var(--dm)">${specEmoji} ${p.spec?.bonus||''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:14px;font-weight:700;color:${hasEvent?'var(--r)':'var(--gr)'}">
+                ${hasEvent?'⏸ СТОИТ':'+'+fmt(p.income)+'$'}
+              </div>
+              ${!hasEvent?`<div style="font-size:9px;color:var(--dm)">в час</div>`:''}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            ${(p.upgrades||[]).map((u,i)=>`
+              <div style="flex:1;height:4px;border-radius:2px;background:${i<lvl?tierClr:'var(--dk)'}"></div>`).join('')}
+            <span style="font-size:9px;color:var(--dm);white-space:nowrap">Ур.${lvl}/${maxLvl}</span>
+          </div>
+          ${!hasEvent?`<div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${nextUpgrade?`<button class="btn btn-sm" style="flex:1;background:${canUpgrade?'rgba(240,180,41,.15)':'var(--d3)'};border-color:${canUpgrade?'var(--g)':'var(--br2)'};color:${canUpgrade?'var(--g)':'var(--dm)'}"
+              onclick="upgradeProp('${p.id}')" ${!canUpgrade?'disabled':''}>
+              🔧 ${nextUpgrade} · ${fmt(nextCost)}$
+            </button>`:'<span class="tag tg" style="flex:1;text-align:center">✅ Макс уровень</span>'}
+            <button class="btn btn-sm" style="background:${p.manager?'rgba(0,210,211,.15)':'var(--d3)'};border-color:${p.manager?'var(--cy)':'var(--br2)'};color:${p.manager?'var(--cy)':'var(--dm)'};min-width:80px"
+              onclick="toggleManager('${p.id}')">
+              ${p.manager?'👔 Менеджер':'👔 Нанять'}
+            </button>
+          </div>
+          ${p.manager?`<div style="font-size:9px;color:var(--dm);text-align:center;margin-top:5px">Менеджер: −${fmt(MANAGER_COST)}$/24ч · +40% дохода</div>`:''}
+          `:''}
+        </div>`;
+      }).join('');
+    }
+    el.innerHTML=html;
+  }
+
+  // Shop
+  const el2=document.getElementById('D_propShop');
+  if(el2){
+    const available=PROPS.filter(p=>!owned.includes(p.id));
+    const grouped={t1:[],t2:[],t3:[]};
+    available.forEach(p=>grouped[p.tier]?.push(p));
+    const tierNames={t1:'⭐ Малый бизнес',t2:'⭐⭐ Средний',t3:'⭐⭐⭐ Крупный'};
+    el2.innerHTML=Object.entries(grouped).map(([tier,props])=>props.length?`
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--dm);text-transform:uppercase;margin:10px 0 6px;padding:0 2px">${tierNames[tier]}</div>
+      ${props.map(p=>{
+        const lvlOk=(me.level||1)>=(p.minLevel||1);
+        const canBuy=me.money>=p.price&&lvlOk;
+        const specEmoji={home:'🏠',boost:'⚡',drug:'💊',rep:'⭐',social:'🤝',passive:'💤',bank:'💰',casino:'🎰',police:'🛡️',prestige:'👑'}[p.spec?.type]||'✨';
+        return`
+        <div class="card mb6" style="opacity:${lvlOk?1:.5}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:26px;width:42px;height:42px;background:var(--d3);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;margin-bottom:1px">${p.name}</div>
+              <div style="font-size:9px;color:var(--dm);margin-bottom:2px">${p.desc}</div>
+              <div style="font-size:9px;color:var(--cy)">${specEmoji} ${p.spec?.bonus}</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <span class="tag tgr">+${p.income}$/ч</span>
+              ${!lvlOk?`<span class="tag tr">Lvl${p.minLevel}</span>`:''}
+            </div>
+            <button class="btn btn-g btn-sm" onclick="buyProp('${p.id}')" ${!canBuy?'disabled':''}>${fmt(p.price)}$</button>
+          </div>
+        </div>`;
+      }).join('')}`:'').join('');
+  }
+}
+
 async function buyProp(id){
-  const p=PROPS.find(x=>x.id===id);if(!p||me.money<p.price){toast('Нет денег!',1);return;}
-  me.money-=p.price;if(!me.props)me.props=[];me.props.push(id);me.score+=Math.floor(p.price/20);
-  addTx(-p.price, p.ico+' Куплено: '+p.name);
-  saveMe();await pushFeed(p.ico,'<b>'+me.name+'</b> купил '+p.name);
+  const p=PROPS.find(x=>x.id===id);
+  if(!p){toast('Не найдено',1);return;}
+  if(me.money<p.price){toast('Нет денег!',1);return;}
+  if((me.level||1)<(p.minLevel||1)){toast('Нужен уровень '+p.minLevel+'!',1);return;}
+  me.money-=p.price;
+  if(!me.props)me.props=[];
+  me.props.push(id);
+  if(!me.propData)me.propData={};
+  me.propData[id]={level:0,manager:false,managerHired:0};
+  me.score+=Math.floor(p.price/20);
+  addTx(-p.price,p.ico+' Куплено: '+p.name);
+  saveMe();
+  await pushFeed(p.ico,'<b>'+me.name+'</b> купил «'+p.name+'»');
   sfx('coins');haptic('light');checkAchievements();
-  updateHdr();rProp();toast('🏠 '+p.name+' куплен!');
+  applyPropBonuses();
+  updateHdr();rProp();toast(p.ico+' '+p.name+' куплен!');
+}
+
+async function upgradeProp(id){
+  const p=getPropData(id);
+  if(!p)return;
+  const lvl=p.level||0;
+  const maxLvl=(p.upgrades||[]).length;
+  if(lvl>=maxLvl){toast('Максимальный уровень!',1);return;}
+  const cost=p.upgradeCost[lvl];
+  if(me.money<cost){toast('Нужно '+fmt(cost)+'$!',1);return;}
+  me.money-=cost;
+  if(!me.propData)me.propData={};
+  if(!me.propData[id])me.propData[id]={level:0,manager:false};
+  me.propData[id].level=(me.propData[id].level||0)+1;
+  addTx(-cost,'🔧 Улучшение: '+p.name+' → Ур.'+(lvl+1));
+  sfx('levelup');haptic('medium');
+  await pushFeed('🔧','<b>'+me.name+'</b> улучшил «'+p.name+'» до уровня '+(lvl+1));
+  saveMe();updateHdr();rProp();
+  toast('✅ '+p.name+' улучшен до Ур.'+(lvl+1)+'!');
+}
+
+async function toggleManager(id){
+  const p=getPropData(id);
+  if(!p)return;
+  if(!me.propData)me.propData={};
+  if(!me.propData[id])me.propData[id]={level:0,manager:false};
+  const hasManager=me.propData[id].manager;
+  if(!hasManager){
+    if(me.money<MANAGER_COST){toast('Нужно '+fmt(MANAGER_COST)+'$ (предоплата за 1 день)!',1);return;}
+    me.money-=MANAGER_COST;
+    me.propData[id].manager=true;
+    me.propData[id].managerHired=Date.now();
+    addTx(-MANAGER_COST,'👔 Менеджер нанят: '+p.name);
+    sfx('coins');haptic('light');
+    toast('👔 Менеджер нанят! Доход +40%');
+  }else{
+    me.propData[id].manager=false;
+    toast('👔 Менеджер уволен');
+  }
+  saveMe();rProp();
+}
+
+// Apply special business bonuses to game systems
+function applyPropBonuses(){
+  const owned=me.props||[];
+  // Casino bonus
+  window._propCasinoBonus=owned.includes('casino_share')?0.25:owned.includes('gameclub')?0.1:0;
+  // Drug risk reduction
+  window._propDrugBonus=owned.includes('pharmacy')||owned.includes('warehouse');
+  // Police bonus (wanted decay faster)
+  window._propPoliceBonus=owned.includes('security_co');
+  // Garage (carjack bonus)
+  window._propGarageBonus=owned.includes('garage')?0.15:0;
+  // Taxi park (job bonus)
+  window._propTaxiBonus=owned.includes('taxipark')?30:0;
+}
+
+// Deduct manager salaries every 24h
+function checkManagerSalaries(){
+  if(!me.propData)return;
+  const now=Date.now();
+  Object.entries(me.propData).forEach(([id,data])=>{
+    if(!data.manager)return;
+    const hired=data.managerHired||now;
+    const days=Math.floor((now-hired)/864e5);
+    if(days>=1){
+      const due=days*MANAGER_COST;
+      if(me.money>=due){
+        me.money-=due;
+        data.managerHired=now;
+        addTx(-due,'👔 Зарплата менеджера: '+PROPS.find(p=>p.id===id)?.name);
+      }else{
+        data.manager=false;
+        toast('⚠️ Менеджер «'+PROPS.find(p=>p.id===id)?.name+'» уволен — нет денег на зарплату',1);
+      }
+    }
+  });
+  saveMe();
 }
 
 // ── DAILY ──
@@ -2974,7 +3253,7 @@ async function cjFinishWin(){
   cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);
   const car=cjState.car;
   const bonus=cjState.score>=3?1.3:1;
-  const r=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*bonus);
+  const r=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*(1+(window._propGarageBonus||0))*bonus);
   me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;me.wanted=(me.wanted||0)+2;
   me.raceWins=(me.raceWins||0)+1;
   if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+3e5;
@@ -3491,12 +3770,13 @@ async function spinSlots(){
   if(res[0]===res[1]&&res[1]===res[2]){const m=res[0]==='7️⃣'?20:res[0]==='💎'?10:5;win=bet*m*(casinoBonus?2:1);msg='🎆 ТРОЙКА! +'+win+'$';}
   else if(res[0]===res[1]||res[1]===res[2]||res[0]===res[2]){win=bet*2*(casinoBonus?2:1);msg='✅ Пара! +'+win+'$';}
   else msg='❌ Мимо';
-  if(win){me.money+=win;me.score+=Math.floor(win/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
-    addTx(win,'🎰 Казино — слоты');sfx('win');haptic('medium');checkAchievements();
-    if(win>=bet*10)await pushFeed('🎰','<b>'+me.name+'</b> выиграл в казино +'+win+'$!');
+  if(win){me.money+=Math.floor(win*(1+(window._propCasinoBonus||0)));me.score+=Math.floor(win/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
+    const realWin=Math.floor(win*(1+(window._propCasinoBonus||0)));
+    addTx(realWin,'🎰 Казино — слоты');sfx('win');haptic('medium');checkAchievements();
+    if(realWin>=bet*10)await pushFeed('🎰','<b>'+me.name+'</b> выиграл в казино +'+realWin+'$!');
   }else{sfx('fail');addTx(-bet,'🎰 Казино — слоты (проигрыш');}
   saveMe();updateHdr();
-  const r=document.getElementById('slotRes');if(r){r.textContent=msg;r.style.color=win?'var(--gr)':'var(--r)';}
+  const r=document.getElementById('slotRes');if(r){r.textContent=msg+(win&&window._propCasinoBonus?' 🎰+'+Math.round(window._propCasinoBonus*100)+'%':'');r.style.color=win?'var(--gr)':'var(--r)';}
 }
 async function spinRoulette(){
   const bet=parseInt(document.getElementById('rBet')?.value)||0;
@@ -5919,9 +6199,353 @@ function obFinish(){
 }
 
 // ── INCOME & TIMERS ──
+// ══════════════════════════════════════
+// ⚡ СОБЫТИЯ БИЗНЕСА — мини-игры
+// ══════════════════════════════════════
+let _bizEventProp=null;
+let _bizCleanup=null;
+
+function bizEventCleanup(){
+  if(_bizCleanup){_bizCleanup();_bizCleanup=null;}
+  _bizEventProp=null;
+}
+
+function startBizEvent(propId){
+  const p=PROPS.find(x=>x.id===propId);
+  const pd=me.propData?.[propId];
+  const ev=BIZ_EVENTS.find(e=>e.id===pd?.event);
+  if(!p||!pd||!ev)return;
+  _bizEventProp=propId;
+  document.getElementById('mBizEventT').textContent=ev.ico+' '+ev.name;
+  om('mBizEvent');
+  haptic('medium');
+  const el=document.getElementById('mBizEventB');
+  // Route to mini-game
+  const games={fire:bizGameFire,raid:bizGameBribe,robbery:bizGameFight,
+                inspection:bizGameBribe,breakdown:bizGameRepair,strike:bizGameArgue};
+  (games[ev.id]||bizGameBribe)(el,p,ev);
+}
+
+async function resolveBizEvent(success){
+  bizEventCleanup();
+  cm('mBizEvent');
+  if(!_bizEventProp){rProp();return;}
+  const pid=_bizEventProp;_bizEventProp=null;
+  const p=PROPS.find(x=>x.id===pid);
+  const pd=me.propData?.[pid];
+  const ev=BIZ_EVENTS.find(e=>e.id===pd?.event);
+  if(success){
+    // Clear event — business resumes
+    if(pd){pd.event=null;pd.eventUntil=0;}
+    const bonus=Math.floor((getPropData(pid)?.income||100)*2);
+    me.money+=bonus;
+    addTx(bonus,ev?.ico+' Ликвидировано: '+p?.name);
+    sfx('win');haptic('heavy');
+    toast('✅ '+p?.name+' снова работает! +'+fmt(bonus)+'$ компенсация');
+  }else{
+    // Failed — extend cooldown by 1h more
+    if(pd)pd.eventUntil=Date.now()+3600000;
+    sfx('fail');haptic('medium');
+    toast('❌ Не справился! Бизнес простаивает ещё 1ч',1);
+  }
+  saveMe();updateHdr();rProp();
+}
+
+// 🔥 ПОЖАР — тапай по огню 10 раз за 8 сек
+function bizGameFire(el,p,ev){
+  let taps=0,timeLeft=8;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">${p.ico} ${p.name}</div>
+      <div style="font-size:12px;margin-bottom:8px">${ev.desc}</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span id="bef_time" style="font-size:12px;color:var(--r)">⏱️ 8с</span>
+        <span id="bef_taps" style="font-size:12px;color:var(--g)">🚿 0/10</span>
+      </div>
+      <div style="background:var(--dk);height:5px;border-radius:3px;overflow:hidden;margin-bottom:14px">
+        <div id="bef_bar" style="height:100%;width:100%;background:var(--r);transition:width 1s linear"></div>
+      </div>
+    </div>
+    <div id="bef_grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px"></div>
+    <div style="font-size:10px;color:var(--dm);text-align:center">Тапай по огню — не трогай воду!</div>`;
+
+  function spawnItems(){
+    const grid=document.getElementById('bef_grid');if(!grid)return;
+    grid.innerHTML=Array(8).fill(0).map(()=>{
+      const isFire=Math.random()>0.3;
+      return`<button onclick="bizFireTap(this,${isFire})"
+        style="height:54px;font-size:26px;background:${isFire?'rgba(230,57,80,.15)':'rgba(0,150,210,.15)'};
+          border:1.5px solid ${isFire?'var(--r)':'var(--bl)'};border-radius:10px;cursor:pointer">
+        ${isFire?'🔥':'🚿'}</button>`;
+    }).join('');
+  }
+  window.bizFireTap=function(btn,isFire){
+    if(!_bizEventProp)return;
+    btn.style.opacity='0.3';btn.disabled=true;
+    if(isFire){taps++;sfx('click');haptic('light');
+      const t=document.getElementById('bef_taps');if(t)t.textContent='🚿 '+taps+'/10';
+      if(taps>=10){clearInterval(timer);resolveBizEvent(true);return;}
+    }else{sfx('fail');haptic('medium');}
+    if(Array.from(document.querySelectorAll('#bef_grid button')).every(b=>b.disabled)){
+      spawnItems();
+    }
+  };
+  spawnItems();
+  const timer=setInterval(()=>{
+    timeLeft--;
+    const t=document.getElementById('bef_time');if(t)t.textContent='⏱️ '+timeLeft+'с';
+    const b=document.getElementById('bef_bar');if(b)b.style.width=(timeLeft/8*100)+'%';
+    if(timeLeft<=0){clearInterval(timer);resolveBizEvent(taps>=7);}
+  },1000);
+  _bizCleanup=()=>clearInterval(timer);
+}
+
+// 🚔 ВЗЯТКА / 📋 ПРОВЕРКА — угадай правильный ответ
+function bizGameBribe(el,p,ev){
+  const isRaid=ev.id==='raid';
+  const scenarios=isRaid?[
+    {q:'Полицейский спрашивает документы. Что делаешь?',
+     opts:[{t:'Спокойно достаёшь документы',c:true},{t:'Предлагаешь деньги сразу',c:false},{t:'Начинаешь спорить',c:false}]},
+    {q:'Коп замечает странный запах. Как реагируешь?',
+     opts:[{t:'Говоришь про ремонт',c:true},{t:'Молчишь',c:false},{t:'Предлагаешь «договориться»',c:Math.random()>0.5}]},
+    {q:'Просят открыть подсобку. Что говоришь?',
+     opts:[{t:'Ключи у управляющего, он едет',c:true},{t:'Без ордера не открою',c:false},{t:'Открываешь сам',c:false}]},
+  ]:[
+    {q:'Инспектор находит нарушение в документах. Что делаешь?',
+     opts:[{t:'Объясняешь что это техническая ошибка',c:true},{t:'Спорить с инспектором',c:false},{t:'Предлагаешь взятку',c:false}]},
+    {q:'Инспектор хочет осмотреть всё помещение.',
+     opts:[{t:'Соглашаешься, всё показываешь',c:true},{t:'Ссылаешься на занятость',c:false},{t:'Отказываешь',c:false}]},
+    {q:'Итог: нарушение есть. Как закрыть?',
+     opts:[{t:'Обязуешься устранить за 3 дня',c:true},{t:'Игнорируешь',c:false},{t:'Пишешь жалобу',c:Math.random()>0.5}]},
+  ];
+  let round=0,score=0;
+  function render(){
+    const s=scenarios[round];
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--dm);margin-bottom:4px">${p.ico} ${p.name} · Шаг ${round+1}/3</div>
+      </div>
+      <div class="card" style="margin-bottom:12px;padding:14px">
+        <div style="font-size:13px;line-height:1.5;font-weight:600">${s.q}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${s.opts.map(o=>`
+          <button onclick="bizBribeTap(${o.c})"
+            style="padding:12px 14px;background:var(--d3);border:1.5px solid var(--br2);border-radius:9px;
+                   text-align:left;font-size:12px;cursor:pointer;color:var(--tx)">
+            ${o.t}
+          </button>`).join('')}
+      </div>`;
+  }
+  window.bizBribeTap=function(correct){
+    if(correct){score++;sfx('coins');haptic('light');toast('✅ Верно!');}
+    else{sfx('fail');haptic('light');toast('❌ Плохой ответ',1);}
+    round++;
+    if(round>=3)resolveBizEvent(score>=2);
+    else render();
+  };
+  render();
+}
+
+// 🦹 ОГРАБЛЕНИЕ — останови налётчиков (whack)
+function bizGameFight(el,p,ev){
+  let hits=0,timeLeft=12,lives=3;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:4px">${p.ico} ${p.name}</div>
+      <div style="font-size:12px;margin-bottom:8px">${ev.desc}</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <span id="bfg_time" style="font-size:12px;color:var(--r)">⏱️ 12с</span>
+        <span id="bfg_hits" style="font-size:12px;color:var(--g)">👊 0/8</span>
+        <span id="bfg_lives" style="font-size:12px">❤️❤️❤️</span>
+      </div>
+    </div>
+    <div id="bfg_grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px"></div>`;
+  const robbers=['🦹','🤬','👿','💀','😈'];
+  const safe=['👮','🏃','👴','🧑','👩'];
+  function spawn(){
+    const grid=document.getElementById('bfg_grid');if(!grid)return;
+    grid.innerHTML=Array(6).fill(0).map(()=>{
+      const isRobber=Math.random()>0.4;
+      const ico=isRobber?robbers[Math.floor(Math.random()*robbers.length)]:safe[Math.floor(Math.random()*safe.length)];
+      const btn=document.createElement('button');
+      btn.innerHTML=ico;
+      btn.style.cssText=`height:58px;font-size:28px;background:${isRobber?'rgba(230,57,80,.15)':'var(--d3)'};
+        border:1.5px solid ${isRobber?'var(--r)':'var(--br2)'};border-radius:10px;cursor:pointer`;
+      btn.onclick=()=>{
+        if(!_bizEventProp)return;
+        btn.disabled=true;btn.style.opacity='0.3';
+        if(isRobber){hits++;sfx('click');haptic('light');
+          const h=document.getElementById('bfg_hits');if(h)h.textContent='👊 '+hits+'/8';
+          if(hits>=8){clearInterval(timer);resolveBizEvent(true);return;}
+        }else{lives--;sfx('fail');haptic('heavy');
+          const l=document.getElementById('bfg_lives');if(l)l.textContent='❤️'.repeat(Math.max(0,lives))+'🖤'.repeat(3-Math.max(0,lives));
+          if(lives<=0){clearInterval(timer);resolveBizEvent(false);return;}
+        }
+      };
+      return btn.outerHTML;
+    }).join('');
+    // Re-attach events via delegation (since innerHTML)
+    grid.querySelectorAll('button').forEach((btn,i)=>{
+      const isRobber=btn.innerHTML==='🦹'||btn.innerHTML==='🤬'||btn.innerHTML==='👿'||btn.innerHTML==='💀'||btn.innerHTML==='😈';
+      btn.onclick=()=>{
+        if(!_bizEventProp)return;
+        btn.disabled=true;btn.style.opacity='0.3';
+        if(isRobber){hits++;sfx('click');haptic('light');
+          const h=document.getElementById('bfg_hits');if(h)h.textContent='👊 '+hits+'/8';
+          if(hits>=8){clearInterval(timer);resolveBizEvent(true);return;}
+        }else{lives--;sfx('fail');haptic('heavy');
+          const l=document.getElementById('bfg_lives');if(l)l.textContent='❤️'.repeat(Math.max(0,lives))+'🖤'.repeat(3-Math.max(0,lives));
+          if(lives<=0){clearInterval(timer);resolveBizEvent(false);return;}
+        }
+        setTimeout(spawn,400);
+      };
+    });
+  }
+  spawn();
+  const timer=setInterval(()=>{
+    timeLeft--;
+    const t=document.getElementById('bfg_time');if(t)t.textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){clearInterval(timer);resolveBizEvent(hits>=6);}
+  },1000);
+  _bizCleanup=()=>clearInterval(timer);
+}
+
+// ⚙️ РЕМОНТ — собери детали в правильном порядке
+function bizGameRepair(el,p,ev){
+  const parts=['🔩','🔧','⚙️','🔨','🪛'];
+  const order=[...parts].sort(()=>Math.random()-.5).slice(0,4);
+  let idx=0;
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--dm);margin-bottom:4px">${p.ico} ${p.name}</div>
+      <div style="font-size:12px;margin-bottom:10px">${ev.desc}</div>
+      <div style="font-size:12px;margin-bottom:6px">Собери детали по порядку:</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
+        ${order.map((x,i)=>`<div id="brs${i}" style="width:44px;height:44px;background:var(--dk);border-radius:8px;
+          border:1.5px solid var(--br2);display:flex;align-items:center;justify-content:center;font-size:22px">${x}</div>`).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--g);margin-bottom:10px">Следующая: <span style="font-size:24px">${order[0]}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+      ${[...parts].sort(()=>Math.random()-.5).map(x=>`
+        <button onclick="bizRepairTap('${x}')"
+          style="padding:10px;font-size:22px;background:var(--d3);border:1px solid var(--br2);border-radius:8px;cursor:pointer">${x}</button>`).join('')}
+    </div>`;
+  window.bizRepairTap=function(x){
+    if(!_bizEventProp)return;
+    if(x===order[idx]){
+      const cell=document.getElementById('brs'+idx);
+      if(cell){cell.style.background='rgba(29,184,122,.3)';cell.style.borderColor='var(--gr)';}
+      idx++;sfx('click');haptic('light');
+      const nxt=el.querySelector('span[style*="font-size:24px"]');
+      if(nxt&&idx<order.length)nxt.textContent=order[idx];
+      if(idx>=order.length){sfx('win');haptic('heavy');resolveBizEvent(true);}
+    }else{sfx('fail');haptic('medium');toast('❌ Не та деталь!',1);resolveBizEvent(false);}
+  };
+}
+
+// ✊ ЗАБАСТОВКА — убеди сотрудников (диалог)
+function bizGameArgue(el,p,ev){
+  const convos=[
+    {q:'Сотрудник: «Нам не платят вовремя!»',
+     opts:[{t:'Обещаешь повысить зарплату',c:true},{t:'Говоришь работать или уволить',c:false},{t:'Игнорируешь',c:false}]},
+    {q:'Представитель: «Условия труда ужасные!»',
+     opts:[{t:'Обязуешься сделать ремонт',c:true},{t:'Споришь, что всё нормально',c:false},{t:'Предлагаешь уволиться',c:false}]},
+    {q:'Все смотрят на тебя. Финальное слово?',
+     opts:[{t:'«Мы одна команда, я слышу вас»',c:true},{t:'«Работайте или ищите другое место»',c:false},{t:'Молча уходишь',c:false}]},
+  ];
+  let round=0,score=0;
+  function render(){
+    const s=convos[round];
+    el.innerHTML=`
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--dm)">${p.ico} ${p.name} · Шаг ${round+1}/3</div>
+      </div>
+      <div class="card" style="margin-bottom:12px;padding:14px">
+        <div style="font-size:13px;line-height:1.5">${s.q}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${s.opts.map(o=>`
+          <button onclick="bizArgueTap(${o.c})"
+            style="padding:12px 14px;background:var(--d3);border:1.5px solid var(--br2);border-radius:9px;
+                   text-align:left;font-size:12px;cursor:pointer;color:var(--tx)">${o.t}</button>`).join('')}
+      </div>`;
+  }
+  window.bizArgueTap=function(c){
+    if(c){score++;sfx('coins');haptic('light');toast('👍 Хороший ответ!');}
+    else{sfx('fail');haptic('light');toast('👎 Не убедил',1);}
+    round++;
+    if(round>=3)resolveBizEvent(score>=2);
+    else render();
+  };
+  render();
+}
+
+
+const BIZ_EVENTS=[
+  {id:'fire',      ico:'🔥', name:'Пожар!',           desc:'В помещении вспыхнул пожар. Пока не потушишь — бизнес стоит.',   cd:3*3600000,  dmg:0.3, mini:'fire'},
+  {id:'raid',      ico:'🚔', name:'Полицейский рейд',  desc:'Копы нагрянули с проверкой. Разберись с ними.',                  cd:2*3600000,  dmg:0,   mini:'bribe', wanted:2},
+  {id:'robbery',   ico:'🦹', name:'Ограбление!',       desc:'Кто-то пытается ограбить бизнес. Останови налётчиков!',          cd:4*3600000,  dmg:0.2, mini:'fight'},
+  {id:'inspection',ico:'📋', name:'Налоговая проверка',desc:'Инспектор нагрянул с проверкой. Убеди его всё в порядке.',      cd:2*3600000,  dmg:0,   mini:'bribe'},
+  {id:'breakdown', ico:'⚙️', name:'Поломка оборудования',desc:'Что-то сломалось. Надо починить, иначе простой.',              cd:3*3600000,  dmg:0,   mini:'repair'},
+  {id:'strike',    ico:'✊', name:'Забастовка персонала',desc:'Сотрудники бастуют. Уговори их вернуться к работе.',           cd:2*3600000,  dmg:0,   mini:'argue'},
+];
+
+// Chance of event per business per collectIncome tick (every minute)
+const BIZ_EVENT_CHANCE = 0.003; // ~0.3% per tick per business = ~1 event per ~6 hours
+
+function checkBizEvents(){
+  if(!me||(me.props||[]).length===0)return;
+  if(!me.propData)me.propData={};
+  let newEvent=false;
+  (me.props||[]).forEach(pid=>{
+    if(!me.propData[pid])me.propData[pid]={level:0,manager:false};
+    const pd=me.propData[pid];
+    // Skip if already has active event
+    if(pd.event&&pd.eventUntil>Date.now())return;
+    // Manager reduces event chance by 50%
+    const chance=BIZ_EVENT_CHANCE*(pd.manager?0.5:1);
+    if(Math.random()<chance){
+      const ev=BIZ_EVENTS[Math.floor(Math.random()*BIZ_EVENTS.length)];
+      pd.event=ev.id;
+      pd.eventTs=Date.now();
+      pd.eventUntil=Date.now()+ev.cd; // will be on CD until resolved
+      const propName=PROPS.find(p=>p.id===pid)?.name||pid;
+      newEvent=true;
+      // Notify
+      toast(`${ev.ico} ${propName}: ${ev.name}`,1);
+      saveMe();
+    }
+  });
+  if(newEvent){
+    // Show badge on БИЗНЕС tab
+    const bizSnav=document.querySelector('#sn-me .snav[onclick*="prop"]');
+    if(bizSnav&&!bizSnav.querySelector('.biz-badge')){
+      const b=document.createElement('span');
+      b.className='biz-badge';
+      b.style.cssText='background:var(--r);color:#fff;border-radius:5px;padding:0 4px;font-size:8px;margin-left:3px;font-weight:700;vertical-align:middle';
+      b.textContent='!';
+      bizSnav.appendChild(b);
+    }
+  }
+}
+
+// Clear biz badge when viewing prop screen
+function clearBizBadge(){
+  document.querySelectorAll('.biz-badge').forEach(b=>b.remove());
+}
+
+// Inject event check into collectIncome
 async function collectIncome(){
   if(!me||!W)return;
-  const pInc=PROPS.filter(p=>(me.props||[]).includes(p.id)).reduce((s,p)=>s+Math.floor(p.income/60),0);
+  // Only collect from businesses that DON'T have active events
+  const pInc=PROPS.filter(p=>(me.props||[]).includes(p.id)).reduce((s,p)=>{
+    const pd=me.propData?.[p.id];
+    const hasEvent=pd?.event&&pd?.eventUntil>Date.now();
+    if(hasEvent)return s; // no income during event
+    return s+Math.floor(getPropData(p.id)?.income/60||p.income/60);
+  },0);
   const dInc=Object.values(W.districts)
     .filter(d=>d.orgId===me.orgId)
     .reduce((s,d)=>{
@@ -5952,6 +6576,8 @@ async function collectIncome(){
     }
     saveMe();updateHdr();
   }
+  // Random business events
+  checkBizEvents();
 }
 
 // Org dues — 500$/week membership
@@ -6005,6 +6631,8 @@ async function autoSync(){
   updateHdr();
   collectRefRewards();
   checkOrgDues();
+  checkManagerSalaries();
+  applyPropBonuses();
   // Re-render current screen
   const fn=RENDERS[curHub]?.[curSub[curHub]];if(fn)try{fn();}catch(e){}
   // Always check DM badge for unread messages
@@ -6035,6 +6663,7 @@ function launch(){
   const fb=document.getElementById('funBadge');if(fb)fb.style.display='none';
   rProfile();
   checkRefParam();
+  applyPropBonuses(); // apply business bonuses on load
   // Restore jail if player was arrested before closing app
   if(me?.inJail && (me.jailUntil||0) > Date.now()) showJail();
   startRealtime();
