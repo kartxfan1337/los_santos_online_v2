@@ -350,7 +350,7 @@ body{display:flex;flex-direction:column}
       <div class="hxpb"><div class="hxpf" id="xpBar" style="width:0%"></div></div>
     </div>
     <div class="hen">
-      <div class="henv"><span id="stEn">10</span>/10⚡</div>
+      <div class="henv"><span id="stEn">10</span>/<span id="stEnMax">10</span>⚡</div>
       <div class="henl">ENERGY</div>
     </div>
   </div>
@@ -893,7 +893,12 @@ async function syncAll(){
   try{ FEED = (await loadFeed()) || []; }catch{ FEED=[]; }
   me = P[PID] || defPlayer();
   me.lastSeen = Date.now(); me.name = PNAME;
-  if(tgu?.id) me.tgId = String(tgu.id); // always keep tgId fresh
+  if(tgu?.id) me.tgId = String(tgu.id);
+  // Auto-clean orphaned orgId on every sync
+  if(me.orgId && W?.orgs && !W.orgs[me.orgId]){
+    console.log('Cleaning orphaned orgId:', me.orgId);
+    me.orgId = null;
+  }
   P[PID] = me;
 }
 async function saveAll(){P[PID]=me;await Promise.all([ST.set('world',W),ST.set('players',P)]);}
@@ -935,6 +940,11 @@ function updateHdr(){
   const t=me.activeTitle&&TITLES.find(x=>x.id===me.activeTitle);
   id('hAva').textContent=me.avatar||PAVA||'😎';
   id('hName').textContent=(t?t.badge+' ':'')+me.name;
+  // Auto-clean orphaned orgId (org was deleted/disbanded)
+  if(me.orgId&&W?.orgs&&!W.orgs[me.orgId]){
+    me.orgId=null;
+    saveMe();
+  }
   const org=me.orgId&&W?.orgs?.[me.orgId];
   id('hOrg').textContent=org?org.emblem+' '+org.name:'⚠️ Без орги (−35%)';
   id('stM').textContent=fmt(me.money);id('stP').textContent=me.power;
@@ -944,6 +954,7 @@ function updateHdr(){
   id('xpBar').style.width=pct+'%';
   const en=me.energy||0,em=me.energyMax||10;
   id('stEn').textContent=en;id('stEn').style.color=en<=2?'var(--r)':en<=5?'var(--g)':'var(--cy)';
+  const enMax=id('stEnMax');if(enMax)enMax.textContent=em;
   const oc=id('D_online');if(oc)oc.textContent=Object.values(P).filter(p=>Date.now()-p.lastSeen<120000).length+' онлайн';
   const ed=id('D_enDisplay');if(ed)ed.textContent='⚡'+en+'/'+em;
   const sp=id('D_sp');if(sp)sp.textContent=(me.skillPoints||0)+' SP';
@@ -1849,6 +1860,10 @@ async function createOrg(){
   cm('mCreateOrg');updateHdr();rOrg();toast('🏢 Орга создана!');
 }
 async function joinOrg(oid){
+  // Auto-clean orphaned orgId before joining
+  if(me.orgId && W?.orgs && !W.orgs[me.orgId]){
+    me.orgId=null; saveMe();
+  }
   if(me.orgId){toast('Сначала покинь текущую оргу',1);return;}
   await syncAll();const org=W.orgs[oid];if(!org){toast('Не найдено',1);return;}
   me.orgId=oid;me.score+=20;gainXP(50);
@@ -1863,10 +1878,12 @@ async function leaveOrg(){
 }
 async function disbandOrg(){
   await syncAll();const oid=me.orgId;const org=W.orgs[oid];
+  // Clear all members (including those not in local P cache)
   Object.values(P).forEach(p=>{if(p.orgId===oid)p.orgId=null;});
   Object.values(W.districts).forEach(d=>{if(d.orgId===oid){d.orgId=null;d.power=0;}});
   delete W.orgs[oid];me.orgId=null;
-  await saveAll();await pushFeed('💥','Орга '+(org?.emblem||'')+(org?.name||'')+' распущена');
+  await saveAll();
+  await pushFeed('💥','Орга '+(org?.emblem||'')+(org?.name||'')+' распущена');
   updateHdr();rOrg();toast('Орга распущена');
 }
 
@@ -2157,21 +2174,26 @@ function renderJobGame(el){
 
 async function finishJob(success, bonus=1){
   if(!_jobState)return;
-  const {j}=_jobState; _jobState=null;
-  if(!me.cooldowns)me.cooldowns={};
-  me.cooldowns['job_'+j.id]=Date.now()+j.cd*1000;
+  const {j}=_jobState;
+  // Call cleanup (clear timers) if any
+  if(_jobState._cleanup){try{_jobState._cleanup();}catch(e){}}
+  _jobState=null;
+
   if(success){
+    if(!me.cooldowns)me.cooldowns={};
+    me.cooldowns['job_'+j.id]=Date.now()+j.cd*1000;
     const base=j.pay[0]+Math.floor(Math.random()*(j.pay[1]-j.pay[0]));
-    const pay=Math.floor(base*bonus*getPremiumMoneyMult());
+    const pay=Math.floor(base*bonus*(1+(window._propTaxiBonus&&j.id==='taxi'?window._propTaxiBonus/base:0))*getPremiumMoneyMult());
     me.money+=pay;me.score+=Math.floor(pay/20);me.rep+=3;
     gainXP(30);checkBP();
     addTx(pay,j.ico+' '+j.name+(bonus>1?' ⭐':''));
-    sfx('coins');haptic('medium');
+    sfx('win');haptic('medium');
     saveMe();updateHdr();checkAchievements();
-    toast('✅ '+j.name+': +'+fmt(pay)+'$'+(bonus>1?' ОТЛИЧНО!':''));
+    toast('✅ '+j.name+': +'+fmt(pay)+'$'+(bonus>1?' ОТЛИЧНО! x'+bonus.toFixed(1):''));
   }else{
-    saveMe();
-    toast('😓 Не получилось, попробуй снова',1);
+    // No cooldown on failure — just let them retry
+    toast('😓 Не получилось! Попробуй ещё раз',1);
+    sfx('fail');haptic('light');
   }
   rWork();
 }
@@ -2181,38 +2203,42 @@ async function finishJob(success, bonus=1){
 // 🚕 МАРШРУТ — выбери правильный путь за 3 хода
 function jobRoute(el){
   const districts=Object.values(W.districts);
-  const target=districts[Math.floor(Math.random()*districts.length)];
-  const choices=()=>[...districts].sort(()=>Math.random()-.5).slice(0,3).map(d=>({d,correct:d.name===target.name}));
   let step=0,score=0;
   const totalSteps=3;
+  let target=districts[Math.floor(Math.random()*districts.length)];
+
   function render(){
-    const opts=choices();opts[Math.floor(Math.random()*3)].correct=true;
-    // ensure exactly one correct
-    opts.forEach(o=>o.correct=false);
-    const ri=Math.floor(Math.random()*3);opts[ri].correct=true;opts[ri].d=target;
+    // Shuffle options, ensure exactly one is the target
+    const pool=[...districts].filter(d=>d.name!==target.name).sort(()=>Math.random()-.5).slice(0,2);
+    const opts=[...pool,target].sort(()=>Math.random()-.5);
     el.innerHTML=`
       <div style="text-align:center;margin-bottom:14px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🚕 ТАКСИ</div>
         <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Пассажир: ${step+1}/${totalSteps}</div>
         <div style="font-size:13px;margin-bottom:4px">Везти в: <b style="color:var(--g)">${target.icon} ${target.name}</b></div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:10px">✅ ${score} доставлено</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:7px">
         ${opts.map(o=>`
-          <button onclick="jobRoutePick(${o.correct})"
-            style="padding:13px;background:var(--d3);border:1.5px solid var(--br2);border-radius:10px;
-                   font-size:13px;cursor:pointer;text-align:left;color:var(--tx)">
-            ${o.d.icon} ${o.d.name}
+          <button onclick="jobRoutePick(${o.name===target.name})"
+            class="btn btn-gh btn-full"
+            style="font-family:'Exo 2',sans-serif;font-size:13px;padding:13px;text-align:left;letter-spacing:0">
+            ${o.icon} ${o.name}
           </button>`).join('')}
-      </div>
-      <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--dm)">✅ ${score} доставлено</div>`;
+      </div>`;
   }
   window.jobRoutePick=function(correct){
     if(!_jobState)return;
     if(correct){score++;sfx('coins');haptic('light');toast('✅ Правильно!');}
     else{sfx('fail');haptic('light');toast('❌ Не туда!',1);}
     step++;
-    if(step>=totalSteps)finishJob(score>=2,score===3?1.3:1);
-    else{const nd=districts[Math.floor(Math.random()*districts.length)];_jobState._target=nd;render();}
+    if(step>=totalSteps){finishJob(score>=2,score===3?1.3:1);}
+    else{
+      // Pick new target different from previous
+      const others=districts.filter(d=>d.name!==target.name);
+      target=others[Math.floor(Math.random()*others.length)];
+      render();
+    }
   };
   render();
 }
@@ -2304,7 +2330,7 @@ function jobSequence(el){
         ${order.map((p,i)=>`<div id="seq${i}" style="width:40px;height:40px;background:var(--dk);border-radius:8px;
           border:1.5px solid var(--br2);display:flex;align-items:center;justify-content:center;font-size:20px">${p}</div>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--g);margin-bottom:10px">Следующая: <span style="font-size:22px">${order[0]}</span></div>
+      <div style="font-size:11px;color:var(--g);margin-bottom:10px">Следующая: <span id="seqNext" style="font-size:22px">${order[0]}</span></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
       ${[...order].sort(()=>Math.random()-.5).map(p=>`
@@ -2316,12 +2342,16 @@ function jobSequence(el){
     if(!_jobState)return;
     if(p===order[idx]){
       const sq=document.getElementById('seq'+idx);
-      if(sq)sq.style.background='rgba(29,184,122,.3)',sq.style.borderColor='var(--gr)';
+      if(sq){sq.style.background='rgba(29,184,122,.3)';sq.style.borderColor='var(--gr)';}
       idx++;sfx('click');haptic('light');
-      const nxt=document.querySelector('#D_work div[style*="Следующая"]');
-      if(nxt&&idx<order.length)nxt.innerHTML=`Следующая: <span style="font-size:22px">${order[idx]}</span>`;
+      const nxt=document.getElementById('seqNext');
+      if(nxt)nxt.textContent=idx<order.length?order[idx]:'✅';
       if(idx>=order.length){sfx('win');haptic('heavy');finishJob(true,1.3);}
-    }else{sfx('fail');haptic('medium');toast('❌ Не та деталь!',1);}
+    }else{
+      sfx('fail');haptic('medium');
+      toast('❌ Не та деталь!',1);
+      finishJob(false);
+    }
   };
 }
 
@@ -2448,12 +2478,14 @@ function jobArgue(el){
 
 // 🏥 ХИРУРГ — удержи руку стабильно
 function jobSteady(el){
-  let stability=100,timeLeft=8,raf=null;
-  let targetX=0,targetY=0,cursorX=0,cursorY=0,pressed=false;
+  let stability=100,timeLeft=8;
+  let targetX=50,targetY=50,cursorX=50,cursorY=50;
+  let _moveTimer=null,_timerInt=null,_alive=true;
+
   el.innerHTML=`
     <div style="text-align:center;margin-bottom:10px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--cy)">🏥 ХИРУРГ</div>
-      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Веди точку по маршруту не дрожа!</div>
+      <div style="font-size:11px;color:var(--dm);margin-bottom:6px">Держи палец на зелёной точке!</div>
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span id="ssTime" style="font-size:12px;color:var(--dm)">⏱️ 8с</span>
         <span id="ssStab" style="font-size:12px;color:var(--gr)">💚 100%</span>
@@ -2461,44 +2493,57 @@ function jobSteady(el){
     </div>
     <div id="ssArena" style="background:var(--d3);border-radius:12px;height:200px;position:relative;
       border:1.5px solid var(--br2);overflow:hidden;touch-action:none;cursor:crosshair">
-      <div id="ssTarget" style="position:absolute;width:24px;height:24px;background:rgba(29,184,122,.4);
-        border:2px solid var(--gr);border-radius:50%;transform:translate(-50%,-50%);transition:top .8s,left .8s"></div>
-      <div id="ssCursor" style="position:absolute;width:16px;height:16px;background:rgba(240,180,41,.8);
-        border:2px solid var(--g);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none"></div>
+      <div id="ssTarget" style="position:absolute;width:32px;height:32px;background:rgba(29,184,122,.35);
+        border:2px solid var(--gr);border-radius:50%;transform:translate(-50%,-50%);
+        left:50%;top:50%;transition:top .7s ease,left .7s ease"></div>
+      <div id="ssCursor" style="position:absolute;width:18px;height:18px;background:rgba(240,180,41,.9);
+        border:2px solid var(--g);border-radius:50%;transform:translate(-50%,-50%);
+        left:50%;top:50%;pointer-events:none;transition:left .05s,top .05s"></div>
     </div>
-    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:8px">Двигай пальцем по зелёной точке</div>`;
+    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:8px">
+      Води пальцем — следи за зелёной точкой
+    </div>`;
 
-  function moveTarget(){
-    const arena=document.getElementById('ssArena');if(!arena)return;
-    targetX=20+Math.random()*60;targetY=20+Math.random()*60;
+  function moveTgt(){
+    if(!_alive)return;
+    targetX=15+Math.random()*70;
+    targetY=15+Math.random()*70;
     const t=document.getElementById('ssTarget');
     if(t){t.style.left=targetX+'%';t.style.top=targetY+'%';}
-    setTimeout(moveTarget,900);
+    _moveTimer=setTimeout(moveTgt,900);
   }
-  moveTarget();
+  moveTgt();
 
   const arena=document.getElementById('ssArena');
   function handleMove(cx,cy){
+    if(!_alive)return;
     const rect=arena?.getBoundingClientRect();if(!rect)return;
     cursorX=(cx-rect.left)/rect.width*100;
     cursorY=(cy-rect.top)/rect.height*100;
     const c=document.getElementById('ssCursor');
     if(c){c.style.left=cursorX+'%';c.style.top=cursorY+'%';}
     const dist=Math.sqrt((cursorX-targetX)**2+(cursorY-targetY)**2);
-    if(dist>15){stability=Math.max(0,stability-1.5);}
-    else{stability=Math.min(100,stability+0.5);}
+    stability=dist<12?Math.min(100,stability+1):Math.max(0,stability-2);
     const s=document.getElementById('ssStab');
-    if(s){s.textContent='💚 '+Math.round(stability)+'%';s.style.color=stability>60?'var(--gr)':stability>30?'var(--g)':'var(--r)';}
+    if(s){
+      s.textContent='💚 '+Math.round(stability)+'%';
+      s.style.color=stability>60?'var(--gr)':stability>30?'var(--g)':'var(--r)';
+    }
+    if(stability<=0){_alive=false;clearTimeout(_moveTimer);clearInterval(_timerInt);finishJob(false);}
   }
   arena?.addEventListener('mousemove',e=>handleMove(e.clientX,e.clientY));
   arena?.addEventListener('touchmove',e=>{e.preventDefault();handleMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
 
-  const timerInt=setInterval(()=>{
-    timeLeft--;const t=document.getElementById('ssTime');if(t)t.textContent='⏱️ '+timeLeft+'с';
-    if(timeLeft<=0){clearInterval(timerInt);finishJob(stability>=40,stability>=80?1.5:stability>=60?1.2:1);}
-    if(stability<=0){clearInterval(timerInt);finishJob(false);}
+  _timerInt=setInterval(()=>{
+    if(!_alive)return;
+    timeLeft--;
+    const t=document.getElementById('ssTime');if(t)t.textContent='⏱️ '+timeLeft+'с';
+    if(timeLeft<=0){
+      _alive=false;clearTimeout(_moveTimer);clearInterval(_timerInt);
+      finishJob(stability>=40,stability>=80?1.5:stability>=60?1.2:1);
+    }
   },1000);
-  if(_jobState)_jobState._cleanup=()=>clearInterval(timerInt);
+  if(_jobState)_jobState._cleanup=()=>{_alive=false;clearTimeout(_moveTimer);clearInterval(_timerInt);};
 }
 
 // ── MISSIONS ──
