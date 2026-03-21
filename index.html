@@ -379,6 +379,7 @@ body{display:flex;flex-direction:column}
     <div class="snav"    onclick="goSub('me','history',this)">📒 История</div>
     <div class="snav"    onclick="goSub('me','sponsor',this)">📺 Задания</div>
     <div class="snav"    onclick="goSub('me','refer',this)">👥 Рефералы</div>
+    <div class="snav"    onclick="goSub('me','friends',this)" id="friendsTab">🤝 Друзья<div class="tbadge" id="friendReqBadge" style="display:none">!</div></div>
     <div class="snav"    onclick="goSub('me','premium',this)">💎 Премиум</div>
   </div>
   <div class="subscreen on pad" id="ss-profile"><div id="D_profile"></div></div>
@@ -403,6 +404,7 @@ body{display:flex;flex-direction:column}
   <div class="subscreen pad"    id="ss-history"><div id="D_history"></div></div>
   <div class="subscreen pad"    id="ss-sponsor"><div id="D_sponsor"></div></div>
   <div class="subscreen pad"    id="ss-refer"><div id="D_refer"></div></div>
+  <div class="subscreen pad"    id="ss-friends"><div id="D_friends"></div></div>
   <div class="subscreen pad"    id="ss-premium"><div id="D_premium"></div></div>
 </div>
 
@@ -413,13 +415,21 @@ body{display:flex;flex-direction:column}
     <div class="snav"    onclick="goSub('city','news',this)">📰 Газета</div>
     <div class="snav"    onclick="goSub('city','election',this)">🗳️ Выборы</div>
     <div class="snav"    onclick="goSub('city','top',this)">🏆 Топ</div>
+    <div class="snav"    onclick="goSub('city','credits',this)">🏦 Банк</div>
   </div>
   <div class="subscreen on pad" id="ss-map">
-    <div class="sec"><div class="sec-l">Карта</div><span class="tag tgr" id="D_online">0 онлайн</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span class="tag tgr" id="D_online">0 онлайн</span>
+    </div>
+    <div id="D_weather"></div>
+    <div id="D_cityevent"></div>
+    <div id="D_stashes"></div>
     <div class="mgrid" id="D_map" style="width:100%;box-sizing:border-box;overflow:hidden"></div>
     <div class="sec"><div class="sec-l">Лента</div></div>
     <div class="card" style="padding:0"><div id="D_feed"></div></div>
   </div>
+  <div class="subscreen pad" id="ss-bounties"><div id="D_bounties"></div></div>
+  <div class="subscreen pad" id="ss-credits"><div id="D_credits"></div></div>
   <div class="subscreen pad" id="ss-news"><div id="D_news"></div></div>
   <div class="subscreen pad" id="ss-election">
     <div class="sec"><div class="sec-l">Выборы мэра</div><span id="D_elTimer" class="tag tbl"></span></div>
@@ -440,6 +450,8 @@ body{display:flex;flex-direction:column}
     <div class="snav"    onclick="goSub('org','wars',this)">⚔️ Войны</div>
     <div class="snav"    onclick="goSub('org','tourn',this)">🏆 Турнир</div>
     <div class="snav"    onclick="goSub('org','allies',this)">🤝 Альянсы</div>
+    <div class="snav"    onclick="goSub('org','orgchat',this)">💬 Чат<div class="tbadge" id="orgChatBadge" style="display:none">!</div></div>
+    <div class="snav"    onclick="goSub('org','orgmissions',this)">🎯 Миссии</div>
   </div>
   <div class="subscreen on pad" id="ss-orgmain"><div id="D_org"></div></div>
   <div class="subscreen pad"    id="ss-wars">
@@ -453,6 +465,8 @@ body{display:flex;flex-direction:column}
     <div id="D_tourn"></div>
   </div>
   <div class="subscreen pad"    id="ss-allies"><div id="D_allies"></div></div>
+  <div class="subscreen pad"    id="ss-orgchat"><div id="D_orgchat"></div></div>
+  <div class="subscreen pad"    id="ss-orgmissions"><div id="D_orgmissions"></div></div>
 </div>
 
 <!-- CRIME -->
@@ -549,6 +563,12 @@ body{display:flex;flex-direction:column}
 <div id="toast"></div>
 
 <!-- MODALS -->
+<!-- Player Profile Modal -->
+<div class="mo" id="mPlayerProfile" onclick="cm('mPlayerProfile')">
+  <div class="mbox" onclick="event.stopPropagation()" style="padding:0;overflow:hidden;max-height:90vh;overflow-y:auto">
+    <div id="mPlayerProfileBody"></div>
+  </div>
+</div>
 <div class="mo" id="mBizEvent" onclick="cm('mBizEvent');bizEventCleanup()">
   <div class="mbox" onclick="event.stopPropagation()">
     <div class="mtitle" id="mBizEventT">⚡ Событие</div>
@@ -958,14 +978,18 @@ function updateHdr(){
   const oc=id('D_online');if(oc)oc.textContent=Object.values(P).filter(p=>Date.now()-p.lastSeen<120000).length+' онлайн';
   const ed=id('D_enDisplay');if(ed)ed.textContent='⚡'+en+'/'+em;
   const sp=id('D_sp');if(sp)sp.textContent=(me.skillPoints||0)+' SP';
+  // Friend request badge
+  const inReqs=(me.friendRequests?.in||[]).length;
+  const frBadge=id('friendReqBadge');
+  if(frBadge)frBadge.style.display=inReqs>0?'flex':'none';
 }
 
 // ── NAVIGATION ──
 const RENDERS={
   me:{profile:rProfile,skills:rSkills,prop:rProp,daily:rDaily,titles:rTitles,achieve:rAchieve,history:rHistory,
-      sponsor:rShopSponsor,refer:rShopRefer,premium:rShopPremium},
-  city:{map:rCity,news:rNews,election:rElection,top:rTop},
-  org:{orgmain:rOrg,wars:rWars,tourn:rTournament,allies:rAlliances},
+      sponsor:rShopSponsor,refer:rShopRefer,premium:rShopPremium,friends:rFriends},
+  city:{map:rCity,news:rNews,election:rElection,top:rTop,credits:rCredits},
+  org:{orgmain:rOrg,wars:rWars,tourn:rTournament,allies:rAlliances,orgchat:rOrgChat,orgmissions:rOrgMissions},
   crime:{work:rWork,missions:rMissions,carjack:rCarjack,drugs:rDrugs,bets:rBets},
   fun:{casino:rCasino,poker:rPoker,chat:rChat,dm:rDM,
        mines:rMines,wheel:rWheel,horses:rHorses,
@@ -1116,6 +1140,29 @@ function rCity(){
   });
 
   mg.innerHTML=html||'<div class="empty">Загрузка карты...</div>';
+
+  // Render stashes
+  ST.get('stashes').then(stashes=>{
+    const el=document.getElementById('D_stashes');if(!el)return;
+    const active=(stashes||[]).filter(s=>!s.claimed&&s.until>Date.now());
+    if(!active.length){el.innerHTML='';return;}
+    el.innerHTML=`<div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;color:var(--g);letter-spacing:1px;margin-bottom:6px">🎁 ТАЙНИКИ В ГОРОДЕ</div>
+      ${active.map(s=>`
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.25);border-radius:9px;padding:8px 11px;margin-bottom:5px">
+          <span style="font-size:20px">🎁</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700">${W.districts[s.district]?.icon||'📍'} ${W.districts[s.district]?.name||s.district}</div>
+            <div style="font-size:9px;color:var(--dm)">Скрытая награда · ещё ${Math.ceil((s.until-Date.now())/60000)}м</div>
+          </div>
+          <button class="btn btn-g btn-sm" onclick="claimStash('${s.id}')">🎁 ВЗЯТЬ</button>
+        </div>`).join('')}
+    </div>`;
+  });
+
+  // Update weather and event
+  checkWeather();
+  ST.get('city_event').then(ev=>renderCityEvent(ev||{}));
 
   const fl=document.getElementById('D_feed');if(!fl)return;
   fl.innerHTML=FEED.slice(0,20).map(f=>`<div class="fi">
@@ -1395,6 +1442,10 @@ const PROPS=[
   {id:'mansion',   ico:'🏰', name:'Особняк',         desc:'Статус + макс доход',       price:30000, income:600, tier:'t3', minLevel:15,
    spec:{type:'prestige','bonus':'Все бонусы +10%'},
    upgrades:['Бассейн','Охрана','Вертолётная площадка'], upgradeCost:[10000,18000,30000], upgradeInc:[200,350,500]},
+  // Diamond exclusive
+  {id:'bizclub',   ico:'💎', name:'Бизнес-клуб',      desc:'Только для Diamond · VIP-доход',price:0, income:1000, tier:'t3', minLevel:1, diamond:true,
+   spec:{type:'prestige','bonus':'Diamond эксклюзив · +5% к доходу всех бизнесов'},
+   upgrades:['Переговорная','Пентхаус','Яхта'], upgradeCost:[50000,100000,200000], upgradeInc:[500,1000,2000]},
 ];
 
 // Manager salaries per business
@@ -1530,11 +1581,15 @@ function rProp(){
   const el2=document.getElementById('D_propShop');
   if(el2){
     const available=PROPS.filter(p=>!owned.includes(p.id));
+    const isDiamond=me.premium==='diamond'&&Date.now()<(me.premiumUntil||0);
+    const regular=available.filter(p=>!p.diamond);
+    const diamond=available.filter(p=>p.diamond);
     const grouped={t1:[],t2:[],t3:[]};
-    available.forEach(p=>grouped[p.tier]?.push(p));
+    regular.forEach(p=>grouped[p.tier]?.push(p));
     const tierColors={t1:'#2e86de',t2:'#f0b429',t3:'#1db87a'};
     const tierNames={t1:'⭐ Малый бизнес',t2:'⭐⭐ Средний бизнес',t3:'⭐⭐⭐ Крупный бизнес'};
-    el2.innerHTML=Object.entries(grouped).map(([tier,props])=>!props.length?'':` 
+
+    let html=Object.entries(grouped).map(([tier,props])=>!props.length?'':` 
       <div style="display:flex;align-items:center;gap:8px;margin:14px 0 8px">
         <div style="width:3px;height:14px;border-radius:2px;background:${tierColors[tier]};flex-shrink:0"></div>
         <span style="font-size:10px;font-weight:800;letter-spacing:1px;color:${tierColors[tier]};text-transform:uppercase">${tierNames[tier]}</span>
@@ -1575,21 +1630,69 @@ function rProp(){
           </div>
         </div>`;
       }).join('')}`).join('');
+
+    // Diamond Business Club section
+    if(diamond.length){
+      html+=`
+      <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
+        <div style="width:3px;height:14px;border-radius:2px;background:#9b59b6;flex-shrink:0"></div>
+        <span style="font-size:10px;font-weight:800;letter-spacing:1px;color:#e056fd;text-transform:uppercase">💎 Diamond Exclusive</span>
+        <div style="height:1px;flex:1;background:rgba(155,89,182,.3)"></div>
+      </div>
+      ${diamond.map(p=>`
+        <div style="background:rgba(155,89,182,.1);border:1.5px solid ${isDiamond?'#9b59b6':'var(--br2)'};
+             border-left:3px solid ${isDiamond?'#9b59b6':'var(--br2)'};
+             border-radius:10px;padding:11px 12px;margin-bottom:7px;opacity:${isDiamond?1:.5}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+            <div style="font-size:26px;width:42px;height:42px;background:rgba(155,89,182,.2);border-radius:9px;
+                 display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">
+                <div style="font-weight:700;font-size:13px">${p.name}</div>
+                <span class="tag tpu" style="font-size:8px">💎 DIAMOND</span>
+              </div>
+              <div style="font-size:9px;color:var(--dm)">${p.desc}</div>
+              <div style="font-size:9px;color:#e056fd;margin-top:2px">✨ ${p.spec?.bonus||''}</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:12px;font-weight:700;color:var(--gr)">+${p.income}$/ч</span>
+            ${isDiamond
+              ?`<button onclick="event.stopPropagation();buyProp('${p.id}')"
+                   style="background:linear-gradient(135deg,#9b59b6,#6c3483);color:#fff;border:none;
+                          border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">
+                   ПОЛУЧИТЬ БЕСПЛАТНО
+                 </button>`
+              :`<span style="font-size:10px;color:#e056fd;cursor:pointer" onclick="goSub('me','premium',null)">
+                   💎 Купить Diamond →
+                 </span>`}
+          </div>
+        </div>`).join('')}`;
+    }
+    el2.innerHTML=html;
   }
 }
 
 async function buyProp(id){
   const p=PROPS.find(x=>x.id===id);
   if(!p){toast('Не найдено',1);return;}
-  if(me.money<p.price){toast('Нет денег!',1);return;}
-  if((me.level||1)<(p.minLevel||1)){toast('Нужен уровень '+p.minLevel+'!',1);return;}
-  me.money-=p.price;
   if(!me.props)me.props=[];
+  if(me.props.includes(id)){toast('Уже куплено!',1);return;}
+  // Diamond exclusive business
+  if(p.diamond){
+    if(!(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0))){
+      toast('💎 Только для Diamond!',1);return;
+    }
+  }else{
+    if(me.money<p.price){toast('Нет денег!',1);return;}
+    if((me.level||1)<(p.minLevel||1)){toast('Нужен уровень '+p.minLevel+'!',1);return;}
+    me.money-=p.price;
+    me.score+=Math.floor(p.price/20);
+    addTx(-p.price,p.ico+' Куплено: '+p.name);
+  }
   me.props.push(id);
   if(!me.propData)me.propData={};
   me.propData[id]={level:0,manager:false,managerHired:0};
-  me.score+=Math.floor(p.price/20);
-  addTx(-p.price,p.ico+' Куплено: '+p.name);
   saveMe();
   await pushFeed(p.ico,'<b>'+me.name+'</b> купил «'+p.name+'»');
   sfx('coins');haptic('light');checkAchievements();
@@ -1799,15 +1902,20 @@ function rOrg(){
         <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Создай оргу или вступи — соло −35% к наградам</div>
         <button class="btn btn-g" onclick="om('mCreateOrg');setupEmblems()">➕ СОЗДАТЬ ОРГУ</button>
       </div>
-      ${all.length?'<div class="sec mt8"><div class="sec-l">Все организации</div></div>':''}
+      ${all.length?'<div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin:12px 0 8px">ВСЕ ОРГАНИЗАЦИИ</div>':''}
       ${all.map(o=>{
         const mc=Object.values(P).filter(p=>p.orgId===o.id).length;
         const tp=Object.values(P).filter(p=>p.orgId===o.id).reduce((s,p)=>s+p.power,0);
-        return`<div class="card fb">
-          <div class="fc" style="gap:8px"><div style="font-size:24px">${o.emblem}</div>
-          <div><div style="font-family:'Bebas Neue',sans-serif;font-size:14px">${o.name}</div>
-          <div style="font-size:9px;color:var(--dm)">${mc} чл · ⚡${tp} · ${OTYPES[o.type]||'Банда'}</div></div></div>
-          <button class="btn btn-gr btn-sm" onclick="joinOrg('${o.id}')">ВСТУПИТЬ</button>
+        const lvl=o.level||1;
+        return`<div class="card mb6">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:28px;width:46px;height:46px;background:var(--d3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${o.emblem}</div>
+            <div style="flex:1">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:15px">${o.name}</div>
+              <div style="font-size:9px;color:var(--dm)">${mc} чл · ⚡${tp} · ${OTYPES[o.type]||'Банда'} · Ур.${lvl}</div>
+            </div>
+            <button class="btn btn-gr btn-sm" onclick="joinOrg('${o.id}')">ВСТУПИТЬ</button>
+          </div>
         </div>`;
       }).join('')}`;
     return;
@@ -1815,36 +1923,121 @@ function rOrg(){
   const members=Object.values(P).filter(p=>p.orgId===me.orgId);
   const totalP=members.reduce((s,p)=>s+p.power,0);
   const myD=Object.values(W.districts).filter(d=>d.orgId===me.orgId);
-  const isLeader=org.leaderId===PID;
+  const myRank=getMyRank(org);
+  const rankInfo=ORG_RANKS[myRank];
+  const lvl=org.level||1;
+  const xp=org.xp||0;
+  const needed=lvl*1000;
+  const xpPct=Math.min(100,Math.floor(xp/needed*100));
+  const treasury=org.treasury||0;
+  const bonus=getOrgLevelBonus();
+  const activeMissions=(org.activeMissions||[]).length;
+
   el.innerHTML=`
-    <div class="card hi">
-      <div class="fc" style="gap:10px;margin-bottom:8px">
+    <!-- Header card -->
+    <div class="card hi" style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div class="oemb">${org.emblem}</div>
-        <div>
+        <div style="flex:1">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:20px">${org.name}</div>
-          <div style="font-size:10px;color:var(--dm)">${org.motto||'—'}</div>
-          <div class="fc" style="gap:5px;margin-top:5px">
+          <div style="font-size:10px;color:var(--dm);margin-bottom:5px">${org.motto||'—'}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
             <span class="tag tg">${OTYPES[org.type]||'Банда'}</span>
-            <span class="tag ${isLeader?'tg':'tgr'}">${isLeader?'👑 ЛИДЕР':'✅ УЧАСТНИК'}</span>
+            <span class="tag ${myRank==='leader'?'tg':myRank==='deputy'?'tbl':'tgr'}">${rankInfo?.name||'🔫 Рядовой'}</span>
+            <span class="tag tpu">Ур.${lvl}</span>
           </div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
-        <div style="text-align:center;background:var(--d3);border-radius:6px;padding:6px 3px"><div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${members.length}</div><div style="font-size:8px;color:var(--dm)">ЧЛЕНОВ</div></div>
-        <div style="text-align:center;background:var(--d3);border-radius:6px;padding:6px 3px"><div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${totalP}</div><div style="font-size:8px;color:var(--dm)">СИЛА</div></div>
-        <div style="text-align:center;background:var(--d3);border-radius:6px;padding:6px 3px"><div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${myD.length}</div><div style="font-size:8px;color:var(--dm)">РАЙОНОВ</div></div>
-        <div style="text-align:center;background:var(--d3);border-radius:6px;padding:6px 3px"><div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${fmt(myD.reduce((s,d)=>s+d.income,0))}</div><div style="font-size:8px;color:var(--dm)">$/Ч</div></div>
+
+      <!-- Org level XP bar -->
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dm);margin-bottom:3px">
+        <span>Уровень организации ${lvl}</span><span>${xp}/${needed} XP</span>
+      </div>
+      <div style="background:var(--dk);border-radius:3px;height:5px;overflow:hidden;margin-bottom:10px">
+        <div style="height:100%;width:${xpPct}%;background:linear-gradient(90deg,var(--pu),var(--cy));border-radius:3px;transition:width .4s"></div>
+      </div>
+
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px">
+        <div style="text-align:center;background:var(--d3);border-radius:8px;padding:7px 3px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${members.length}</div>
+          <div style="font-size:8px;color:var(--dm)">ЧЛЕНОВ</div>
+        </div>
+        <div style="text-align:center;background:var(--d3);border-radius:8px;padding:7px 3px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${totalP}</div>
+          <div style="font-size:8px;color:var(--dm)">СИЛА</div>
+        </div>
+        <div style="text-align:center;background:var(--d3);border-radius:8px;padding:7px 3px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--g)">${myD.length}</div>
+          <div style="font-size:8px;color:var(--dm)">РАЙОНОВ</div>
+        </div>
+        <div style="text-align:center;background:var(--d3);border-radius:8px;padding:7px 3px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--g)">${fmt(treasury)}$</div>
+          <div style="font-size:8px;color:var(--dm)">КАЗНА</div>
+        </div>
+      </div>
+
+      <!-- Org level bonuses -->
+      <div style="background:rgba(155,89,182,.1);border-radius:8px;padding:7px 10px;font-size:10px;color:var(--dm)">
+        🏆 Ур.${lvl} бонусы: <span style="color:var(--g)">+${bonus.income}% доход</span> ·
+        <span style="color:var(--cy)">−${bonus.discount}% скиллы</span> ·
+        <span style="color:var(--gr)">+${bonus.power} силы всем</span>
+        ${activeMissions>0?` · <span style="color:var(--g)">🎯 ${activeMissions} миссий</span>`:''}
       </div>
     </div>
-    <div class="sec mt8"><div class="sec-l">Участники</div></div>
-    <div class="card" style="padding:7px 12px">
-      ${members.map(p=>`<div class="fc" style="gap:8px;padding:6px 0;border-bottom:1px solid var(--br2)">
-        <div style="font-size:18px">${p.avatar}</div>
-        <div style="flex:1"><div style="font-size:12px;font-weight:700">${p.name}${p.id===org.leaderId?' 👑':''}${p.id===PID?' <span class="tag tbl">ТЫ</span>':''}</div>
-        <div style="font-size:9px;color:var(--dm)">⚡${p.power} · ⭐${p.rep}</div></div>
-      </div>`).join('')}
+
+    <!-- Treasury actions -->
+    <div class="card mb8">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--dm);margin-bottom:8px;letter-spacing:1px">🏦 КАЗНА ОРГ · ${fmt(treasury)}$</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[500,1000,5000].map(amt=>`
+          <button class="btn btn-sm" style="background:rgba(29,184,122,.15);border-color:var(--gr);color:var(--gr)"
+            onclick="payToTreasury(${amt})" ${me.money<amt?'disabled':''}>
+            +${fmt(amt)}$
+          </button>`).join('')}
+        ${canOrgDo('treasury')&&treasury>0?`
+          <button class="btn btn-sm" style="background:rgba(240,180,41,.15);border-color:var(--g);color:var(--g)"
+            onclick="withdrawFromTreasury(Math.min(${treasury},${Math.floor(treasury)}))">
+            💰 Вывести
+          </button>`:''}
+      </div>
     </div>
-    ${isLeader?`<button class="btn btn-r btn-full mt8" onclick="disbandOrg()">💀 РАСПУСТИТЬ</button>`:`<button class="btn btn-gh btn-full mt8" onclick="leaveOrg()">🚪 ПОКИНУТЬ</button>`}`;
+
+    <!-- Members with ranks -->
+    <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:6px">УЧАСТНИКИ</div>
+    <div class="card" style="padding:4px 0">
+      ${members.map(p=>{
+        const pRank=p.id===org.leaderId?'leader':(org.ranks?.[p.id]||'member');
+        const pRankInfo=ORG_RANKS[pRank];
+        const isMe=p.id===PID;
+        const canManage=canOrgDo('promote')&&!isMe&&p.id!==org.leaderId;
+        return`<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br2);cursor:${isMe?'default':'pointer'}"
+          onclick="${isMe?'':'openProfile(\''+p.id+'\')'}">
+          <span style="font-size:18px;flex-shrink:0">${p.avatar}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700">${p.name}${isMe?' <span class="tag tbl" style="font-size:8px">ТЫ</span>':''}</div>
+            <div style="font-size:9px;color:var(--dm)">${pRankInfo?.name||'🔫 Рядовой'} · ⚡${p.power}</div>
+          </div>
+          ${canManage?`
+            <div style="display:flex;gap:4px">
+              <select onchange="promoteOrgMember('${p.id}',this.value)"
+                style="background:var(--d3);border:1px solid var(--br2);border-radius:6px;padding:3px 5px;font-size:9px;color:var(--tx);cursor:pointer">
+                <option value="member" ${pRank==='member'?'selected':''}>🔫 Рядовой</option>
+                <option value="officer" ${pRank==='officer'?'selected':''}>🎖️ Офицер</option>
+                ${myRank==='leader'?`<option value="deputy" ${pRank==='deputy'?'selected':''}>⭐ Зам</option>`:''}
+              </select>
+              ${canOrgDo('kick')?`<button class="btn btn-r btn-sm" style="padding:3px 7px;font-size:10px" onclick="kickOrgMember('${p.id}')">✕</button>`:''}
+            </div>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:6px;margin-top:10px">
+      ${canOrgDo('war')||myRank==='leader'?
+        `<button class="btn btn-r btn-sm" style="flex:1" onclick="disbandOrg()">💀 Распустить</button>`
+        :`<button class="btn btn-gh btn-full" onclick="leaveOrg()">🚪 Покинуть оргу</button>`}
+    </div>`;
 }
 async function createOrg(){
   const name=document.getElementById('oName')?.value.trim();
@@ -1852,12 +2045,305 @@ async function createOrg(){
   if(me.money<500){toast('Нужно 500$!',1);return;}
   await syncAll();
   const oid='org'+Date.now();
-  W.orgs[oid]={id:oid,name,emblem:selEmb,motto:document.getElementById('oMotto')?.value.trim()||'',type:selOType,leaderId:PID,score:0};
+  W.orgs[oid]={
+    id:oid,name,emblem:selEmb,
+    motto:document.getElementById('oMotto')?.value.trim()||'',
+    type:selOType,leaderId:PID,score:0,
+    level:1,xp:0,treasury:0,
+    ranks:{[PID]:'leader'},
+    chat:[],missions:[]
+  };
   me.orgId=oid;me.money-=500;me.score+=50;gainXP(100);
   addTx(-500,'🏢 Создание организации');
   sfx('levelup');haptic('heavy');checkAchievements();
   await saveAll();await pushFeed('🏢','<b>'+me.name+'</b> основал '+selEmb+'<b>'+name+'</b>!');
   cm('mCreateOrg');updateHdr();rOrg();toast('🏢 Орга создана!');
+}
+
+// ── RANKS ──
+const ORG_RANKS={
+  leader: {name:'👑 Лидер',      perms:['kick','promote','war','treasury','missions']},
+  deputy: {name:'⭐ Зам. лидера', perms:['kick','promote','war','missions']},
+  officer:{name:'🎖️ Офицер',      perms:['missions']},
+  member: {name:'🔫 Рядовой',     perms:[]},
+};
+
+function getMyRank(org){
+  if(!org)return'member';
+  if(org.leaderId===PID)return'leader';
+  return org.ranks?.[PID]||'member';
+}
+
+function canOrgDo(perm){
+  const org=me.orgId&&W.orgs[me.orgId];
+  if(!org)return false;
+  const rank=getMyRank(org);
+  return ORG_RANKS[rank]?.perms.includes(perm)||false;
+}
+
+async function promoteOrgMember(pid,rank){
+  if(!canOrgDo('promote')){toast('Нет прав!',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  if(!org.ranks)org.ranks={};
+  org.ranks[pid]=rank;
+  await saveAll();rOrg();
+  toast('✅ Ранг обновлён');
+}
+
+async function kickOrgMember(pid){
+  if(!canOrgDo('kick')){toast('Нет прав!',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  if(P[pid])P[pid].orgId=null;
+  if(org.ranks)delete org.ranks[pid];
+  await saveAll();rOrg();
+  await pushFeed('🚪','<b>'+me.name+'</b> исключил '+(P[pid]?.name||'игрока')+'из '+org.emblem+org.name);
+  toast('✅ Исключён');
+}
+
+// ── ORG TREASURY ──
+async function payToTreasury(amount){
+  if(me.money<amount){toast('Нет денег!',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  me.money-=amount;
+  org.treasury=(org.treasury||0)+amount;
+  // Org XP from contributions
+  const xpGain=Math.floor(amount/100);
+  org.xp=(org.xp||0)+xpGain;
+  // Level up org
+  const needed=org.level*1000;
+  if(org.xp>=needed){
+    org.level=(org.level||1)+1;org.xp=0;
+    sfx('levelup');haptic('heavy');
+    toast('🏆 Орга достигла уровня '+org.level+'!');
+    await pushFeed('🏆','Орга '+org.emblem+'<b>'+org.name+'</b> достигла уровня '+org.level+'!');
+  }
+  addTx(-amount,'🏦 Взнос в казну орги');
+  saveMe();await saveAll();
+  rOrg();toast('✅ Внесено '+fmt(amount)+'$ в казну');sfx('coins');
+}
+
+async function withdrawFromTreasury(amount){
+  if(!canOrgDo('treasury')){toast('Только лидер!',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  if((org.treasury||0)<amount){toast('В казне только '+fmt(org.treasury||0)+'$',1);return;}
+  org.treasury-=amount;me.money+=amount;
+  addTx(amount,'🏦 Вывод из казны орги');
+  saveMe();await saveAll();rOrg();toast('💰 Выведено '+fmt(amount)+'$');
+}
+
+// ── ORG LEVEL BONUSES ──
+function getOrgLevelBonus(){
+  const org=me.orgId&&W.orgs[me.orgId];
+  if(!org)return{income:0,discount:0,power:0};
+  const lvl=org.level||1;
+  return{
+    income: lvl*2,        // +2% к доходу за уровень
+    discount: Math.min(20,lvl*2), // скидка на скиллы
+    power: lvl*5,         // +5 силы всем членам
+  };
+}
+
+// ── ORG CHAT ──
+let _orgChatPrev=0;
+async function rOrgChat(){
+  const el=document.getElementById('D_orgchat');if(!el)return;
+  const org=me.orgId&&W.orgs[me.orgId];
+  if(!org){
+    el.innerHTML='<div class="empty">Вступи в оргу чтобы общаться</div>';return;
+  }
+  const msgs=(org.chat||[]).slice(-30);
+  // Clear badge
+  const b=document.getElementById('orgChatBadge');if(b)b.style.display='none';
+  _orgChatPrev=msgs.length;
+  el.innerHTML=`
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;margin-bottom:8px;color:var(--g)">
+      💬 ЧАТ ${org.emblem} ${org.name}
+    </div>
+    <div id="orgMsgs" style="background:var(--d2);border:1px solid var(--br2);border-radius:12px;
+      padding:8px;height:280px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:4px">
+      ${msgs.length?msgs.map(m=>`
+        <div style="display:flex;gap:7px;align-items:flex-start">
+          <span style="font-size:14px;flex-shrink:0">${m.ava||'👤'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:1px">
+              <span style="font-size:10px;font-weight:700;color:${m.pid===PID?'var(--g)':'var(--cy)'}">${m.name}</span>
+              ${m.rank&&m.rank!=='member'?`<span style="font-size:8px;color:var(--dm)">${ORG_RANKS[m.rank]?.name||''}</span>`:''}
+              <span style="font-size:8px;color:var(--dm);margin-left:auto">${fmtAge(m.ts)}</span>
+            </div>
+            <div style="font-size:12px;line-height:1.4;word-break:break-word">${m.text}</div>
+          </div>
+        </div>`).join('')
+      :'<div style="color:var(--dm);font-size:11px;text-align:center;padding:20px">Нет сообщений — начни общение!</div>'}
+    </div>
+    <div style="display:flex;gap:6px">
+      <input class="inp" id="orgMsgInp" placeholder="Написать в чат орги..." maxlength="200" style="flex:1">
+      <button class="btn btn-cy btn-sm" onclick="sendOrgMsg()">➤</button>
+    </div>`;
+  // Scroll to bottom
+  const msgsEl=document.getElementById('orgMsgs');
+  if(msgsEl)msgsEl.scrollTop=msgsEl.scrollHeight;
+  // Handle Enter key
+  document.getElementById('orgMsgInp')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();sendOrgMsg();}
+  });
+}
+
+async function sendOrgMsg(){
+  const inp=document.getElementById('orgMsgInp');
+  const text=inp?.value.trim();
+  if(!text){return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  if(!org.chat)org.chat=[];
+  org.chat.push({pid:PID,name:me.name,ava:me.avatar,
+    rank:getMyRank(org),text,ts:Date.now()});
+  org.chat=org.chat.slice(-50); // keep last 50
+  if(inp)inp.value='';
+  await saveAll();
+  rOrgChat();haptic('light');
+}
+
+// Poll org chat for new messages
+setInterval(async()=>{
+  if(!me?.orgId||document.querySelector('#sn-org .snav.on')?.textContent?.includes('Чат')===false)return;
+  const org=W.orgs[me.orgId];
+  if(!org)return;
+  const msgs=(org.chat||[]).length;
+  if(msgs>_orgChatPrev&&_orgChatPrev>0){
+    const b=document.getElementById('orgChatBadge');
+    if(b)b.style.display='flex';
+  }
+},15000);
+
+// ── ORG MISSIONS ──
+const ORG_MISSION_TEMPLATES=[
+  {id:'om1',ico:'💰',name:'Наполнить казну',desc:'Собери взносы от всех членов',
+   goal:'treasury',target:5000,reward:{treasury:1000,xp:200},duration:24,
+   check:(org)=>(org.treasury||0)>=5000},
+  {id:'om2',ico:'⚔️',name:'Победить в 3 войнах',desc:'Объявите войны и победите',
+   goal:'wars',target:3,reward:{allMoney:500,xp:300},duration:72,
+   check:(org)=>(org.warsWon||0)>=3},
+  {id:'om3',ico:'🏙️',name:'Захватить 5 районов',desc:'Контролируйте 5+ районов одновременно',
+   goal:'districts',target:5,reward:{allMoney:1000,xp:400},duration:48,
+   check:()=>Object.values(W.districts).filter(d=>d.orgId===me.orgId).length>=5},
+  {id:'om4',ico:'👥',name:'Набрать 5 членов',desc:'Приведите новых членов в оргу',
+   goal:'members',target:5,reward:{allMoney:300,xp:150},duration:48,
+   check:()=>Object.values(P).filter(p=>p.orgId===me.orgId).length>=5},
+  {id:'om5',ico:'🏆',name:'Набрать 10000 очков',desc:'Все вместе зарабатывайте очки',
+   goal:'score',target:10000,reward:{allMoney:2000,xp:500},duration:72,
+   check:()=>Object.values(P).filter(p=>p.orgId===me.orgId).reduce((s,p)=>s+(p.score||0),0)>=10000},
+];
+
+async function rOrgMissions(){
+  const el=document.getElementById('D_orgmissions');if(!el)return;
+  const org=me.orgId&&W.orgs[me.orgId];
+  if(!org){
+    el.innerHTML='<div class="empty">Вступи в оргу для доступа к миссиям</div>';return;
+  }
+  const active=org.activeMissions||[];
+  const now=Date.now();
+  const members=Object.values(P).filter(p=>p.orgId===me.orgId);
+
+  el.innerHTML=`
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;margin-bottom:8px;color:var(--g)">
+      🎯 МИССИИ ${org.emblem} ${org.name}
+    </div>
+
+    <!-- Active missions -->
+    ${active.length?`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:6px">АКТИВНЫЕ</div>
+      ${active.map(am=>{
+        const tmpl=ORG_MISSION_TEMPLATES.find(t=>t.id===am.id);if(!tmpl)return'';
+        const timeLeft=Math.max(0,am.end-now);
+        const done=tmpl.check(org);
+        let progress=0;
+        if(tmpl.goal==='treasury')progress=Math.min(100,Math.floor((org.treasury||0)/tmpl.target*100));
+        else if(tmpl.goal==='members')progress=Math.min(100,Math.floor(members.length/tmpl.target*100));
+        else if(tmpl.goal==='districts')progress=Math.min(100,Math.floor(Object.values(W.districts).filter(d=>d.orgId===me.orgId).length/tmpl.target*100));
+        else if(tmpl.goal==='score')progress=Math.min(100,Math.floor(members.reduce((s,p)=>s+(p.score||0),0)/tmpl.target*100));
+        else progress=done?100:0;
+        return`
+        <div class="card mb8" style="border-left:3px solid ${done?'var(--gr)':'var(--g)'}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:28px">${tmpl.ico}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px">${tmpl.name}</div>
+              <div style="font-size:10px;color:var(--dm)">${tmpl.desc}</div>
+            </div>
+            ${done?`<span class="tag tgr">✅ ГОТОВО</span>`:`<span style="font-size:9px;color:var(--dm)">⏱️ ${fmtS(Math.ceil(timeLeft/1000))}</span>`}
+          </div>
+          <div style="background:var(--dk);border-radius:3px;height:5px;overflow:hidden;margin-bottom:6px">
+            <div style="height:100%;width:${progress}%;background:${done?'var(--gr)':'var(--g)'};border-radius:3px;transition:width .4s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10px;color:var(--dm)">${progress}% · Награда: +${fmt(tmpl.reward.allMoney||0)}$ всем</span>
+            ${done&&canOrgDo('missions')?`<button class="btn btn-gr btn-sm" onclick="claimOrgMission('${am.id}')">🎁 ПОЛУЧИТЬ</button>`:''}
+          </div>
+        </div>`;
+      }).join('')}`:''}
+
+    <!-- Available missions -->
+    <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin:10px 0 6px">ДОСТУПНЫЕ</div>
+    ${ORG_MISSION_TEMPLATES
+      .filter(t=>!active.find(a=>a.id===t.id))
+      .map(t=>`
+      <div class="card mb6">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:26px;width:44px;height:44px;background:var(--d3);border-radius:10px;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0">${t.ico}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px;margin-bottom:2px">${t.name}</div>
+            <div style="font-size:10px;color:var(--dm)">${t.desc}</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:5px">
+            <span class="tag tgr">+${fmt(t.reward.allMoney||0)}$ всем</span>
+            <span class="tag tbl">+${t.reward.xp} XP орге</span>
+            <span class="tag tcy">⏱️ ${t.duration}ч</span>
+          </div>
+          ${canOrgDo('missions')?
+            `<button class="btn btn-g btn-sm" onclick="startOrgMission('${t.id}')">НАЧАТЬ</button>`
+            :`<span class="tag tr" style="font-size:8px">Офицер+</span>`}
+        </div>
+      </div>`).join('')||'<div class="empty">Все миссии активны</div>'}`;
+}
+
+async function startOrgMission(templateId){
+  if(!canOrgDo('missions')){toast('Нужен ранг Офицера+',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  const tmpl=ORG_MISSION_TEMPLATES.find(t=>t.id===templateId);if(!tmpl)return;
+  if(!org.activeMissions)org.activeMissions=[];
+  if(org.activeMissions.find(a=>a.id===templateId)){toast('Уже активна!',1);return;}
+  org.activeMissions.push({id:templateId,start:Date.now(),end:Date.now()+tmpl.duration*3600000});
+  await saveAll();rOrgMissions();
+  toast('🎯 Миссия «'+tmpl.name+'» начата!');sfx('coins');haptic('medium');
+}
+
+async function claimOrgMission(templateId){
+  if(!canOrgDo('missions')){toast('Нет прав!',1);return;}
+  const org=W.orgs[me.orgId];if(!org)return;
+  const tmpl=ORG_MISSION_TEMPLATES.find(t=>t.id===templateId);if(!tmpl)return;
+  // Pay all members
+  const members=Object.values(P).filter(p=>p.orgId===me.orgId);
+  const reward=tmpl.reward.allMoney||0;
+  members.forEach(p=>{
+    p.money=(p.money||0)+reward;
+    if(p.id===PID){me.money+=reward;addTx(reward,'🎯 Миссия орги: '+tmpl.name);}
+  });
+  // Org XP
+  org.xp=(org.xp||0)+tmpl.reward.xp;
+  const needed=(org.level||1)*1000;
+  if(org.xp>=needed){
+    org.level=(org.level||1)+1;org.xp=0;
+    toast('🏆 Орга достигла уровня '+org.level+'!');
+    await pushFeed('🏆','Орга '+org.emblem+'<b>'+org.name+'</b> прокачалась до уровня '+org.level+'!');
+  }
+  // Remove mission
+  org.activeMissions=(org.activeMissions||[]).filter(a=>a.id!==templateId);
+  await saveAll();saveMe();updateHdr();
+  await pushFeed('🎯','Орга '+org.emblem+'<b>'+org.name+'</b> выполнила миссию «'+tmpl.name+'»! Все получили +'+fmt(reward)+'$');
+  sfx('win');haptic('heavy');rOrgMissions();
+  toast('🎉 Миссия выполнена! +'+fmt(reward)+'$ всем членам!');
 }
 async function joinOrg(oid){
   // Auto-clean orphaned orgId before joining
@@ -2091,10 +2577,11 @@ function rTop(){
   const sorted=Object.values(P).sort((a,b)=>b.score-a.score);
   document.getElementById('D_topPlayers').innerHTML=sorted.slice(0,15).map((p,i)=>{
     const org=p.orgId&&W.orgs[p.orgId];
-    return`<div class="lbrow${p.id===PID?' me':''}">
+    const isMe=p.id===PID;
+    return`<div class="lbrow${isMe?' me':''}" onclick="${isMe?'':'openProfile(\''+p.id+'\')'}" style="cursor:${isMe?'default':'pointer'}">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--dm);width:22px">${ri[i]||i+1}</div>
       <div style="font-size:18px">${p.avatar}</div>
-      <div style="flex:1"><div style="font-size:12px;font-weight:700">${p.name}${p.id===PID?' <span class="tag tbl">ТЫ</span>':''}</div><div style="font-size:9px;color:var(--dm)">${org?org.emblem+org.name:'Одиночка'}</div></div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:700">${p.name}${isMe?' <span class="tag tbl">ТЫ</span>':''}</div><div style="font-size:9px;color:var(--dm)">${org?org.emblem+org.name:'Одиночка'}</div></div>
       <div class="mono" style="font-size:12px;color:var(--g)">${fmt(p.score)}pts</div>
     </div>`;
   }).join('');
@@ -4039,9 +4526,13 @@ function rChat(){
   const el=document.getElementById('D_chatMsgs');if(!el)return;
   const msgs=(CHAT||[]).slice(-40);
   el.innerHTML=msgs.map(m=>`<div class="cmsg">
-    <div class="cava">${m.avatar||'👤'}</div>
+    <div class="cava" onclick="${m.pid&&m.pid!==PID?`openProfile('${m.pid}')`:''}
+      style="cursor:${m.pid&&m.pid!==PID?'pointer':'default'}">${m.avatar||'👤'}</div>
     <div style="flex:1">
-      <div style="font-size:11px;font-weight:700;color:var(--g)">${m.name||'?'}${m.org?` <span style="font-size:9px;color:var(--dm)">${m.org}</span>`:''}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--g);cursor:${m.pid&&m.pid!==PID?'pointer':'default'}"
+        onclick="${m.pid&&m.pid!==PID?`openProfile('${m.pid}')`:''}">
+        ${m.name||'?'}${m.org?` <span style="font-size:9px;color:var(--dm)">${m.org}</span>`:''}
+      </div>
       <div style="font-size:12px;line-height:1.4">${String(m.msg||m.text||'').replace(/</g,'&lt;')}</div>
       <div style="font-size:8px;color:var(--dm);font-family:'Share Tech Mono',monospace">${fmtT(m.ts||Date.now())}</div>
     </div>
@@ -6211,7 +6702,7 @@ const PREMIUM_PLANS = [
   {
     id:'gold', name:'GOLD', icon:'⭐', cls:'gold',
     price:'99 Stars', priceStars:99,
-    duration:30, // days
+    duration:30,
     perks:[
       ['💰','x1.5 к доходу с миссий'],
       ['⚡','Макс энергия +5'],
@@ -6219,6 +6710,7 @@ const PREMIUM_PLANS = [
       ['🧬','Скидка 20% на навыки'],
       ['🏷️','Золотое имя в чате'],
       ['🎁','+500$ ежедневный бонус'],
+      ['🏦','Малый кредит — ставка −10%'],
     ]
   },
   {
@@ -6234,6 +6726,9 @@ const PREMIUM_PLANS = [
       ['🎁','+1500$ ежедневный бонус'],
       ['🔒','Иммунитет к тюрьме'],
       ['👑','Эксклюзивный титул BOSS'],
+      ['💎','VIP-кредит 200K$ (−20% ставка)'],
+      ['💴','Премиум вклад 100K$ (+50% доход)'],
+      ['🏢','Доступ к Diamond Бизнес-клубу'],
     ]
   },
 ];
@@ -6242,10 +6737,15 @@ const DONATE_ITEMS = [
   {id:'energy10',   icon:'⚡', name:'10 энергии',        price:'19 Stars',  priceStars:19,  action:m=>{m.energy=Math.min(m.energyMax||10,(m.energy||0)+10);}},
   {id:'money5k',    icon:'💵', name:'+5 000$',           price:'49 Stars',  priceStars:49,  action:m=>{m.money+=5000; addTx(5000,'💎 Донат: +5000$');}},
   {id:'money20k',   icon:'💰', name:'+20 000$',          price:'149 Stars', priceStars:149, action:m=>{m.money+=20000; addTx(20000,'💎 Донат: +20000$');}},
+  {id:'money100k',  icon:'💎', name:'+100 000$',         price:'599 Stars', priceStars:599, action:m=>{m.money+=100000; addTx(100000,'💎 Донат: +100000$');}},
   {id:'sp3',        icon:'🧬', name:'+3 Skill Points',   price:'59 Stars',  priceStars:59,  action:m=>{m.skillPoints=(m.skillPoints||0)+3;}},
+  {id:'sp10',       icon:'🔬', name:'+10 Skill Points',  price:'149 Stars', priceStars:149, action:m=>{m.skillPoints=(m.skillPoints||0)+10;}},
   {id:'refill',     icon:'🔋', name:'Сбросить кулдауны', price:'29 Stars',  priceStars:29,  action:m=>{m.cooldowns={};}},
   {id:'wanted0',    icon:'🚔', name:'Снять розыск',      price:'39 Stars',  priceStars:39,  action:m=>{m.wanted=0;m.inJail=false;m.jailUntil=0;}},
   {id:'avatar_vip', icon:'🦅', name:'VIP-аватар 🦅',    price:'79 Stars',  priceStars:79,  action:m=>{m.avatar='🦅';}},
+  {id:'xpboost',    icon:'🚀', name:'x2 XP на 24ч',     price:'99 Stars',  priceStars:99,  action:m=>{m.xpBoostUntil=Date.now()+864e5; addTx(0,'🚀 XP буст x2 на 24ч');}},
+  {id:'bizslot',    icon:'🏪', name:'+1 слот бизнеса',   price:'199 Stars', priceStars:199, action:m=>{m.extraBizSlots=(m.extraBizSlots||0)+1; addTx(0,'🏪 Доп. слот бизнеса');}},
+  {id:'namechange', icon:'✏️', name:'Смена имени',       price:'49 Stars',  priceStars:49,  action:m=>{m._pendingNameChange=true;}},
 ];
 
 function rShopPremium(){
@@ -6956,18 +7456,980 @@ async function launch(){
   // Make sure chat badge is hidden on fresh start
   const fb=document.getElementById('funBadge');if(fb)fb.style.display='none';
   rProfile();
-  await checkRefParam(); // await so me.refBy is saved before next sync
+  await checkRefParam();
   applyPropBonuses();
-  // Restore jail if player was arrested before closing app
   if(me?.inJail && (me.jailUntil||0) > Date.now()) showJail();
   startRealtime();
   setTimeout(checkAchievements, 2000);
-  setInterval(autoSync,20000);   // 20s — safe for Supabase free tier
+  setTimeout(checkWeather, 3000);
+  setTimeout(checkCityEvent, 4000);
+  setTimeout(checkStashes, 5000);
+  setTimeout(checkCredit, 6000);
+  setInterval(autoSync,20000);
   setInterval(collectIncome,60000);
   setInterval(updateTimers,1000);
+  setInterval(checkWeather, 3600000);    // update weather every hour
+  setInterval(checkCityEvent, 21600000); // new event every 6h
+  setInterval(checkStashes, 14400000);   // new stashes every 4h
 }
 
-// ── BOOT ──
+// ════════════════════════════════════════
+// 🌦️ ПОГОДА
+// ════════════════════════════════════════
+const WEATHER_TYPES=[
+  {id:'sunny',  ico:'☀️', name:'Ясно',        bonus:'Стандартные условия',          mods:{}},
+  {id:'rain',   ico:'🌧️', name:'Дождь',        bonus:'−15% к угону, −10% к трафику', mods:{carjack:-0.15,drug:-0.10}},
+  {id:'hot',    ico:'🔥', name:'Жара',          bonus:'+15% к трафику',               mods:{drug:0.15}},
+  {id:'fog',    ico:'🌫️', name:'Туман',         bonus:'−30% розыска от угона',        mods:{wanted:-0.30}},
+  {id:'storm',  ico:'⛈️', name:'Гроза',         bonus:'−20% всего дохода',            mods:{income:-0.20}},
+  {id:'clear',  ico:'🌙', name:'Ночь/Ясно',     bonus:'+10% к крим заданиям',         mods:{missions:0.10}},
+];
+let currentWeather=WEATHER_TYPES[0];
+
+async function checkWeather(){
+  const w=await ST.get('weather')||{id:'sunny',until:0};
+  if(Date.now()>w.until){
+    // New weather
+    const nw=WEATHER_TYPES[Math.floor(Math.random()*WEATHER_TYPES.length)];
+    const until=Date.now()+3600000*(3+Math.floor(Math.random()*5)); // 3-8 hours
+    await ST.set('weather',{id:nw.id,until});
+    currentWeather=nw;
+    if(nw.id!=='sunny'){
+      toast(nw.ico+' '+nw.name+': '+nw.bonus,0);
+    }
+  }else{
+    currentWeather=WEATHER_TYPES.find(x=>x.id===w.id)||WEATHER_TYPES[0];
+  }
+  // Update weather widget if city tab open
+  const we=document.getElementById('D_weather');
+  if(we){
+    const left=Math.max(0,Math.ceil((w.until-Date.now())/60000));
+    we.innerHTML=`<div style="display:flex;align-items:center;gap:8px;background:var(--d2);border:1px solid var(--br2);border-radius:10px;padding:8px 12px;margin-bottom:8px">
+      <span style="font-size:22px">${currentWeather.ico}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700">${currentWeather.name}</div>
+        <div style="font-size:10px;color:var(--dm)">${currentWeather.bonus} · ещё ${left}м</div>
+      </div>
+    </div>`;
+  }
+}
+
+function getWeatherMod(type){
+  return currentWeather?.mods?.[type]||0;
+}
+
+// ════════════════════════════════════════
+// 🎡 ГОРОДСКИЕ СОБЫТИЯ
+// ════════════════════════════════════════
+const CITY_EVENTS=[
+  {id:'festival',ico:'🎪',name:'Городской фестиваль!',desc:'Репутация x2 на 3 часа',dur:3,
+   apply:()=>{window._eventRepMult=2;toast('🎪 Фестиваль! Репа x2 на 3ч 🎉');}},
+  {id:'raid',ico:'🚨',name:'Полицейский рейд',desc:'Все криминальные активности дают +1★',dur:2,
+   apply:()=>{window._eventWantedPlus=1;toast('🚨 Полицейский рейд по городу! Осторожно!',1);}},
+  {id:'carnival',ico:'🎰',name:'Карнавал в казино',desc:'Казино x1.5 на 4 часа',dur:4,
+   apply:()=>{window._eventCasinoMult=1.5;toast('🎰 Карнавал! Казино x1.5 на 4ч!');}},
+  {id:'blackout',ico:'🌑',name:'Блэкаут в городе',desc:'Полиция не работает — розыск не растёт',dur:2,
+   apply:()=>{window._eventNoWanted=true;toast('🌑 Блэкаут! Полиция слепа 2ч 😈');}},
+  {id:'payday',ico:'💸',name:'День зарплаты',desc:'Все бизнесы дают x2 дохода',dur:3,
+   apply:()=>{window._eventIncomeMult=2;toast('💸 День зарплаты! Доход x2 на 3ч!');}},
+  {id:'gang_war',ico:'⚔️',name:'Уличная война',desc:'+50% к наградам за задания',dur:2,
+   apply:()=>{window._eventMissionMult=1.5;toast('⚔️ Уличная война! Задания +50% на 2ч!');}},
+];
+let _cityEventTimer=null;
+
+async function checkCityEvent(){
+  const ev=await ST.get('city_event')||{id:null,until:0};
+  // Clear expired event
+  if(ev.until>0&&Date.now()>ev.until){
+    window._eventRepMult=1;window._eventWantedPlus=0;window._eventCasinoMult=1;
+    window._eventNoWanted=false;window._eventIncomeMult=1;window._eventMissionMult=1;
+  }
+  // New event chance (30% every 6h)
+  if(Date.now()>ev.until&&Math.random()<0.3){
+    const ne=CITY_EVENTS[Math.floor(Math.random()*CITY_EVENTS.length)];
+    const until=Date.now()+ne.dur*3600000;
+    await ST.set('city_event',{id:ne.id,until});
+    ne.apply();
+    await pushFeed(ne.ico,`<b>СОБЫТИЕ!</b> ${ne.name} — ${ne.desc} (${ne.dur}ч)`);
+    if(_cityEventTimer)clearTimeout(_cityEventTimer);
+    _cityEventTimer=setTimeout(checkCityEvent,ne.dur*3600000+1000);
+  }else if(ev.id&&Date.now()<ev.until){
+    const template=CITY_EVENTS.find(e=>e.id===ev.id);
+    if(template)template.apply();
+  }
+  // Show event widget
+  renderCityEvent(ev);
+}
+
+function renderCityEvent(ev){
+  const el=document.getElementById('D_cityevent');if(!el)return;
+  if(!ev.id||Date.now()>ev.until){el.innerHTML='';return;}
+  const template=CITY_EVENTS.find(e=>e.id===ev.id);if(!template)return;
+  const left=Math.max(0,Math.ceil((ev.until-Date.now())/60000));
+  el.innerHTML=`<div style="background:rgba(240,180,41,.08);border:1.5px solid rgba(240,180,41,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:22px">${template.ico}</span>
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:700;color:var(--g)">${template.name}</div>
+      <div style="font-size:10px;color:var(--dm)">${template.desc} · ещё ${left}м</div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// 🎁 ТАЙНИКИ НА КАРТЕ
+// ════════════════════════════════════════
+async function checkStashes(){
+  const stashes=await ST.get('stashes')||[];
+  const active=stashes.filter(s=>!s.claimed&&s.until>Date.now());
+  // Generate new stashes if none
+  if(active.length<3){
+    const districts=Object.keys((W||{}).districts||{});
+    if(!districts.length)return;
+    const newStashes=[...stashes.filter(s=>!s.claimed&&s.until>Date.now())];
+    const needed=3-newStashes.length;
+    for(let i=0;i<needed;i++){
+      const dist=districts[Math.floor(Math.random()*districts.length)];
+      const rewards=[
+        {type:'money',val:500+Math.floor(Math.random()*2000),label:'+💵'},
+        {type:'energy',val:3,label:'+3⚡'},
+        {type:'sp',val:1,label:'+1 SP'},
+        {type:'money',val:1000,label:'+💵'},
+      ];
+      const r=rewards[Math.floor(Math.random()*rewards.length)];
+      newStashes.push({id:'s'+Date.now()+i,district:dist,reward:r,
+        until:Date.now()+4*3600000,claimed:false,ts:Date.now()});
+    }
+    await ST.set('stashes',newStashes.slice(-10));
+  }
+  // Show badge on map
+  const myD=Object.keys((W||{}).districts||{});
+  const myStashes=active.filter(s=>myD.includes(s.district));
+  const badge=document.getElementById('mapStashBadge');
+  if(badge)badge.style.display=myStashes.length>0?'flex':'none';
+}
+
+async function claimStash(stashId){
+  const stashes=await ST.get('stashes')||[];
+  const s=stashes.find(x=>x.id===stashId);
+  if(!s||s.claimed||s.until<Date.now()){toast('Тайник уже забран!',1);return;}
+  s.claimed=true;s.claimedBy=PID;
+  // Apply reward
+  if(s.reward.type==='money'){me.money+=s.reward.val;addTx(s.reward.val,'🎁 Тайник найден!');}
+  else if(s.reward.type==='energy'){me.energy=Math.min(me.energyMax||10,(me.energy||0)+s.reward.val);}
+  else if(s.reward.type==='sp'){me.skillPoints=(me.skillPoints||0)+s.reward.val;}
+  await ST.set('stashes',stashes);
+  saveMe();updateHdr();
+  sfx('win');haptic('heavy');
+  await pushFeed('🎁',`<b>${me.name}</b> нашёл тайник в ${W.districts[s.district]?.name||s.district}! ${s.reward.label}${s.reward.val}`);
+  toast('🎁 Тайник найден! '+s.reward.label+s.reward.val);
+  rCity();
+}
+
+// ════════════════════════════════════════
+// 🎯 ОХОТА НА ИГРОКА
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// 🏦 БАНК
+// ════════════════════════════════════════
+const CREDIT_PLANS=[
+  {id:'micro',  name:'Микрозайм',      amount:1000,   rate:0.40, hours:12, icon:'💸', minLevel:1,  diamond:false,
+   desc:'Быстрые деньги, жёсткий процент'},
+  {id:'small',  name:'Малый кредит',   amount:5000,   rate:0.30, hours:24, icon:'💵', minLevel:3,  diamond:false,
+   desc:'Стандартный потребкредит'},
+  {id:'medium', name:'Средний кредит', amount:20000,  rate:0.35, hours:48, icon:'💰', minLevel:6,  diamond:false,
+   desc:'Для среднего бизнеса'},
+  {id:'large',  name:'Крупный кредит', amount:60000,  rate:0.40, hours:72, icon:'🏦', minLevel:10, diamond:false,
+   desc:'Серьёзные деньги — серьёзный риск'},
+  {id:'vip',    name:'💎 VIP-кредит',  amount:200000, rate:0.20, hours:96, icon:'💎', minLevel:1,  diamond:true,
+   desc:'Только для Diamond · сниженная ставка'},
+];
+
+const DEPOSIT_PLANS=[
+  {id:'d0', name:'Копилка',       hours:6,  rate:0.03, icon:'🪙', minAmount:500,    minLevel:1,  diamond:false,
+   desc:'Минимальный вклад на 6 часов'},
+  {id:'d1', name:'Краткосрочный', hours:12, rate:0.07, icon:'💴', minAmount:2000,   minLevel:2,  diamond:false,
+   desc:'Небольшой доход за ночь'},
+  {id:'d2', name:'Стандартный',   hours:24, rate:0.15, icon:'💵', minAmount:8000,   minLevel:5,  diamond:false,
+   desc:'Хороший процент за сутки'},
+  {id:'d3', name:'Выгодный',      hours:48, rate:0.25, icon:'💰', minAmount:25000,  minLevel:10, diamond:false,
+   desc:'Для состоятельных игроков'},
+  {id:'d4', name:'💎 Премиум',    hours:72, rate:0.50, icon:'💎', minAmount:100000, minLevel:1,  diamond:true,
+   desc:'Только для Diamond · максимальный доход'},
+];
+
+function showBankTab(tab){
+  // Update tab styles
+  ['loans','deposits','transfer','history'].forEach(t=>{
+    const btn=document.getElementById('bankTab_'+t);
+    if(!btn)return;
+    const active=t===tab;
+    btn.style.background=active?'var(--g)':'var(--d3)';
+    btn.style.color=active?'#000':'var(--dm)';
+  });
+  const el=document.getElementById('bankContent');if(!el)return;
+  const now=Date.now();
+  const loan=me.activeLoan;
+  const deposit=me.activeDeposit;
+
+  if(tab==='loans'){
+    const loanActive=loan&&loan.until>now;
+    el.innerHTML=loanActive?`
+      <div class="card rhi mb8">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--r);margin-bottom:8px">⚠️ АКТИВНЫЙ КРЕДИТ</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--dm)">Взято</span>
+          <span style="font-size:12px;font-weight:700">${fmt(loan.amount)}$</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--dm)">К возврату</span>
+          <span style="font-size:12px;font-weight:700;color:var(--r)">${fmt(loan.debt)}$</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--dm)">Осталось</span>
+          <span style="font-size:11px;color:var(--r)">${Math.ceil((loan.until-now)/3600000)}ч</span>
+        </div>
+        <div style="background:var(--dk);border-radius:3px;height:5px;overflow:hidden;margin-bottom:10px">
+          <div style="height:100%;width:${Math.min(100,Math.floor((now-loan.taken)/(loan.until-loan.taken)*100))}%;background:var(--r);border-radius:3px;transition:width .5s"></div>
+        </div>
+        <button class="btn btn-gr btn-full" onclick="repayLoan()" ${me.money<loan.debt?'disabled':''}>✅ ПОГАСИТЬ ${fmt(loan.debt)}$</button>
+        ${me.money<loan.debt?`<div style="font-size:10px;color:var(--r);text-align:center;margin-top:6px">Не хватает ${fmt(loan.debt-me.money)}$ · При просрочке банк конфискует имущество!</div>`:''}
+      </div>`
+    :`
+      <div style="font-size:10px;color:var(--dm);line-height:1.7;margin-bottom:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px">
+        💡 <b>Как работает кредит:</b> Получаешь деньги сразу. Возвращаешь с процентом в срок.<br>
+        ⚠️ Просрочка → банк <b>конфискует бизнес</b> или списывает деньги принудительно.
+      </div>
+      ${CREDIT_PLANS.map(p=>{
+        const lvlOk=(me.level||1)>=p.minLevel;
+        const diamondOk=!p.diamond||(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0));
+        const canUse=lvlOk&&diamondOk;
+        const debt=Math.floor(p.amount*(1+p.rate));
+        const profit=debt-p.amount;
+        return`
+        <div class="card mb6" style="opacity:${canUse?1:.55};border-left:3px solid ${p.diamond?'#9b59b6':canUse?'var(--r)':'var(--br2)'}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:26px;width:42px;height:42px;background:${p.diamond?'rgba(155,89,182,.15)':'var(--d3)'};border-radius:10px;
+              display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <span style="font-weight:700;font-size:13px">${p.name}</span>
+                ${p.diamond
+                  ?`<span class="tag tpu" style="font-size:8px">💎 DIAMOND</span>`
+                  :`<span class="tag ${canUse?'tr':'tbl'}" style="font-size:8px">Lvl${p.minLevel}+</span>`}
+              </div>
+              <div style="font-size:10px;color:var(--dm)">${p.desc}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;text-align:center">
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:var(--gr)">+${fmt(p.amount)}$</div>
+              <div style="font-size:8px;color:var(--dm)">получишь</div>
+            </div>
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:${p.diamond?'#e056fd':'var(--r)'}">${p.rate*100}%</div>
+              <div style="font-size:8px;color:var(--dm)">ставка</div>
+            </div>
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:var(--r)">-${fmt(profit)}$</div>
+              <div style="font-size:8px;color:var(--dm)">${p.hours}ч переплата</div>
+            </div>
+          </div>
+          ${canUse
+            ?`<button class="btn btn-full" style="background:${p.diamond?'linear-gradient(135deg,#9b59b6,#6c3483)':'linear-gradient(135deg,var(--r),#a01828)'};color:#fff"
+               onclick="takeLoan('${p.id}')">💳 ВЗЯТЬ ${fmt(p.amount)}$</button>`
+            :p.diamond
+              ?`<div style="text-align:center;padding:8px;background:rgba(155,89,182,.1);border-radius:8px;font-size:11px;color:#e056fd">
+                  💎 Только для Diamond подписки · <span onclick="goSub('me','premium',document.querySelector('[onclick*=\\'me\\',\\'premium\\']'))" style="cursor:pointer;text-decoration:underline">Получить</span>
+                </div>`
+              :`<div style="text-align:center;font-size:11px;color:var(--dm);padding:6px">🔒 Нужен уровень ${p.minLevel}</div>`}
+        </div>`;
+      }).join('')}`;
+
+  }else if(tab==='deposits'){
+    const depositActive=deposit&&deposit.until>now;
+    const depositReady=deposit&&deposit.until<=now&&!deposit.collected;
+    el.innerHTML=depositActive?`
+      <div class="card ghi mb8">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--gr);margin-bottom:8px">💴 АКТИВНЫЙ ВКЛАД</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--dm)">Вложено</span>
+          <span style="font-size:12px;font-weight:700">${fmt(deposit.amount)}$</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--dm)">Получишь</span>
+          <span style="font-size:12px;font-weight:700;color:var(--gr)">${fmt(Math.floor(deposit.amount*(1+deposit.rate)))}$</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--dm)">Созревает через</span>
+          <span style="font-size:11px;color:var(--cy)">${Math.ceil((deposit.until-now)/3600000)}ч</span>
+        </div>
+        <div style="background:var(--dk);border-radius:3px;height:5px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(100,Math.floor((now-deposit.taken)/(deposit.until-deposit.taken)*100))}%;background:var(--gr);border-radius:3px"></div>
+        </div>
+      </div>`
+    :depositReady?`
+      <div class="card ghi mb8" style="text-align:center;padding:16px">
+        <div style="font-size:32px;margin-bottom:6px">🎉</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gr);margin-bottom:4px">ВКЛАД СОЗРЕЛ!</div>
+        <div style="font-size:13px;margin-bottom:12px">+${fmt(Math.floor(deposit.amount*(1+deposit.rate)))}$</div>
+        <button class="btn btn-gr btn-full" onclick="collectDeposit()">💰 ЗАБРАТЬ</button>
+      </div>`
+    :`
+      <div style="font-size:10px;color:var(--dm);line-height:1.7;margin-bottom:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px">
+        💡 <b>Как работает вклад:</b> Кладёшь деньги — забираешь с процентом через N часов.<br>
+        ⛔ Досрочное снятие невозможно.
+      </div>
+      ${DEPOSIT_PLANS.map(p=>{
+        const lvlOk=(me.level||1)>=p.minLevel;
+        const diamondOk=!p.diamond||(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0));
+        const canUse=lvlOk&&diamondOk;
+        const profit=Math.floor(p.minAmount*p.rate);
+        return`
+        <div class="card mb6" style="opacity:${canUse?1:.55};border-left:3px solid ${p.diamond?'#9b59b6':canUse?'var(--gr)':'var(--br2)'}">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="font-size:26px;width:42px;height:42px;background:${p.diamond?'rgba(155,89,182,.15)':'var(--d3)'};border-radius:10px;
+              display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.icon}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <span style="font-weight:700;font-size:13px">${p.name}</span>
+                ${p.diamond?`<span class="tag tpu" style="font-size:8px">💎 DIAMOND</span>`
+                  :`<span class="tag ${canUse?'tgr':'tbl'}" style="font-size:8px">Lvl${p.minLevel}+</span>`}
+              </div>
+              <div style="font-size:10px;color:var(--dm)">${p.desc}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;text-align:center">
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:${p.diamond?'#e056fd':'var(--cy)'}">+${p.rate*100}%</div>
+              <div style="font-size:8px;color:var(--dm)">доход</div>
+            </div>
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:var(--g)">${p.hours}ч</div>
+              <div style="font-size:8px;color:var(--dm)">срок</div>
+            </div>
+            <div style="background:var(--dk);border-radius:7px;padding:5px">
+              <div style="font-size:11px;font-weight:700;color:var(--gr)">+${fmt(profit)}$</div>
+              <div style="font-size:8px;color:var(--dm)">мин. прибыль</div>
+            </div>
+          </div>
+          ${canUse?`
+          <div style="display:flex;gap:6px">
+            <input class="inp" id="depAmt_${p.id}" type="number" placeholder="Сумма $" style="flex:1" value="${p.minAmount}">
+            <button class="btn btn-sm" style="background:${p.diamond?'linear-gradient(135deg,#9b59b6,#6c3483)':'linear-gradient(135deg,var(--gr),#107a50)'};color:#fff"
+              onclick="makeDeposit('${p.id}')">💴 ОТКРЫТЬ</button>
+          </div>
+          <div style="font-size:9px;color:var(--dm);margin-top:4px">Мин: ${fmt(p.minAmount)}$</div>`
+          :p.diamond?`<div style="text-align:center;padding:8px;background:rgba(155,89,182,.1);border-radius:8px;font-size:11px;color:#e056fd">💎 Только для Diamond подписки</div>`
+          :`<div style="text-align:center;font-size:11px;color:var(--dm);padding:6px">🔒 Нужен уровень ${p.minLevel}</div>`}
+        </div>`;
+      }).join('')}`;
+
+  }else if(tab==='transfer'){
+    el.innerHTML=`
+      <div style="font-size:10px;color:var(--dm);line-height:1.7;margin-bottom:10px;background:rgba(0,0,0,.2);border-radius:8px;padding:10px">
+        💡 Отправляй деньги другим игрокам. Комиссия банка <b>5%</b>.
+      </div>
+      <div class="card">
+        <select class="inp" id="transferTarget" style="margin-bottom:8px">
+          <option value="">Выбери получателя...</option>
+          ${Object.values(P).filter(p=>p.id!==PID).map(p=>`
+            <option value="${p.id}">${p.avatar} ${p.name} (${fmt(p.money)}$)</option>`).join('')}
+        </select>
+        <input class="inp" id="transferAmount" type="number" placeholder="Сумма $" style="margin-bottom:8px" value="1000">
+        <div id="transferFee" style="font-size:10px;color:var(--dm);margin-bottom:8px">Комиссия 5%: ~50$</div>
+        <button class="btn btn-cy btn-full" onclick="bankTransfer()">💸 ОТПРАВИТЬ</button>
+      </div>`;
+    // Live fee calculation
+    document.getElementById('transferAmount')?.addEventListener('input',e=>{
+      const amt=parseInt(e.target.value)||0;
+      const fee=document.getElementById('transferFee');
+      if(fee)fee.textContent=`Комиссия 5%: ${fmt(Math.floor(amt*0.05))}$ · Получит: ${fmt(amt-Math.floor(amt*0.05))}$`;
+    });
+
+  }else if(tab==='history'){
+    const bankTxs=(me.txHistory||[]).filter(t=>
+      t.label?.includes('Кредит')||t.label?.includes('Вклад')||
+      t.label?.includes('Перевод')||t.label?.includes('Налог')||t.label?.includes('Банк')
+    ).slice(0,20);
+    el.innerHTML=`
+      <div class="card" style="padding:4px 0">
+        ${bankTxs.length?bankTxs.map(t=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--br2)">
+            <span style="font-size:14px">${t.amount>0?'📈':'📉'}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px">${t.label}</div>
+              <div style="font-size:9px;color:var(--dm)">${fmtAge(t.ts)} назад</div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${t.amount>0?'var(--gr)':'var(--r)'}">
+              ${t.amount>0?'+':''}${fmt(t.amount)}$
+            </span>
+          </div>`).join('')
+        :'<div class="empty">Нет банковских операций</div>'}
+      </div>`;
+  }
+}
+
+async function makeDeposit(planId){
+  const plan=DEPOSIT_PLANS.find(p=>p.id===planId);if(!plan)return;
+  if((me.level||1)<plan.minLevel){toast('Нужен уровень '+plan.minLevel+'!',1);return;}
+  if(plan.diamond&&!(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0))){
+    toast('💎 Только для Diamond подписки!',1);return;
+  }
+  if(me.activeDeposit&&me.activeDeposit.until>Date.now()){toast('У тебя уже есть вклад!',1);return;}
+  const amount=parseInt(document.getElementById('depAmt_'+planId)?.value)||0;
+  if(amount<plan.minAmount){toast('Минимум '+fmt(plan.minAmount)+'$!',1);return;}
+  if(me.money<amount){toast('Нет денег!',1);return;}
+  me.money-=amount;
+  me.activeDeposit={planId,amount,rate:plan.rate,taken:Date.now(),until:Date.now()+plan.hours*3600000,collected:false};
+  addTx(-amount,'💴 Вклад: '+plan.name);
+  saveMe();updateHdr();sfx('coins');haptic('medium');
+  toast('💴 Вклад открыт! Заберёшь +'+fmt(Math.floor(amount*(1+plan.rate)))+'$ через '+plan.hours+'ч');
+  showBankTab('deposits');
+}
+
+async function collectDeposit(){
+  const d=me.activeDeposit;if(!d||!d.collected===false)return;
+  if(Date.now()<d.until){toast('Вклад ещё не созрел!',1);return;}
+  const payout=Math.floor(d.amount*(1+d.rate));
+  me.money+=payout;
+  addTx(payout,'💰 Вклад получен: +'+fmt(payout-d.amount)+'$ прибыль');
+  me.activeDeposit=null;
+  saveMe();updateHdr();sfx('win');haptic('heavy');
+  toast('🎉 Вклад получен! +'+fmt(payout)+'$');showBankTab('deposits');
+}
+
+async function bankTransfer(){
+  const targetId=document.getElementById('transferTarget')?.value;
+  const amount=parseInt(document.getElementById('transferAmount')?.value)||0;
+  if(!targetId){toast('Выбери получателя!',1);return;}
+  if(amount<100){toast('Минимум 100$!',1);return;}
+  const fee=Math.floor(amount*0.05);
+  const net=amount-fee;
+  if(me.money<amount){toast('Не хватает '+fmt(amount-me.money)+'$!',1);return;}
+  const target=P[targetId];if(!target)return;
+  me.money-=amount;
+  addTx(-amount,'💸 Перевод → '+target.name);
+  addTx(-fee,'🏛️ Комиссия банка (5%)'); // fee already included in -amount
+  // Give to target
+  target.money=(target.money||0)+net;
+  await ST.set('players',P);
+  saveMe();updateHdr();
+  sfx('coins');haptic('medium');
+  await pushFeed('💸',`<b>${me.name}</b> перевёл <b>${target.name}</b> ${fmt(net)}$`);
+  if(target.tgId)notifyPlayer(target.tgId,'daily_remind'); // reuse as generic ping
+  toast('✅ Переведено '+fmt(net)+'$ → '+target.name+' (комиссия '+fmt(fee)+'$)');
+  showBankTab('history');
+}
+
+// rCredits is defined above as the full bank with showBankTab
+
+function rCredits(){
+  const el=document.getElementById('D_credits');if(!el)return;
+  const loan=me.activeLoan;
+  const deposit=me.activeDeposit;
+  const now=Date.now();
+  const loanActive=loan&&loan.until>now;
+  const depositActive=deposit&&deposit.until>now;
+  const depositReady=deposit&&deposit.until<=now&&!deposit.collected;
+
+  el.innerHTML=`
+    <div style="text-align:center;padding:14px 0 10px">
+      <div style="font-size:36px;margin-bottom:5px">🏦</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px">ГОРОДСКОЙ БАНК</div>
+      <div style="font-size:10px;color:var(--dm)">Кредиты · Вклады · Переводы</div>
+    </div>
+    <div class="card hi mb8" style="text-align:center;padding:12px">
+      <div style="font-size:10px;color:var(--dm);margin-bottom:3px">БАЛАНС</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--g)">${fmt(me.money)}$</div>
+      ${loanActive?`<div style="font-size:10px;color:var(--r);margin-top:3px">⚠️ Долг: ${fmt(loan.debt)}$ · осталось ${Math.ceil((loan.until-now)/3600000)}ч</div>`:''}
+      ${depositActive?`<div style="font-size:10px;color:var(--cy);margin-top:3px">💴 Вклад: ${fmt(deposit.amount)}$ · через ${Math.ceil((deposit.until-now)/3600000)}ч</div>`:''}
+      ${depositReady?`<div style="font-size:10px;color:var(--gr);margin-top:3px">✅ Вклад готов! Забери ${fmt(Math.floor(deposit.amount*(1+deposit.rate)))}$</div>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px">
+      <button id="bankTab_loans"    onclick="showBankTab('loans')"
+        class="btn btn-g btn-sm" style="font-size:9px;padding:8px 2px">💳<br>КРЕДИТ</button>
+      <button id="bankTab_deposits" onclick="showBankTab('deposits')"
+        class="btn btn-gh btn-sm" style="font-size:9px;padding:8px 2px">💴<br>ВКЛАД</button>
+      <button id="bankTab_transfer" onclick="showBankTab('transfer')"
+        class="btn btn-gh btn-sm" style="font-size:9px;padding:8px 2px">💸<br>ПЕРЕВОД</button>
+      <button id="bankTab_history"  onclick="showBankTab('history')"
+        class="btn btn-gh btn-sm" style="font-size:9px;padding:8px 2px">📋<br>ИСТОРИЯ</button>
+    </div>
+    <div id="bankContent"></div>`;
+
+  showBankTab('loans');
+}
+
+async function takeLoan(planId){
+  if(me.activeLoan&&me.activeLoan.until>Date.now()){toast('Сначала погаси текущий кредит!',1);return;}
+  const plan=CREDIT_PLANS.find(p=>p.id===planId);if(!plan)return;
+  if((me.level||1)<plan.minLevel){toast('Нужен уровень '+plan.minLevel+'!',1);return;}
+  if(plan.diamond&&!(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0))){
+    toast('💎 Только для Diamond подписки!',1);return;
+  }
+  const debt=Math.floor(plan.amount*(1+plan.rate));
+  me.money+=plan.amount;
+  me.activeLoan={planId,amount:plan.amount,debt,taken:Date.now(),until:Date.now()+plan.hours*3600000};
+  addTx(plan.amount,'💳 Кредит: '+plan.name);
+  saveMe();updateHdr();
+  sfx('coins');haptic('medium');
+  toast('💳 Кредит получен! Верни '+fmt(debt)+'$ за '+plan.hours+'ч');rCredits();
+}
+
+async function repayLoan(){
+  const loan=me.activeLoan;if(!loan)return;
+  if(me.money<loan.debt){toast('Не хватает '+fmt(loan.debt-me.money)+'$!',1);return;}
+  me.money-=loan.debt;
+  addTx(-loan.debt,'💳 Погашение кредита');
+  me.activeLoan=null;
+  saveMe();updateHdr();
+  sfx('win');haptic('medium');
+  toast('✅ Кредит погашен!');rCredits();
+}
+
+function checkCredit(){
+  if(!me?.activeLoan)return;
+  const loan=me.activeLoan;
+  if(Date.now()>loan.until&&loan.debt>0){
+    // Overdue — confiscate a business
+    if(me.money>=loan.debt){
+      me.money-=loan.debt;
+      addTx(-loan.debt,'⚠️ Банк списал долг принудительно');
+      toast('⚠️ Банк списал долг '+fmt(loan.debt)+'$',1);
+    }else if(me.props&&me.props.length>0){
+      const lost=me.props.pop();
+      const lostName=PROPS.find(p=>p.id===lost)?.name||lost;
+      addTx(0,'🏦 Банк конфисковал: '+lostName);
+      toast('🏦 Банк конфисковал «'+lostName+'» за просрочку!',1);
+      sfx('fail');haptic('heavy');
+    }else{
+      const fine=Math.min(me.money,Math.floor(loan.debt*0.5));
+      me.money=Math.max(0,me.money-fine);
+      addTx(-fine,'⚠️ Штраф за просрочку кредита');
+    }
+    me.activeLoan=null;
+    saveMe();updateHdr();
+  }
+}
+
+// ════════════════════════════════════════
+// 👤 ПРОСМОТР ПРОФИЛЯ ИГРОКА
+// ════════════════════════════════════════
+function openProfile(pid){
+  if(!pid||pid===PID)return;
+  const p=P[pid];if(!p)return;
+  const el=document.getElementById('mPlayerProfileBody');if(!el)return;
+
+  const org=p.orgId&&W.orgs[p.orgId];
+  const t=p.activeTitle&&TITLES.find(x=>x.id===p.activeTitle);
+  const lvl=p.level||1;
+  const myD=Object.values(W.districts||{}).filter(d=>d.orgId===p.orgId).length;
+  const isDiamond=p.premium==='diamond'&&Date.now()<(p.premiumUntil||0);
+  const isGold=p.premium==='gold'&&Date.now()<(p.premiumUntil||0);
+  const isPremium=isDiamond||isGold;
+  const orgRank=org&&(org.leaderId===pid?'👑 Лидер':(org.ranks?.[pid]?ORG_RANKS[org.ranks[pid]]?.name:'🔫 Рядовой'));
+
+  // Achievements count
+  const achievDone=(p.achievements||[]).length;
+
+  // Online status
+  const lastSeen=p.lastSeen||0;
+  const onlineNow=Date.now()-lastSeen<120000;
+  const onlineStr=onlineNow?'🟢 Онлайн':lastSeen?'⚫ '+fmtAge(lastSeen)+' назад':'⚫ Давно';
+
+  // Shared activities check
+  const sameOrg=me.orgId&&me.orgId===p.orgId;
+  const isEnemy=me.orgId&&p.orgId&&me.orgId!==p.orgId&&Object.values(W.wars||{}).find(w=>(w.attacker===me.orgId&&w.defender===p.orgId)||(w.attacker===p.orgId&&w.defender===me.orgId));
+
+  // Liked profiles
+  const liked=(me.likedProfiles||[]).includes(pid);
+
+  el.innerHTML=`
+    <!-- Profile header with gradient bg -->
+    <div style="background:linear-gradient(180deg,${isDiamond?'rgba(155,89,182,.25)':isGold?'rgba(240,180,41,.15)':'rgba(46,134,222,.12)'} 0%,var(--d1) 60%);padding:20px 16px 14px;position:relative">
+
+      <!-- Close button -->
+      <button onclick="cm('mPlayerProfile')" style="position:absolute;top:12px;right:12px;background:var(--d3);border:1px solid var(--br2);border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;color:var(--dm)">✕</button>
+
+      <!-- Avatar + name -->
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="position:relative;display:inline-block">
+          <div style="font-size:56px;line-height:1">${p.avatar||'👤'}</div>
+          ${isPremium?`<div style="position:absolute;bottom:-4px;right:-8px;font-size:16px">${isDiamond?'💎':'⭐'}</div>`:''}
+        </div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-top:8px;
+          ${isDiamond?'background:linear-gradient(90deg,#e056fd,#9b59b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent':isGold?'color:var(--g)':'color:var(--tx)'}">${p.name}</div>
+        <div style="font-size:11px;color:var(--dm);margin-bottom:6px">${t?t.badge+' '+t.name:'Без титула'}</div>
+        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
+          ${org?`<span class="tag tg">${org.emblem} ${org.name}</span>`:'<span class="tag tr">Одиночка</span>'}
+          ${orgRank?`<span class="tag tbl">${orgRank}</span>`:''}
+          <span class="tag ${onlineNow?'tgr':''}" style="${onlineNow?'':'color:var(--dm)'}">${onlineStr}</span>
+          ${isEnemy?`<span class="tag tr">⚔️ Враг</span>`:''}
+          ${sameOrg?`<span class="tag tg">🤝 Союзник</span>`:''}
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        ${[
+          ['🏆',lvl,'Уровень','var(--pu)'],
+          ['⚡',p.power,'Сила','var(--g)'],
+          ['⭐',p.rep,'Репа','var(--g)'],
+          ['🗺️',myD,'Районов','var(--bl)'],
+          ['🏅',achievDone,'Ачивок','var(--cy)'],
+          ['📊',fmt(p.score),'Очки','var(--gr)'],
+        ].map(([ico,val,label,clr])=>`
+          <div style="background:rgba(0,0,0,.25);border-radius:10px;padding:8px;text-align:center">
+            <div style="font-size:9px;color:var(--dm);margin-bottom:2px">${ico} ${label}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${clr}">${val}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Actions row -->
+    <div style="padding:10px 14px;border-bottom:1px solid var(--br2);display:flex;gap:7px;flex-wrap:wrap">
+      ${(()=>{
+        const friends=me.friends||[];
+        const outReq=(me.friendRequests||{}).out||[];
+        const inReq=(me.friendRequests||{}).in||[];
+        const isFriend=friends.includes(pid);
+        const sent=outReq.includes(pid);
+        const incoming=inReq.includes(pid);
+        if(isFriend) return`<button class="btn btn-sm btn-gh" onclick="removeFriend('${pid}')" style="flex:1">✅ В друзьях</button>`;
+        if(incoming) return`
+          <button class="btn btn-sm btn-gr" onclick="acceptFriend('${pid}')" style="flex:1">✅ Принять</button>
+          <button class="btn btn-sm btn-r" onclick="declineFriend('${pid}')" style="flex:1">✕ Отклонить</button>`;
+        if(sent) return`<button class="btn btn-sm btn-gh" style="flex:1;opacity:.6" disabled>⏳ Запрос отправлен</button>`;
+        return`<button class="btn btn-sm btn-g" onclick="sendFriendRequest('${pid}')" style="flex:1">👥 Добавить в друзья</button>`;
+      })()}
+      <button class="btn btn-gr btn-sm" onclick="openSendMoney('${pid}')" style="flex:1">💸 Отправить $</button>
+      <button class="btn btn-bl btn-sm" onclick="openDMWith('${pid}')" style="flex:1">💬 DM</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--br2)">
+      ${['stats','skills','achiev','biz'].map((t,i)=>`
+        <button id="pTab_${pid}_${t}" onclick="showProfileTab('${pid}','${t}')"
+          style="flex:1;padding:9px 4px;background:${i===0?'var(--d2)':'transparent'};
+          border:none;border-bottom:2px solid ${i===0?'var(--g)':'transparent'};
+          color:${i===0?'var(--g)':'var(--dm)'};font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px">
+          ${'📊 СТАТ|🧬 СКИЛЛЫ|🏅 АЧИВКИ|🏢 БИЗНЕС'.split('|')[i]}
+        </button>`).join('')}
+    </div>
+    <div id="pTabContent_${pid}" style="padding:12px 14px;min-height:150px"></div>`;
+
+  showProfileTab(pid,'stats');
+  om('mPlayerProfile');
+}
+
+function showProfileTab(pid,tab){
+  const p=P[pid];if(!p)return;
+  ['stats','skills','achiev','biz'].forEach(t=>{
+    const btn=document.getElementById(`pTab_${pid}_${t}`);
+    if(!btn)return;
+    const active=t===tab;
+    btn.style.background=active?'var(--d2)':'transparent';
+    btn.style.borderBottomColor=active?'var(--g)':'transparent';
+    btn.style.color=active?'var(--g)':'var(--dm)';
+  });
+  const el=document.getElementById(`pTabContent_${pid}`);if(!el)return;
+  const org=p.orgId&&W.orgs[p.orgId];
+
+  if(tab==='stats'){
+    const statRows=[
+      ['🚗','Угонов',p.raceWins||0],
+      ['🏦','Ограблений',p.heists||0],
+      ['🔫','Захватов',p.kills||0],
+      ['🎰','Побед в казино',p.casinoWins||0],
+      ['🥊','Дуэлей выиграно',p.duelsWon||0],
+      ['📦','Доставок трафика',p.drugDeliveries||0],
+      ['🎯','Заданий выполнено',p.missionsDone||0],
+      ['👥','Рефералов',(p.refFriends||[]).length],
+    ];
+    el.innerHTML=`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:8px">КРИМИНАЛЬНАЯ СТАТИСТИКА</div>
+      <div style="background:var(--d2);border-radius:10px;overflow:hidden">
+        ${statRows.map((r,i)=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;${i<statRows.length-1?'border-bottom:1px solid var(--br2)':''}">
+            <span style="font-size:16px;width:24px;text-align:center">${r[0]}</span>
+            <span style="flex:1;font-size:12px">${r[1]}</span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:var(--g)">${r[2]}</span>
+          </div>`).join('')}
+      </div>
+      ${org?`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin:12px 0 8px">ОРГАНИЗАЦИЯ</div>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:28px">${org.emblem}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${org.name}</div>
+            <div style="font-size:10px;color:var(--dm)">${OTYPES[org.type]||'Банда'} · Ур.${org.level||1}</div>
+          </div>
+        </div>
+      </div>`:''}`;
+
+  }else if(tab==='skills'){
+    const skills=p.skills||{};
+    el.innerHTML=`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:8px">НАВЫКИ</div>
+      ${SKILLS.map(s=>{
+        const lvl=skills[s.id]||0;
+        return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:20px;width:32px;height:32px;background:var(--d3);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${s.ico}</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:11px;font-weight:700">${s.name}</span>
+              <span style="font-size:11px;color:${lvl>0?'var(--g)':'var(--dm)'}">Lvl ${lvl}/${s.maxLvl}</span>
+            </div>
+            <div style="background:var(--dk);border-radius:3px;height:5px;overflow:hidden">
+              <div style="height:100%;width:${lvl/s.maxLvl*100}%;background:${lvl>=s.maxLvl?'var(--gr)':'linear-gradient(90deg,var(--g2),var(--g))'};border-radius:3px;transition:width .4s"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}`;
+
+  }else if(tab==='achiev'){
+    const done=p.achievements||[];
+    el.innerHTML=`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:8px">ДОСТИЖЕНИЯ (${done.length}/${ACHIEVEMENTS.length})</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        ${ACHIEVEMENTS.map(a=>{
+          const has=done.includes(a.id);
+          return`<div style="background:${has?'rgba(240,180,41,.1)':'var(--d2)'};border:1px solid ${has?'rgba(240,180,41,.3)':'var(--br2)'};border-radius:9px;padding:9px;opacity:${has?1:.4}">
+            <div style="font-size:20px;margin-bottom:4px">${a.ico}</div>
+            <div style="font-size:10px;font-weight:700;line-height:1.3">${a.name}</div>
+            <div style="font-size:8px;color:var(--dm);margin-top:2px">${a.desc}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+  }else if(tab==='biz'){
+    const props=p.props||[];
+    el.innerHTML=`
+      <div style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px;margin-bottom:8px">БИЗНЕСЫ (${props.length})</div>
+      ${props.length?props.map(pid2=>{
+        const prop=PROPS.find(x=>x.id===pid2);if(!prop)return'';
+        const pd=p.propData?.[pid2];
+        const lvl=pd?.level||0;
+        return`<div style="display:flex;align-items:center;gap:10px;background:var(--d2);border:1px solid var(--br2);border-radius:9px;padding:9px 11px;margin-bottom:6px">
+          <span style="font-size:22px">${prop.ico}</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700">${prop.name}</div>
+            <div style="font-size:9px;color:var(--dm)">Ур.${lvl} · +${prop.income+(prop.upgradeInc||[]).slice(0,lvl).reduce((s,x)=>s+x,0)}$/ч${pd?.manager?' · 👔 Менеджер':''}</div>
+          </div>
+        </div>`;
+      }).join(''):'<div class="empty">Нет бизнесов</div>'}`;
+  }
+}
+
+async function likeProfile(pid,btn){
+  if(!me.likedProfiles)me.likedProfiles=[];
+  const already=me.likedProfiles.includes(pid);
+  if(already){
+    me.likedProfiles=me.likedProfiles.filter(x=>x!==pid);
+    if(P[pid])P[pid].likes=Math.max(0,(P[pid].likes||0)-1);
+    if(btn){btn.className='btn btn-sm btn-gh';btn.innerHTML='🤍 Лайк';}
+  }else{
+    me.likedProfiles.push(pid);
+    if(P[pid])P[pid].likes=(P[pid].likes||0)+1;
+    if(btn){btn.className='btn btn-sm btn-g';btn.innerHTML='❤️ Нравится';}
+    sfx('coins');haptic('light');
+  }
+  saveMe();
+  await ST.set('players',P);
+}
+
+function openDMWith(pid){
+  cm('mPlayerProfile');
+  setTimeout(()=>openDM(pid),200);
+}
+
+// ── SEND MONEY FROM PROFILE ──
+function openSendMoney(pid){
+  const p=P[pid];if(!p)return;
+  const el=document.getElementById('mPlayerProfileBody');if(!el)return;
+  // Inject send money UI below tabs
+  const existing=document.getElementById('sendMoneyPanel');
+  if(existing){existing.remove();return;}
+  const panel=document.createElement('div');
+  panel.id='sendMoneyPanel';
+  panel.style.cssText='padding:12px 14px;background:rgba(29,184,122,.08);border-top:1px solid rgba(29,184,122,.2)';
+  panel.innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:var(--gr);margin-bottom:8px">💸 Отправить деньги → ${p.avatar} ${p.name}</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      ${[500,1000,5000,10000].map(a=>`<button class="btn btn-sm btn-gh" onclick="document.getElementById('sendAmt').value=${a}" style="flex:1;font-size:10px">${fmt(a)}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px">
+      <input class="inp" id="sendAmt" type="number" placeholder="Сумма $" style="flex:1" value="1000">
+      <button class="btn btn-gr btn-sm" onclick="confirmSendMoney('${pid}')">ОТПРАВИТЬ</button>
+    </div>
+    <div style="font-size:9px;color:var(--dm);margin-top:5px">Комиссия банка 5% · Баланс: ${fmt(me.money)}$</div>`;
+  // Insert after actions row
+  const actionsRow=el.querySelector('[style*="border-bottom"]');
+  if(actionsRow)actionsRow.insertAdjacentElement('afterend',panel);
+  else el.appendChild(panel);
+}
+
+async function confirmSendMoney(pid){
+  const amount=parseInt(document.getElementById('sendAmt')?.value)||0;
+  if(amount<100){toast('Минимум 100$!',1);return;}
+  const fee=Math.floor(amount*0.05);
+  const net=amount-fee;
+  const total=amount;
+  if(me.money<total){toast('Не хватает '+fmt(total-me.money)+'$!',1);return;}
+  const target=P[pid];if(!target)return;
+  me.money-=total;
+  target.money=(target.money||0)+net;
+  addTx(-total,'💸 Перевод → '+target.name+' (комиссия '+fmt(fee)+'$)');
+  await ST.set('players',P);
+  saveMe();updateHdr();
+  sfx('coins');haptic('medium');
+  document.getElementById('sendMoneyPanel')?.remove();
+  cm('mPlayerProfile');
+  await pushFeed('💸',`<b>${me.name}</b> отправил <b>${target.name}</b> ${fmt(net)}$`);
+  if(target.tgId)notifyPlayer(target.tgId,'biz_event',{ico:'💸',biz:'Перевод',event:me.name+' отправил тебе '+fmt(net)+'$'});
+  toast('✅ Отправлено '+fmt(net)+'$ → '+target.name);
+}
+
+// ── СИСТЕМА ДРУЗЕЙ ──
+async function sendFriendRequest(pid){
+  const target=P[pid];if(!target)return;
+  if(!me.friendRequests)me.friendRequests={out:[],in:[]};
+  if(!me.friends)me.friends=[];
+  if(me.friends.includes(pid)){toast('Уже в друзьях!',1);return;}
+  if(!me.friendRequests.out)me.friendRequests.out=[];
+  if(me.friendRequests.out.includes(pid)){toast('Запрос уже отправлен!',1);return;}
+  me.friendRequests.out.push(pid);
+  // Add to target's incoming
+  if(!target.friendRequests)target.friendRequests={out:[],in:[]};
+  if(!target.friendRequests.in)target.friendRequests.in=[];
+  target.friendRequests.in.push(PID);
+  await ST.set('players',P);
+  saveMe();
+  if(target.tgId)notifyPlayer(target.tgId,'duel',{challenger:me.name+' хочет добавить тебя в друзья',bet:0});
+  sfx('coins');haptic('light');
+  toast('👥 Запрос отправлен '+target.name+'!');
+  openProfile(pid); // refresh
+}
+
+async function acceptFriend(pid){
+  const target=P[pid];if(!target)return;
+  if(!me.friends)me.friends=[];
+  if(!target.friends)target.friends=[];
+  me.friends.push(pid);
+  target.friends.push(PID);
+  // Clean up requests
+  me.friendRequests.in=(me.friendRequests?.in||[]).filter(x=>x!==pid);
+  if(target.friendRequests?.out)target.friendRequests.out=target.friendRequests.out.filter(x=>x!==PID);
+  await ST.set('players',P);
+  saveMe();sfx('win');haptic('medium');
+  toast('✅ '+target.name+' теперь твой друг!');
+  openProfile(pid);
+  rFriends(); // refresh friends tab if open
+}
+
+async function declineFriend(pid){
+  const target=P[pid];if(!target)return;
+  me.friendRequests.in=(me.friendRequests?.in||[]).filter(x=>x!==pid);
+  if(target.friendRequests?.out)target.friendRequests.out=target.friendRequests.out.filter(x=>x!==PID);
+  await ST.set('players',P);
+  saveMe();
+  toast('Запрос отклонён');
+  openProfile(pid);
+}
+
+async function removeFriend(pid){
+  const target=P[pid];if(!target)return;
+  me.friends=(me.friends||[]).filter(x=>x!==pid);
+  if(target.friends)target.friends=target.friends.filter(x=>x!==PID);
+  await ST.set('players',P);
+  saveMe();toast('Удалён из друзей');
+  openProfile(pid);
+  rFriends();
+}
+
+// ── РАЗДЕЛ ДРУЗЬЯ ──
+function rFriends(){
+  const el=document.getElementById('D_friends');if(!el)return;
+  const friends=me.friends||[];
+  const inReqs=(me.friendRequests?.in||[]);
+  const now=Date.now();
+
+  const online=friends.filter(pid=>{const p=P[pid];return p&&now-p.lastSeen<120000;});
+  const offline=friends.filter(pid=>{const p=P[pid];return p&&now-p.lastSeen>=120000;});
+
+  el.innerHTML=`
+    ${inReqs.length?`
+    <div style="font-size:10px;font-weight:700;color:var(--g);letter-spacing:1px;margin-bottom:8px">
+      🔔 ВХОДЯЩИЕ ЗАПРОСЫ (${inReqs.length})
+    </div>
+    ${inReqs.map(pid=>{
+      const p=P[pid];if(!p)return'';
+      const org=p.orgId&&W.orgs[p.orgId];
+      return`<div class="card mb6">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:22px;cursor:pointer" onclick="openProfile('${pid}')">${p.avatar}</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px">${p.name}</div>
+            <div style="font-size:10px;color:var(--dm)">Lvl${p.level||1} · ${org?org.emblem+org.name:'Одиночка'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-gr btn-sm" style="flex:1" onclick="acceptFriend('${pid}')">✅ Принять</button>
+          <button class="btn btn-r btn-sm" style="flex:1" onclick="declineFriend('${pid}')">✕ Отклонить</button>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="height:1px;background:var(--br2);margin:12px 0"></div>`:''}
+
+    ${friends.length===0?`
+    <div style="text-align:center;padding:32px 20px">
+      <div style="font-size:40px;margin-bottom:10px">👥</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;margin-bottom:6px">Нет друзей</div>
+      <div style="font-size:11px;color:var(--dm)">Добавляй игроков через их профиль в Топе или Чате</div>
+    </div>`:`
+
+    ${online.length?`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--gr);flex-shrink:0"></div>
+      <span style="font-size:10px;font-weight:700;color:var(--gr);letter-spacing:1px">ОНЛАЙН (${online.length})</span>
+    </div>
+    ${online.map(pid=>friendCard(pid,true)).join('')}`:''}
+
+    ${offline.length?`
+    <div style="display:flex;align-items:center;gap:6px;margin:${online.length?'14px 0 8px':'0 0 8px'}">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--dm);flex-shrink:0"></div>
+      <span style="font-size:10px;font-weight:700;color:var(--dm);letter-spacing:1px">НЕ В СЕТИ (${offline.length})</span>
+    </div>
+    ${offline.map(pid=>friendCard(pid,false)).join('')}`:''}
+    `}`;
+}
+
+function friendCard(pid,online){
+  const p=P[pid];if(!p)return'';
+  const org=p.orgId&&W.orgs[p.orgId];
+  return`
+  <div class="card mb6" style="border-left:3px solid ${online?'var(--gr)':'var(--br2)'}">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="position:relative;cursor:pointer" onclick="openProfile('${pid}')">
+        <span style="font-size:26px">${p.avatar}</span>
+        <div style="position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;
+          border-radius:50%;background:${online?'var(--gr)':'#666'};border:2px solid var(--d2)"></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${p.name}</div>
+        <div style="font-size:10px;color:var(--dm)">Lvl${p.level||1} · ⚡${p.power} · ${org?org.emblem+org.name:'Одиночка'}</div>
+        <div style="font-size:9px;color:${online?'var(--gr)':'var(--dm)'}">
+          ${online?'🟢 Онлайн':'⚫ '+fmtAge(p.lastSeen||0)+' назад'}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button class="btn btn-bl btn-sm" style="font-size:10px;padding:5px 8px" onclick="openDM('${pid}')">💬</button>
+        <button class="btn btn-gh btn-sm" style="font-size:10px;padding:5px 8px" onclick="openProfile('${pid}')">👤</button>
+      </div>
+    </div>
+  </div>`;
+}
 async function boot(){
   const lb=document.getElementById('lb');
   const ls=document.getElementById('ls');
