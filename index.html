@@ -620,7 +620,7 @@ body{display:flex;flex-direction:column}
 <script>
 // ── CONFIG ──
 const ADMINS=[{id:'658117827',pin:'1337',name:'Главный',role:'superadmin'}];
-const OB_KEY='lso_ob_v5'; // v5 = updated onboarding with all features
+const OB_KEY='lso_ob_v6'; // v6 — full feature set: friends, bank, weather, org ranks
 const AVTS=['😎','🤠','👊','🥷','🎩','😈','🦁','🐺','🐉','🔥','🎯','💀'];
 const EMBLEMS=['🔫','💀','🐉','🦅','🐺','🦁','⚡','🔥','💎','🕷️','🎯','👑','🌊','🗡️','🛡️','🎪','🌹','☠️','🦈','🔱'];
 const OTYPES={gang:'Банда',corp:'Корпорация',mafia:'Мафия',police:'Полиция'};
@@ -3132,19 +3132,27 @@ async function finishMission(win, bonusMult=1){
   if(!me.cooldowns)me.cooldowns={};
   me.cooldowns[id]=Date.now()+m.cd*1000;
   if(win){
-    const mult=soloMult()*getPremiumMoneyMult()*bonusMult;
+    const eventMult=window._eventMissionMult||1;
+    const weatherMult=1+(getWeatherMod('missions')||0);
+    const mult=soloMult()*getPremiumMoneyMult()*bonusMult*eventMult*weatherMult;
     const money=Math.floor(m.r.m*mult);
-    me.money+=money;me.power+=m.r.p;me.rep+=m.r.rep;me.score+=m.r.sc;
+    const rep=Math.floor(m.r.rep*(window._eventRepMult||1));
+    // Wanted: city event can block it
+    const wantedAdd=window._eventNoWanted?0:(m.type==='solo'?1:0);
+    me.money+=money;me.power+=m.r.p;me.rep+=rep;me.score+=m.r.sc;
     me.bpXP=(me.bpXP||0)+m.r.sc;
     me.missionsDone=(me.missionsDone||0)+1;
+    me.wanted=Math.min(5,(me.wanted||0)+wantedAdd);
     if(id==='heist')me.heists=(me.heists||0)+1;
     if(id==='race')me.raceWins=(me.raceWins||0)+1;
     if(me.orgId&&W.orgs[me.orgId])W.orgs[me.orgId].score=(W.orgs[me.orgId].score||0)+Math.floor(m.r.sc/2);
     gainXP(m.r.sc);checkBP();
-    addTx(money,m.ico+' '+m.name+(bonusMult>1?' 🔥':'')); sfx('win');haptic('heavy');
+    const eventNote=eventMult>1?' 🎉+событие':'';
+    addTx(money,m.ico+' '+m.name+(bonusMult>1?' 🔥':'')+eventNote);
+    sfx('win');haptic('heavy');
     checkAchievements();
-    await pushFeed(m.ico,'<b>'+me.name+'</b> выполнил «'+m.name+'» (+'+fmt(money)+'$)'+(bonusMult>1?' 🔥':''));
-    toast('✅ +'+fmt(money)+'$'+(bonusMult>1?' ОТЛИЧНО x'+bonusMult.toFixed(1)+'!':mult<1?' (соло −35%)':''));
+    await pushFeed(m.ico,'<b>'+me.name+'</b> выполнил «'+m.name+'» (+'+fmt(money)+'$)'+(bonusMult>1?' 🔥':'')+(eventMult>1?' 🎉':''));
+    toast('✅ +'+fmt(money)+'$'+(bonusMult>1?' ОТЛИЧНО!':'')+(eventMult>1?' +событие!':''));
   }else{
     me.power=Math.max(5,me.power-8);me.wanted=(me.wanted||0)+1;
     gainXP(5);sfx('fail');haptic('medium');
@@ -3857,19 +3865,25 @@ async function cjFinishWin(){
   cancelAnimationFrame(cjRaf);cancelAnimationFrame(cjState?.chaseRaf);
   const car=cjState.car;
   const bonus=cjState.score>=3?1.3:1;
-  const gross=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*(1+(window._propGarageBonus||0))*bonus);
-  const tax=Math.floor(gross*0.10); // 10% налог с угона
+  const weatherMod=1+(getWeatherMod('carjack')||0);
+  const gross=Math.floor(car.reward*(1+(me.skills?.negotiation||0)*.05)*(1+(window._propGarageBonus||0))*bonus*weatherMod);
+  const tax=Math.floor(gross*0.10);
   const r=gross-tax;
-  me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;me.wanted=(me.wanted||0)+2;
+  me.money+=r;me.score+=Math.floor(r/10);me.rep+=8;
+  // Fog reduces wanted gain, Blackout event removes it
+  const wantedGain=window._eventNoWanted?0:Math.max(0,2+Math.round(getWeatherMod('wanted')||0));
+  me.wanted=(me.wanted||0)+wantedGain;
   me.raceWins=(me.raceWins||0)+1;
   if(!me.cooldowns)me.cooldowns={};me.cooldowns.carjack=Date.now()+3e5;
-  gainXP(60);cjState={active:false,result:{win:true,msg:'Угнан! +'+fmt(r)+'$'+(bonus>1?' 🔥':'')+' 🚗💨'}};
+  gainXP(60);
+  const weatherNote=weatherMod!==1?(weatherMod>1?' 🔥+погода':' 🌧️-погода'):'';
+  cjState={active:false,result:{win:true,msg:'Угнан! +'+fmt(r)+'$'+(bonus>1?' 🔥':'')+weatherNote+' 🚗💨'}};
   addTx(gross,'🚗 Угон: '+car.name);
   if(tax>0)addTx(-tax,'🏛️ Налог на угон (10%)');
   sfx('win');haptic('heavy');checkAchievements();
   saveMe();updateHdr();
   await pushFeed('🚗','<b>'+me.name+'</b> угнал '+car.name+' за '+fmt(r)+'$!');
-  toast('🏎️ '+car.name+' угнан! +'+fmt(r)+'$ (−'+fmt(tax)+'$ налог)');rCarjack();
+  toast('🏎️ '+car.name+' угнан! +'+fmt(r)+'$'+(tax>0?' (−'+fmt(tax)+'$ налог)':''));rCarjack();
 }
 
 // ══════════════════════════════════════
@@ -4081,20 +4095,25 @@ window.drugCheckpointChoice=function(correct){
 async function drugDeliverySuccess(){
   const {s}=window._drugDelivery;
   window._drugDelivery=null;
-  const gross=s.qty*s.sell*(window.drugBonus?2:1);
-  const tax=Math.floor(gross*0.15); // 15% налог на трафик
-  const profit=gross-tax;
-  me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;me.wanted=(me.wanted||0)+1;
+  const weatherMod=1+(getWeatherMod('drug')||0); // hot=+15%, rain=-10%
+  const gross=s.qty*s.sell*(window.drugBonus?2:1)*weatherMod;
+  const tax=Math.floor(gross*0.15);
+  const profit=Math.floor(gross-tax);
+  me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;
+  // Wanted: event can block it
+  const wantedAdd=window._eventNoWanted?0:1;
+  me.wanted=(me.wanted||0)+wantedAdd;
   me.drugStash.splice(s._idx||0,1);
   const idx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
   if(idx>=0)me.drugStash.splice(idx,1);
+  me.drugDeliveries=(me.drugDeliveries||0)+1;
   gainXP(80);
-  addTx(gross,'💊 Доставлено: '+s.drug);
+  addTx(Math.floor(gross),'💊 Доставлено: '+s.drug);
   if(tax>0)addTx(-tax,'🏛️ Налог на трафик (15%)');
   sfx('win');haptic('heavy');
   saveMe();updateHdr();
-  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$ (−'+fmt(tax)+'$ налог)');
-  toast('✅ Доставлено! +'+fmt(profit)+'$ (−'+fmt(tax)+'$ налог)');rDrugs();
+  await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$');
+  toast('✅ Доставлено! +'+fmt(profit)+'$'+(tax>0?' (−'+fmt(tax)+'$ налог)':''));rDrugs();
 }
 
 async function drugDeliveryCaught(){
@@ -4389,7 +4408,8 @@ async function spinSlots(){
   else if(res[0]===res[1]||res[1]===res[2]||res[0]===res[2]){win=bet*2*(casinoBonus?2:1);msg='✅ Пара! +'+win+'$';}
   else msg='❌ Мимо';
   if(win){
-    const gross=Math.floor(win*(1+(window._propCasinoBonus||0)));
+    const eventMult=window._eventCasinoMult||1;
+    const gross=Math.floor(win*(1+(window._propCasinoBonus||0))*eventMult);
     const tax=Math.floor(gross*0.10);
     const realWin=gross-tax;
     me.money+=realWin;me.score+=Math.floor(realWin/20);gainXP(30);me.casinoWins=(me.casinoWins||0)+1;
@@ -6461,11 +6481,6 @@ function gainXPWithSfx(amount){
 // ════════════════════════════════════════
 
 // Build referral link using Telegram start param
-function getRefLink(){
-  const botName = 'los_santos_online_bot'; // замени на имя своего бота
-  return `https://t.me/${botName}?start=ref_${PID}`;
-}
-
 // ── РЕФЕРАЛЬНАЯ СИСТЕМА ──────────────────
 function getRefLink(){
   const botName='los_santos_online_bot';
@@ -6858,77 +6873,64 @@ async function adminAddSponsorTask(icon,title,desc,url,money,energy,sp){
 // ── ONBOARDING ──
 let obStep=0,obAva=PAVA;
 const OB_SLIDES=[
-  // 0 — Welcome
   {tag:'ДОБРО ПОЖАЛОВАТЬ',title:'Los Santos\nOnline',ico:'🌆',next:'НАЧАТЬ →',
     body:'Живой криминальный мир в Telegram.<br>Реальные игроки, настоящие войны, борьба за власть.',
     cards:[
-      {ico:'🌍',t:'Мультиплеер',s:'Все игроки в одном живом мире'},
-      {ico:'⚡',t:'Прогрессия',s:'Уровни, скиллы, бизнес, премиум, титулы'},
-      {ico:'🏆',t:'Борьба за власть',s:'Захватывай районы, воюй с оргами'},
+      {ico:'🌍',t:'Мультиплеер',s:'Все в одном живом мире — реальные игроки'},
+      {ico:'⚡',t:'Прогрессия',s:'Уровни, скиллы, бизнес, орги, друзья, премиум'},
+      {ico:'🏆',t:'Борьба за власть',s:'Захватывай районы, объявляй войны, покоряй топ'},
     ]},
-
-  // 1 — Avatar
   {tag:'ШАГ 1 из 7 — ПЕРСОНАЖ',title:'Выбери\nаватар',ico:null,next:'ВЫБРАТЬ →',
-    body:'Это будет твоё лицо в Los Santos',isAvaPicker:true},
-
-  // 2 — Navigation (updated)
+    body:'Это твоё лицо в Los Santos',isAvaPicker:true},
   {tag:'ШАГ 2 из 7 — НАВИГАЦИЯ',title:'5 разделов\nигры',ico:'🗂️',next:'ПОНЯЛ →',
     body:'Всё управление через нижнее меню.',
     cards:[
-      {ico:'👤',t:'Я — твой штаб',s:'Профиль, скиллы, бизнес, ачивки, рефералы, премиум',hi:true},
-      {ico:'🗺️',t:'Город',s:'Карта районов, газета, выборы, топ игроков'},
-      {ico:'🏢',t:'Орга',s:'Твоя банда, войны, турниры, альянсы'},
+      {ico:'👤',t:'Я — твой штаб',s:'Профиль, скиллы, бизнес, ачивки, рефералы, друзья, премиум',hi:true},
+      {ico:'🗺️',t:'Город',s:'Карта, газета, выборы, топ, банк, тайники'},
+      {ico:'🏢',t:'Орга',s:'Банда с рангами, казна, чат орги, миссии, войны'},
       {ico:'💵',t:'Работа',s:'Легальная работа, крим задания, угон, трафик, ставки'},
-      {ico:'🎲',t:'Досуг',s:'Казино, покер, мины, скачки, чат, DM'},
+      {ico:'🎲',t:'Досуг',s:'Казино, покер, мины, скачки, лотерея, дуэли, чат'},
     ]},
-
-  // 3 — Income ways (updated)
   {tag:'ШАГ 3 из 7 — ЗАРАБОТОК',title:'Много\nпутей дохода',ico:'💰',next:'ПОНЯЛ →',
-    body:'Зарабатывай легально и нелегально — выбор за тобой.',
+    body:'Зарабатывай легально и нелегально — используй всё.',
     cards:[
-      {ico:'💼',t:'Легальная работа',s:'Таксист, курьер, механик, адвокат, хирург — без розыска',hi:true},
-      {ico:'💀',t:'Крим задания',s:'Патруль, ограбление, взлом — выше риск, выше доход'},
-      {ico:'🏠',t:'Бизнес',s:'12 видов — купи, прокачай, найми менеджера'},
-      {ico:'🎰',t:'Казино и игры',s:'Слоты, покер, мины, скачки, лотерея'},
+      {ico:'💼',t:'Легальная работа',s:'8 профессий с мини-играми — без розыска',hi:true},
+      {ico:'💀',t:'Крим задания',s:'6 видов — выше риск, выше доход'},
+      {ico:'🏠',t:'Бизнес',s:'13 видов, улучшения, менеджер, события'},
+      {ico:'🏦',t:'Банк',s:'Кредиты, вклады под %, переводы между игроками'},
     ]},
-
-  // 4 — Crime & jail
-  {tag:'ШАГ 4 из 7 — ЗАКОН',title:'Следи\nза розыском',ico:'🚔',next:'ПОНЯТНО →',
-    body:'За преступления полиция тебя замечает.<br>5 звёзд = <b>арест</b>.',
+  {tag:'ШАГ 4 из 7 — УЛИЦА',title:'Следи за\nобстановкой',ico:'🚔',next:'ПОНЯТНО →',
+    body:'Город живёт своей жизнью — следи за событиями.',
     cards:[
-      {ico:'⭐',t:'Розыск растёт',s:'Угон, трафик, провалы миссий — +★'},
-      {ico:'🚔',t:'5★ — тюрьма на 5 минут',s:'Можно откупиться деньгами или сбежать (50%)'},
-      {ico:'⏳',t:'Сам снижается',s:'−1★ каждые 5 мин если сидишь тихо. ЧОП ускоряет x2'},
+      {ico:'🌦️',t:'Погода меняется',s:'Дождь −15% угон · Жара +15% трафик · Туман −розыск'},
+      {ico:'🎡',t:'Городские события',s:'Фестиваль, рейд, блэкаут — раз в несколько часов'},
+      {ico:'🎁',t:'Тайники на карте',s:'Бесплатные награды — кто первый тот и взял'},
+      {ico:'🚔',t:'5★ — тюрьма',s:'Откупись или сбеги (50%) · Розыск снижается сам',hi:true},
     ]},
-
-  // 5 — Org & biz events
-  {tag:'ШАГ 5 из 7 — ОРГА И БИЗНЕС',title:'Один —\nслабее',ico:'🏢',next:'ДАЛЕЕ →',
+  {tag:'ШАГ 5 из 7 — ОРГА',title:'Один —\nслабее',ico:'🏢',next:'ДАЛЕЕ →',
     body:'Орга даёт +35% к доходу и доступ к сильным миссиям.',
     cards:[
-      {ico:'⚔️',t:'Захватывай районы',s:'Районы приносят пассивный доход каждую минуту',hi:true},
-      {ico:'⚡',t:'События бизнеса',s:'Пожар, рейд, поломка — бот пришлёт уведомление. Реши мини-игру!'},
-      {ico:'💰',t:'Ставки на события',s:'Пари на войны и выборы — ставки закрываются автоматически'},
+      {ico:'🏅',t:'Ранги: Лидер → Рядовой',s:'Разные права — назначай офицеров и замов',hi:true},
+      {ico:'🏦',t:'Казна орги',s:'Взносы → прокачка уровня → бонусы всем членам'},
+      {ico:'🎯',t:'Орг-миссии',s:'Командные задания — награда всем участникам'},
+      {ico:'⚔️',t:'Войны за районы',s:'Захватывай → пассивный доход каждую минуту'},
     ]},
-
-  // 6 — Bonuses & referrals
-  {tag:'ШАГ 6 из 7 — БОНУСЫ',title:'Зарабатывай\nбольше',ico:'🎁',next:'ОТЛИЧНО →',
-    body:'Используй все способы получить преимущество.',
+  {tag:'ШАГ 6 из 7 — СОЦИАЛЬНОЕ',title:'Общайся\nи дружи',ico:'👥',next:'ОТЛИЧНО →',
+    body:'Los Santos — это не только деньги, но и люди.',
     cards:[
-      {ico:'🏅',t:'Ачивки',s:'20 достижений с наградами — открывай их все',hi:true},
-      {ico:'👥',t:'Рефералы',s:'Приведи друга → ты +2000$, друг +1500$, +SP обоим'},
-      {ico:'📺',t:'Спонсорские задания',s:'Подпишись на канал → деньги и энергия бесплатно'},
-      {ico:'💎',t:'Gold / Diamond',s:'x1.5–x2 к доходу, +энергия, казино-бонусы, иммунитет'},
+      {ico:'👥',t:'Система друзей',s:'Добавляй игроков · видишь кто онлайн · пиши в DM',hi:true},
+      {ico:'👤',t:'Профили',s:'Тап на любого → статы, скиллы, ачивки, бизнес'},
+      {ico:'💸',t:'Переводы',s:'Отправляй деньги другу прямо из его профиля'},
+      {ico:'💎',t:'Gold / Diamond',s:'x1.5–x2 к доходу, VIP кредит, эксклюзивный бизнес'},
     ]},
-
-  // 7 — First steps (updated paths)
   {tag:'ШАГ 7 из 7 — СТАРТ',title:'Первые\nшаги',ico:'🚀',next:'В ИГРУ! 🔥',
     body:'Следуй плану — быстро встанешь на ноги.',
     steps:[
       {n:1,t:'Забери ежедневную награду',s:'👤 Я → 🎁 Награды'},
-      {n:2,t:'Выполни 2–3 лёгкие работы',s:'💵 Работа → Таксист или Курьер'},
-      {n:3,t:'Сделай крим задание',s:'💵 Работа → 💀 Крим → Патруль'},
-      {n:4,t:'Вступи в организацию',s:'🏢 Орга → найди или создай банду'},
-      {n:5,t:'Поделись реф-ссылкой',s:'👤 Я → 👥 Рефералы → +2000$ за каждого друга'},
+      {n:2,t:'Сделай 2–3 работы',s:'💵 Работа → Таксист или Курьер'},
+      {n:3,t:'Выполни крим задание',s:'💵 Работа → 💀 Крим → Патруль'},
+      {n:4,t:'Вступи в организацию',s:'🏢 Орга → найди банду или создай свою'},
+      {n:5,t:'Открой вклад в банке',s:'🗺️ Город → 🏦 Банк → Вклад'},
     ]},
 ];
 function obRender(){
@@ -7331,26 +7333,28 @@ function clearBizBadge(){
 // Inject event check into collectIncome
 async function collectIncome(){
   if(!me||!W)return;
-  // Only collect from businesses that DON'T have active events
+  const eventMult=window._eventIncomeMult||1;
   const pInc=PROPS.filter(p=>(me.props||[]).includes(p.id)).reduce((s,p)=>{
     const pd=me.propData?.[p.id];
     const hasEvent=pd?.event&&pd?.eventUntil>Date.now();
-    if(hasEvent)return s; // no income during event
-    return s+Math.floor(getPropData(p.id)?.income/60||p.income/60);
+    if(hasEvent)return s;
+    return s+Math.floor((getPropData(p.id)?.income/60||p.income/60)*eventMult);
   },0);
   const dInc=Object.values(W.districts)
     .filter(d=>d.orgId===me.orgId)
     .reduce((s,d)=>{
       const bBonus=(d.buildings||[]).reduce((b,bid)=>b+(BUILDINGS[bid]?.incBonus||0),0);
       const ctrl=(d.control||100)/100;
-      const raw=Math.floor((d.income+bBonus)*ctrl/60);
-      const tax=Math.floor(raw*(d.tax||0)/100); // district tax rate
+      const raw=Math.floor((d.income+bBonus)*ctrl/60*eventMult);
+      const tax=Math.floor(raw*(d.tax||0)/100);
       return s+raw-tax;
     },0);
-  const total=pInc+dInc;
+  // Org level income bonus
+  const orgBonus=getOrgLevelBonus().income/100;
+  const total=Math.floor((pInc+dInc)*(1+orgBonus));
   if(total>0){
     me.money+=total;
-    addTx(total,'🏠 Пассивный доход');
+    addTx(total,'🏠 Пассивный доход'+(eventMult>1?' 💸x'+eventMult:''));
     saveMe();updateHdr();
   }
   // Property taxes every 6h
@@ -7362,7 +7366,7 @@ async function collectIncome(){
     if(me.money>=tax){
       me.money-=tax;
       addTx(-tax,'💸 Налог на имущество');
-      if(tax>0)toast('💸 Налог: -'+tax+'$');
+      if(tax>0)toast('💸 Налог: −'+tax+'$');
     }else{
       const lost=me.props.pop();
       const lostName=PROPS.find(p=>p.id===lost)?.name||lost;
@@ -7370,7 +7374,6 @@ async function collectIncome(){
     }
     saveMe();updateHdr();
   }
-  // Random business events
   checkBizEvents();
 }
 
@@ -7422,26 +7425,36 @@ async function autoSync(){
   const prevChatLen=(CHAT||[]).length;
   await syncAll();
   refillEnergy();
-  updateHdr();
+  updateHdr(); // also updates friend request badge
   collectRefRewards();
   checkOrgDues();
   checkManagerSalaries();
+  checkBizEvents();  // бизнес события
+  checkCredit();     // проверка просрочки кредита
+  checkDepositReady(); // уведомление о готовом вкладе
   applyPropBonuses();
   // Re-render current screen
   const fn=RENDERS[curHub]?.[curSub[curHub]];if(fn)try{fn();}catch(e){}
-  // Always check DM badge for unread messages
   checkDMBadge();
-  // Show chat badge ONLY for new messages that arrived AFTER we loaded
-  // prevChatLen===0 means first load — don't show badge
   const newMsgs=(CHAT||[]).length-prevChatLen;
   if(newMsgs>0 && prevChatLen>0 && curSub[curHub]!=='chat'){
     const b=document.getElementById('funBadge');
     if(b){b.style.display='flex';b.textContent=newMsgs>9?'9+':String(newMsgs);}
   }
-  // Always hide badge when viewing chat
   if(curSub[curHub]==='chat'&&curHub==='fun'){
     const b=document.getElementById('funBadge');if(b)b.style.display='none';
   }
+}
+
+function checkDepositReady(){
+  const d=me?.activeDeposit;
+  if(!d||d.collected||d.until>Date.now())return;
+  // Notify once
+  if(d._notified)return;
+  d._notified=true;
+  toast('💴 Вклад созрел! Забери в 🏦 Банке',0);
+  sfx('coins');haptic('medium');
+  if(me.tgId)notifyPlayer(me.tgId,'biz_event',{ico:'💴',biz:'Банк',event:'Вклад готов! Зайди и забери деньги'});
 }
 
 // ── LAUNCH ──
@@ -7516,6 +7529,16 @@ async function checkWeather(){
 
 function getWeatherMod(type){
   return currentWeather?.mods?.[type]||0;
+}
+
+// Initialize city event globals
+if(typeof window!=='undefined'){
+  window._eventRepMult=window._eventRepMult||1;
+  window._eventWantedPlus=window._eventWantedPlus||0;
+  window._eventCasinoMult=window._eventCasinoMult||1;
+  window._eventNoWanted=window._eventNoWanted||false;
+  window._eventIncomeMult=window._eventIncomeMult||1;
+  window._eventMissionMult=window._eventMissionMult||1;
 }
 
 // ════════════════════════════════════════
