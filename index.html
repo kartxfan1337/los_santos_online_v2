@@ -894,13 +894,25 @@ function defPlayer(){return{id:PID,name:PNAME,avatar:PAVA,orgId:null,
   lastWheelSpin:0};}
 
 async function syncAll(){
-  const [worldData, playersData, elecData] = await Promise.all([
-    ST.get('world'), ST.get('players'), ST.get('election')
-  ]);
+  // Retry up to 3 times to get players data
+  let playersData=null, worldData=null, elecData=null;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      [worldData, playersData, elecData] = await Promise.all([
+        ST.get('world'), ST.get('players'), ST.get('election')
+      ]);
+      break; // success
+    }catch(e){
+      console.warn('syncAll attempt',attempt+1,'failed:',e.message);
+      if(attempt<2) await new Promise(r=>setTimeout(r,800));
+    }
+  }
+
   const isNewWorld = !worldData;
   W    = worldData   || defWorld();
   P    = playersData || {};
   ELEC = elecData    || defElection();
+
   // Repair: merge missing districts and fix missing zone fields
   const def=defWorld();
   let worldChanged=isNewWorld;
@@ -909,20 +921,51 @@ async function syncAll(){
     else if(!W.districts[id].zone){W.districts[id].zone=d.zone;worldChanged=true;}
   });
   if(worldChanged) await ST.set('world', W);
+
   try{ CHAT = (await loadChat()) || []; }catch{ CHAT=[]; }
   try{ FEED = (await loadFeed()) || []; }catch{ FEED=[]; }
-  me = P[PID] || defPlayer();
-  me.lastSeen = Date.now(); me.name = PNAME;
-  if(tgu?.id) me.tgId = String(tgu.id);
-  // Auto-clean orphaned orgId on every sync
+
+  // IMPORTANT: only create new profile if player truly doesn't exist in DB
+  // Never overwrite an existing profile with defPlayer()
+  const existingProfile = P[PID];
+  if(existingProfile){
+    // Update existing profile with current session data
+    me = existingProfile;
+    me.lastSeen = Date.now();
+    me.name = PNAME; // always update name from Telegram
+    if(tgu?.id) me.tgId = String(tgu.id);
+  }else if(Object.keys(P).length === 0 && !worldData){
+    // P is empty AND world is new — definitely first boot of entire game
+    me = defPlayer();
+    me.lastSeen = Date.now();
+  }else if(Object.keys(P).length === 0){
+    // P is empty but world exists — Supabase might have failed to return players
+    // DON'T create new profile, use local me if we have one
+    if(!me){
+      me = defPlayer();
+      me.lastSeen = Date.now();
+      console.warn('P empty but world exists — possible sync issue, created fresh profile');
+    }
+    // else keep existing me from previous sync
+  }else{
+    // P has other players but not this PID — truly new player
+    me = defPlayer();
+    me.lastSeen = Date.now();
+  }
+
+  // Auto-clean orphaned orgId
   if(me.orgId && W?.orgs && !W.orgs[me.orgId]){
-    console.log('Cleaning orphaned orgId:', me.orgId);
     me.orgId = null;
   }
+
   P[PID] = me;
 }
 async function saveAll(){P[PID]=me;await Promise.all([ST.set('world',W),ST.set('players',P)]);}
-function saveMe(){P[PID]=me;ST.set('players',P);}
+function saveMe(){
+  if(!me||!PID)return;
+  P[PID]=me;
+  ST.set('players',P).catch(e=>console.warn('saveMe failed:',e));
+}
 // pushFeed is defined above in Supabase section — remove old duplicate:
 
 
@@ -6489,39 +6532,46 @@ function getRefLink(){
 
 // Called on boot AFTER syncAll — check if launched with ref param
 async function checkRefParam(){
-  const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param || '';
-  if(!startParam.startsWith('ref_')) return;
+  // Primary: Telegram WebApp start_param
+  let startParam = tg?.initDataUnsafe?.start_param || '';
+  if(!startParam){
+    const urlParams = new URLSearchParams(window.location.search);
+    startParam = urlParams.get('startapp') || urlParams.get('ref') || '';
+  }
+  if(!startParam || !startParam.startsWith('ref_')) return;
   const refId = startParam.replace('ref_','');
-  if(!refId || refId === PID) return;    // can't refer yourself
-  if(me.refBy) return;                   // already used a referral link
-
+  if(!refId || refId === PID) return;
+  if(me.refBy) return; // already used referral
+  console.log('[REF] Processing referral from:', refId);
+  // Give joiner bonus immediately
   me.refBy = refId;
-  // Give joiner bonus
   me.money += 1500;
   me.energy = Math.min((me.energyMax||10),(me.energy||0)+5);
   me.skillPoints = (me.skillPoints||0)+1;
-  addTx(1500,'👥 Реферальный бонус за вступление');
-  saveMe();
-  toast('🎉 Ты пришёл по реферальной ссылке: +1500$ +5⚡ +1 SP!');
+  addTx(1500,'👥 Реферальный бонус: +1500$');
+  toast('🎉 Реферальная ссылка! +1500$ +5⚡ +1 SP!');
   sfx('win'); haptic('heavy');
-
-  // Queue referrer reward in Supabase
-  try{
-    const rr = (await ST.get('ref_rewards')) || {};
-    if(!rr[refId]) rr[refId]=[];
-    // Don't add duplicate
-    if(!rr[refId].find(r=>r.from===PID)){
-      rr[refId].push({from:PID, fromName:me.name, ts:Date.now(), collected:false});
-      await ST.set('ref_rewards', rr);
+  // Save me blocking
+  P[PID] = me;
+  await ST.set('players', P);
+  // Queue referrer reward with retry
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const rr = (await ST.get('ref_rewards')) || {};
+      if(!rr[refId]) rr[refId] = [];
+      if(!rr[refId].find(r=>r.from===PID)){
+        rr[refId].push({from:PID, fromName:me.name, ts:Date.now(), collected:false});
+        await sbSet('world','ref_rewards', rr);
+        console.log('[REF] Reward queued for referrer:', refId);
+      }
+      break;
+    }catch(e){
+      console.warn('[REF] Write attempt', attempt+1, 'failed:', e.message);
+      await new Promise(r=>setTimeout(r,600));
     }
-  }catch(e){console.warn('ref reward write failed',e);}
-
-  // Track in referrer's friends list too
-  if(!me.refFriends) me.refFriends=[];
-  saveMe();
+  }
 }
 
-// Called every autoSync — give referrer their pending rewards
 async function collectRefRewards(){
   if(!me) return;
   try{
@@ -6530,22 +6580,26 @@ async function collectRefRewards(){
     if(!mine||!mine.length) return;
     const uncollected = mine.filter(r=>!r.collected);
     if(!uncollected.length) return;
+    let changed = false;
     uncollected.forEach(r=>{
       r.collected = true;
       me.money += 2000;
-      me.skillPoints=(me.skillPoints||0)+1;
+      me.skillPoints = (me.skillPoints||0)+1;
       if(!me.refFriends) me.refFriends=[];
       if(!me.refFriends.includes(r.from)) me.refFriends.push(r.from);
-      addTx(2000,'👥 Реферал: '+r.fromName+' вступил!');
-      toast(`👥 ${r.fromName} вступил по твоей ссылке! +2000$ +1 SP`);
-      sfx('coins'); haptic('medium');
+      me.refEarned = (me.refEarned||0)+2000;
+      addTx(2000,'👥 Реферал: '+(r.fromName||'игрок')+' вступил!');
+      toast('👥 '+(r.fromName||'Новый игрок')+' вступил по твоей ссылке! +2000$ +1 SP 🎉');
+      sfx('win'); haptic('heavy');
+      changed = true;
     });
-    rr[PID] = mine;
-    await ST.set('ref_rewards', rr);
-    saveMe(); updateHdr();
-  }catch(e){console.warn('collectRefRewards failed',e);}
+    if(changed){
+      rr[PID] = mine;
+      await sbSet('world','ref_rewards', rr);
+      saveMe(); updateHdr();
+    }
+  }catch(e){console.warn('[REF] collectRefRewards failed:',e);}
 }
-
 function getRefBonus(){
   return (me.refFriends||[]).length > 0 ? 0.05 : 0;
 }
@@ -8461,7 +8515,11 @@ async function boot(){
   const hardTimeout=setTimeout(()=>{
     console.warn('Hard timeout hit — forcing launch');
     if(!W)W=defWorld();
-    if(!me)me=defPlayer();
+    if(!me){
+      // Only create defPlayer if we truly have nothing
+      // Try to use P[PID] if it was partially loaded
+      me = (P&&P[PID]) ? P[PID] : defPlayer();
+    }
     try{document.getElementById('loading').style.display='none';}catch{}
     try{initPinPad();launch();}catch(e){console.error(e);}
   },6000);
@@ -8486,7 +8544,10 @@ async function boot(){
     await new Promise(r=>setTimeout(r,150));
     document.getElementById('loading').style.display='none';
 
-    const isNew=!lsGet(OB_KEY)&&(!me.score||me.score<10);
+    // Only show onboarding if TRULY new:
+    // - OB_KEY not set AND player wasn't in DB before this session
+    const wasInDB = P && P[PID] && (P[PID].score||0) > 0;
+    const isNew = !lsGet(OB_KEY) && !wasInDB;
     if(isNew){
       obAva=me.avatar||PAVA||AVTS[0];
       const ob=document.getElementById('ob');if(ob)ob.style.display='flex';
