@@ -994,7 +994,13 @@ function useEnergy(n){if((me.energy||0)<n){toast('Нет энергии! +1/ч',
 function levelGate(min,name){if((me.level||1)<min){toast('🔒 '+name+' — уровень '+min,1);return false;}return true;}
 
 // ── HEADER ──
-function fmt(n){return n>=1000?(n/1000).toFixed(1)+'k':String(n);}
+function fmt(n){
+  if(n===undefined||n===null||isNaN(n))return'0';
+  n=Math.floor(n);
+  if(n>=1000000)return(n/1000000).toFixed(1)+'M';
+  if(n>=1000)return(n/1000).toFixed(1)+'k';
+  return String(n);
+}
 function fmtT(ts){const d=(Date.now()-ts)/1000;if(d<60)return 'только что';if(d<3600)return Math.floor(d/60)+'м';return Math.floor(d/3600)+'ч';}
 function fmtS(s){if(s>=864e2)return Math.floor(s/864e2)+'д';const m=Math.floor(s/60);return m+':'+(s%60).toString().padStart(2,'0');}
 function updateHdr(){
@@ -1133,7 +1139,7 @@ function rCity(){
       <div style="display:flex;flex-direction:column;gap:5px">
         ${districts.map(([id,d])=>{
           const own=d.orgId&&W.orgs[d.orgId];
-          const isOwn=d.orgId===me.orgId;
+          const isOwn=!!(d.orgId&&me.orgId&&d.orgId===me.orgId);
           const isEnemy=d.orgId&&!isOwn;
           const ctrl=d.control||0;
           const bInc=(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
@@ -1219,12 +1225,18 @@ function openDist(id){
   const d=W.districts[id];if(!d)return;
   const own=d.orgId&&W.orgs[d.orgId];
   const myOrg=me.orgId&&W.orgs[me.orgId];
-  const isOwn=d.orgId===me.orgId;
+  // Fix: null === null was returning true — must check both are non-null
+  const isOwn=!!(d.orgId && me.orgId && d.orgId===me.orgId);
+  const isFree=!d.orgId;
   const zi=ZONES[d.zone]||{name:d.zone,color:'#888'};
-  const canAtk=myOrg&&!isOwn&&(me.level||1)>=UNLOCK.war&&me.power>=(d.minPower||30);
+  const lvlOk=(me.level||1)>=UNLOCK.war;
+  const pwrOk=me.power>=(d.minPower||30);
+  // Free districts: just need org + level + power
+  // Enemy districts: same but declare war first
+  const canCaptureFree=myOrg&&isFree&&lvlOk&&pwrOk;
+  const canAtkEnemy=myOrg&&!isOwn&&!isFree&&lvlOk&&pwrOk;
   const ctrl=d.control||0;
   const buildings=d.buildings||[];
-  // Calculate real income with buildings
   const bInc=buildings.reduce((s,b)=>s+(BUILDINGS[b]?.incBonus||0),0);
   const bDef=buildings.reduce((s,b)=>s+(BUILDINGS[b]?.defBonus||0),0);
   const realIncome=d.income+bInc;
@@ -1237,12 +1249,12 @@ function openDist(id){
       <div class="fb mb4"><span style="color:var(--dm);font-size:10px">КОНТРОЛЬ</span>
         <span style="display:flex;align-items:center;gap:6px">
           <div style="width:80px;background:var(--dk);border-radius:3px;height:6px;overflow:hidden">
-            <div style="height:100%;width:${ctrl}%;background:${isOwn?'var(--g)':'var(--r)'};border-radius:3px"></div>
+            <div style="height:100%;width:${ctrl}%;background:${isOwn?'var(--g)':isFree?'var(--bl)':'var(--r)'};border-radius:3px"></div>
           </div>
           <span style="font-size:10px">${ctrl}%</span>
         </span></div>
       <div class="fb mb4"><span style="color:var(--dm);font-size:10px">ДОХОД</span>
-        <span class="tag tgr">+${realIncome}$/ч${bInc>0?` <span style="font-size:8px">(+${bInc} здания)</span>`:''}</span></div>
+        <span class="tag tgr">+${realIncome}$/ч${bInc>0?` (+${bInc} зд.)`:''}</span></div>
       <div class="fb mb4"><span style="color:var(--dm);font-size:10px">НАЛОГ</span>
         <span style="font-size:11px">${d.tax}%</span></div>
       <div class="fb mb4"><span style="color:var(--dm);font-size:10px">ОБОРОНА</span>
@@ -1250,6 +1262,7 @@ function openDist(id){
       <div class="fb"><span style="color:var(--dm);font-size:10px">ПОЛИЦИЯ</span>
         <span style="font-size:12px">${d.police>0?'👮'.repeat(d.police):'—'}</span></div>
     </div>
+
     ${buildings.length?`<div class="card mb8">
       <div style="font-size:10px;color:var(--dm);margin-bottom:6px">ПОСТРОЙКИ</div>
       ${buildings.map(b=>`<div class="fb mb3">
@@ -1257,24 +1270,46 @@ function openDist(id){
         <span style="font-size:9px;color:var(--gr)">${BUILDINGS[b]?.desc}</span>
       </div>`).join('')}
     </div>`:''}
-    ${isOwn?`<div>
-      <div style="font-size:10px;color:var(--dm);margin-bottom:6px">ПОСТРОИТЬ</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
-        ${Object.entries(BUILDINGS).filter(([bid])=>!buildings.includes(bid)).map(([bid,b])=>`
-          <button class="btn btn-sm" style="background:var(--d3);border:1px solid var(--br2);text-align:left;padding:7px;border-radius:7px" onclick="buildInDist('${id}','${bid}')">
-            <div style="font-size:14px">${b.ico}</div>
-            <div style="font-size:9px;font-weight:700">${b.name}</div>
-            <div style="font-size:8px;color:var(--g)">${fmt(b.cost)}$</div>
-          </button>`).join('')}
-      </div>
-      <div class="tag tg" style="display:block;text-align:center;padding:8px">✅ Ваш район</div>
-    </div>`:''}
-    ${canAtk?`<button class="btn btn-r btn-full mt8" onclick="captDist('${id}')">
-      ⚔️ ЗАХВАТИТЬ (−${d.minPower||30} силы)
-    </button>`:''}
-    ${!myOrg&&!isOwn?'<div class="empty">Нужна организация</div>':''}
-    ${myOrg&&!isOwn&&!canAtk&&(me.level||1)<UNLOCK.war?`<div class="empty">🔒 Нужен уровень ${UNLOCK.war}</div>`:''}
-    ${myOrg&&!isOwn&&canAtk===false&&me.power<(d.minPower||30)?`<div class="empty">Нужно ${d.minPower||30}+ силы</div>`:''}`;
+
+    ${isOwn?`
+      <div>
+        <div style="font-size:10px;color:var(--dm);margin-bottom:6px">ПОСТРОИТЬ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">
+          ${Object.entries(BUILDINGS).filter(([bid])=>!buildings.includes(bid)).map(([bid,b])=>`
+            <button class="btn btn-sm" style="background:var(--d3);border:1px solid var(--br2);text-align:left;padding:7px;border-radius:7px" onclick="buildInDist('${id}','${bid}')">
+              <div style="font-size:14px">${b.ico}</div>
+              <div style="font-size:9px;font-weight:700">${b.name}</div>
+              <div style="font-size:8px;color:var(--g)">${fmt(b.cost)}$</div>
+            </button>`).join('')}
+        </div>
+        <div class="tag tg" style="display:block;text-align:center;padding:8px">✅ Ваш район</div>
+      </div>`:''}
+
+    ${!isOwn&&isFree?`
+      ${canCaptureFree
+        ?`<button class="btn btn-g btn-full mt8" onclick="captDist('${id}')">
+            🏴 ЗАНЯТЬ РАЙОН (−${d.minPower||30}⚡)
+          </button>`
+        :`<div style="background:var(--d2);border-radius:10px;padding:10px;margin-top:8px">
+            <div style="font-size:11px;font-weight:700;margin-bottom:4px">🏴 Занять свободный район</div>
+            ${!myOrg?'<div style="font-size:10px;color:var(--dm)">⚠️ Нужна организация</div>':''}
+            ${myOrg&&!lvlOk?`<div style="font-size:10px;color:var(--dm)">🔒 Нужен уровень ${UNLOCK.war}</div>`:''}
+            ${myOrg&&lvlOk&&!pwrOk?`<div style="font-size:10px;color:var(--dm)">⚡ Нужно ${d.minPower||30}+ силы (у тебя ${me.power})</div>`:''}
+          </div>`}
+    `:''}
+
+    ${!isOwn&&!isFree?`
+      ${canAtkEnemy
+        ?`<button class="btn btn-r btn-full mt8" onclick="captDist('${id}')">
+            ⚔️ АТАКОВАТЬ (−${d.minPower||30}⚡)
+          </button>`
+        :`<div style="background:var(--d2);border-radius:10px;padding:10px;margin-top:8px">
+            <div style="font-size:11px;font-weight:700;margin-bottom:4px">⚔️ Атаковать район</div>
+            ${!myOrg?'<div style="font-size:10px;color:var(--dm)">⚠️ Нужна организация</div>':''}
+            ${myOrg&&!lvlOk?`<div style="font-size:10px;color:var(--dm)">🔒 Нужен уровень ${UNLOCK.war}</div>`:''}
+            ${myOrg&&lvlOk&&!pwrOk?`<div style="font-size:10px;color:var(--dm)">⚡ Нужно ${d.minPower||30}+ силы (у тебя ${me.power})</div>`:''}
+          </div>`}
+    `:''}`;
   om('mDist');
 }
 
@@ -1283,7 +1318,7 @@ async function buildInDist(distId, buildId){
   const d=W.districts[distId];
   const b=BUILDINGS[buildId];
   if(!d||!b){toast('Не найдено',1);return;}
-  if(d.orgId!==me.orgId){toast('Не ваш район!',1);return;}
+  if(!(d.orgId&&me.orgId&&d.orgId===me.orgId)){toast('Не ваш район!',1);return;}
   if(me.money<b.cost){toast('Нужно '+fmt(b.cost)+'$!',1);return;}
   if((d.buildings||[]).includes(buildId)){toast('Уже построено!',1);return;}
   me.money-=b.cost;
@@ -1302,7 +1337,7 @@ async function captDist(id){
   if(!myOrg){toast('Нужна орга!',1);return;}
   const minPow=d.minPower||30;
   if(me.power<minPow){toast('Нужно '+minPow+'+ силы!',1);return;}
-  if(d.orgId===me.orgId){toast('Уже ваш!',1);return;}
+  if(d.orgId&&me.orgId&&d.orgId===me.orgId){toast('Уже ваш!',1);return;}
   const prev=d.orgId&&W.orgs[d.orgId];
   const defTotal=(d.power||0)+(d.buildings||[]).reduce((s,b)=>s+(BUILDINGS[b]?.defBonus||0),0);
   const atkPow=(me.power+(me.skills?.combat||0)*5)*getPremiumMoneyMult();
@@ -1343,7 +1378,7 @@ function rProfile(){
   const lvl=me.level||1,xp=me.xp||0,need=xpFor(lvl),pct=Math.min(100,Math.floor(xp/need*100));
   const org=me.orgId&&W.orgs[me.orgId];
   const t=me.activeTitle&&TITLES.find(x=>x.id===me.activeTitle);
-  const myD=Object.values(W.districts||{}).filter(d=>d.orgId===me.orgId).length;
+  const myD=Object.values(W.districts||{}).filter(d=>!!(d.orgId&&me.orgId&&d.orgId===me.orgId)).length;
   const en=me.energy||0,em=me.energyMax||10;
   const enPct=Math.round(en/em*100);
   const nextEn=Math.max(1,Math.ceil(((me.lastEnergy||Date.now())+36e5-Date.now())/6e4));
@@ -1444,51 +1479,45 @@ function upgradeSkill(id){
 // 🏠 БИЗНЕС — полноценная система
 // ══════════════════════════════════════
 const PROPS=[
-  // TIER 1 — стартовые
-  {id:'apt',      ico:'🏠', name:'Квартира',     desc:'Стартовое жильё',           price:1500,  income:50,  tier:'t1', minLevel:1,
+  {id:'apt',        ico:'🏠', name:'Квартира',      desc:'Стартовое жильё',           price:2000,  income:25,  tier:'t1', minLevel:1,
    spec:{type:'home',    bonus:'−10% налог на имущество'},
-   upgrades:['Ремонт','Мебель','Охрана'],  upgradeCost:[800,1500,2500],   upgradeInc:[20,35,50]},
-  {id:'garage',   ico:'🏎️', name:'Гараж',         desc:'+15% к наградам за угон',   price:2500,  income:80,  tier:'t1', minLevel:1,
-   spec:{type:'boost',   bonus:'+15% к наградам угона'},
-   upgrades:['Подъёмник','Мастерская','Тюнинг'], upgradeCost:[1200,2200,4000], upgradeInc:[30,50,80]},
-  {id:'pharmacy', ico:'💊', name:'Аптека',         desc:'Легальная/нелегальная',     price:3500,  income:120, tier:'t1', minLevel:2,
-   spec:{type:'drug',    bonus:'−20% риск трафика'},
-   upgrades:['Запасы','Лаборатория','Сеть'], upgradeCost:[1500,3000,5000], upgradeInc:[40,80,120]},
-
-  // TIER 2 — средний бизнес
-  {id:'restaurant',ico:'🍕',name:'Ресторан',       desc:'Доход растёт с репутацией', price:6000,  income:150, tier:'t2', minLevel:4,
-   spec:{type:'rep',     bonus:'Доход × репа/100 (макс x3)'},
-   upgrades:['Кухня','Зал','Звёздный шеф'], upgradeCost:[2500,4000,7000], upgradeInc:[60,100,160]},
-  {id:'bar',      ico:'🍺', name:'Бар «Котёл»',    desc:'Легальный бизнес',          price:4000,  income:150, tier:'t2', minLevel:3,
-   spec:{type:'social',  bonus:'+20 репы в день'},
-   upgrades:['Ремонт','Музыка','VIP зал'], upgradeCost:[1800,3200,5500], upgradeInc:[50,90,140]},
-  {id:'taxipark',  ico:'🚕', name:'Таксопарк',      desc:'Пассивный доход от трафика',price:8000,  income:200, tier:'t2', minLevel:5,
-   spec:{type:'passive', bonus:'+30$ за каждую работу таксиста'},
-   upgrades:['Машины','Диспетчер','Приложение'], upgradeCost:[3000,5000,8000], upgradeInc:[70,120,180]},
-
-  // TIER 3 — крупный бизнес
-  {id:'warehouse', ico:'🏭', name:'Склад',          desc:'Контрабандный бизнес',      price:7000,  income:250, tier:'t2', minLevel:6,
-   spec:{type:'drug',    bonus:'+1 слот для груза'},
-   upgrades:['Стеллажи','Безопасность','Холодильники'], upgradeCost:[3500,6000,10000], upgradeInc:[90,150,220]},
-  {id:'bank',      ico:'🏦', name:'Банк',           desc:'% на хранящиеся деньги',    price:20000, income:300, tier:'t3', minLevel:10,
-   spec:{type:'bank',    bonus:'+0.5% к балансу каждый час'},
-   upgrades:['Сейфы','IT-система','Отмывание'], upgradeCost:[8000,15000,25000], upgradeInc:[100,200,350]},
-  {id:'casino_share',ico:'🎰',name:'Доля в казино', desc:'% от всех ставок',          price:15000, income:400, tier:'t3', minLevel:8,
-   spec:{type:'casino',  bonus:'+25% к выигрышам казино'},
-   upgrades:['Автоматы','Покерный зал','VIP столы'], upgradeCost:[6000,12000,20000], upgradeInc:[150,250,400]},
-  {id:'gameclub',  ico:'🎮', name:'Игровой клуб',   desc:'Бонус к казино и досугу',   price:12000, income:280, tier:'t3', minLevel:7,
-   spec:{type:'casino',  bonus:'+10% к выигрышам всех игр'},
-   upgrades:['Консоли','VR зал','Турниры'], upgradeCost:[5000,9000,15000], upgradeInc:[100,180,280]},
-  {id:'security_co',ico:'🛡️',name:'ЧОП',           desc:'Снижает розыск',            price:18000, income:350, tier:'t3', minLevel:9,
-   spec:{type:'police',  bonus:'Розыск снижается в 2 раза быстрее'},
-   upgrades:['Снаряжение','Транспорт','Связи в полиции'], upgradeCost:[7000,12000,20000], upgradeInc:[120,200,300]},
-  {id:'mansion',   ico:'🏰', name:'Особняк',         desc:'Статус + макс доход',       price:30000, income:600, tier:'t3', minLevel:15,
-   spec:{type:'prestige','bonus':'Все бонусы +10%'},
-   upgrades:['Бассейн','Охрана','Вертолётная площадка'], upgradeCost:[10000,18000,30000], upgradeInc:[200,350,500]},
-  // Diamond exclusive
-  {id:'bizclub',   ico:'💎', name:'Бизнес-клуб',      desc:'Только для Diamond · VIP-доход',price:0, income:1000, tier:'t3', minLevel:1, diamond:true,
-   spec:{type:'prestige','bonus':'Diamond эксклюзив · +5% к доходу всех бизнесов'},
-   upgrades:['Переговорная','Пентхаус','Яхта'], upgradeCost:[50000,100000,200000], upgradeInc:[500,1000,2000]},
+   upgrades:['Ремонт','Мебель','Охрана'],          upgradeCost:[1000,2000,4000],   upgradeInc:[10,15,20]},
+  {id:'garage',     ico:'🏎️', name:'Гараж',          desc:'+10% к наградам за угон',   price:4000,  income:40,  tier:'t1', minLevel:1,
+   spec:{type:'boost',   bonus:'+10% к угону'},
+   upgrades:['Подъёмник','Покраска','Тюнинг-цех'], upgradeCost:[2000,4000,8000],   upgradeInc:[15,20,30]},
+  {id:'pharmacy',   ico:'💊', name:'Аптека',          desc:'Легальная/нелегальная',     price:6000,  income:60,  tier:'t1', minLevel:2,
+   spec:{type:'drug',    bonus:'−15% риск трафика'},
+   upgrades:['Склад','Рецептура','Лаборатория'],   upgradeCost:[3000,6000,12000],  upgradeInc:[20,30,40]},
+  {id:'restaurant', ico:'🍕', name:'Ресторан',         desc:'Доход растёт с репутацией', price:10000, income:80,  tier:'t2', minLevel:4,
+   spec:{type:'rep',     bonus:'Доход × репутация'},
+   upgrades:['Шеф-повар','VIP-зал','Ночной клуб'], upgradeCost:[5000,10000,20000], upgradeInc:[30,50,70]},
+  {id:'bar',        ico:'🍺', name:'Бар «Котёл»',      desc:'Легальный бизнес',          price:7000,  income:70,  tier:'t2', minLevel:3,
+   spec:{type:'social',  bonus:'Бонус к репутации'},
+   upgrades:['Сцена','Алкоголь-склад','Казино-зал'],upgradeCost:[3500,7000,14000], upgradeInc:[25,40,55]},
+  {id:'taxipark',   ico:'🚕', name:'Таксопарк',         desc:'Пассивный доход от трафика',price:12000, income:90,  tier:'t2', minLevel:5,
+   spec:{type:'passive', bonus:'+20$ за каждый угон'},
+   upgrades:['Автопарк','Диспетчер','Премиум-авто'],upgradeCost:[6000,12000,24000], upgradeInc:[35,50,65]},
+  {id:'warehouse',  ico:'🏭', name:'Склад',              desc:'Контрабандный бизнес',      price:11000, income:100, tier:'t2', minLevel:6,
+   spec:{type:'drug',    bonus:'−10% закупочная цена трафика'},
+   upgrades:['Сигнализация','Холодильники','Доп. площадь'],upgradeCost:[5500,11000,22000],upgradeInc:[40,55,70]},
+  {id:'bank',       ico:'🏦', name:'Банк',               desc:'% на хранящиеся деньги',    price:35000, income:150, tier:'t3', minLevel:10,
+   spec:{type:'bank',    bonus:'+0.3%/ч на баланс'},
+   upgrades:['Сейфы','Инкассация','Своп-деск'],     upgradeCost:[15000,30000,60000], upgradeInc:[60,90,120]},
+  {id:'casino_share',ico:'🎰',name:'Доля в казино',      desc:'% от всех ставок',          price:28000, income:200, tier:'t3', minLevel:8,
+   spec:{type:'casino',  bonus:'+15% к выигрышу в казино'},
+   upgrades:['VIP-столы','Автоматы','Покер-зал'],   upgradeCost:[12000,25000,50000], upgradeInc:[80,110,150]},
+  {id:'gameclub',   ico:'🎮', name:'Игровой клуб',        desc:'Бонус к казино и досугу',   price:20000, income:140, tier:'t3', minLevel:7,
+   spec:{type:'casino',  bonus:'+8% ко всем играм'},
+   upgrades:['Консоли','Онлайн-зал','Турниры'],     upgradeCost:[10000,20000,40000], upgradeInc:[55,80,110]},
+  {id:'security_co',ico:'🛡️',name:'ЧОП',                 desc:'Снижает розыск',            price:30000, income:175, tier:'t3', minLevel:9,
+   spec:{type:'police',  bonus:'Розыск снижается в 2× быстрее'},
+   upgrades:['Бронежилеты','Броневик','Спецназ'],   upgradeCost:[13000,26000,52000], upgradeInc:[70,95,130]},
+  {id:'mansion',    ico:'🏰', name:'Особняк',              desc:'Статус + макс доход',       price:50000, income:300, tier:'t3', minLevel:15,
+   spec:{type:'prestige','bonus':'Все бонусы +5%'},
+   upgrades:['Бассейн','Охрана','Вертолётная площадка'],upgradeCost:[20000,40000,80000],upgradeInc:[100,150,200]},
+  {id:'bizclub',    ico:'💎', name:'Бизнес-клуб',          desc:'Только для Diamond · VIP-доход',price:0, income:500, tier:'t3', minLevel:1, diamond:true,
+   spec:{type:'prestige','bonus':'Diamond эксклюзив · +3% к доходу всех бизнесов'},
+   upgrades:['Переговорная','Пентхаус','Яхта'],     upgradeCost:[50000,100000,200000],upgradeInc:[200,400,600]},
 ];
 
 // Manager salaries per business
@@ -1786,16 +1815,20 @@ async function toggleManager(id){
 // Apply special business bonuses to game systems
 function applyPropBonuses(){
   const owned=me.props||[];
-  // Casino bonus
-  window._propCasinoBonus=owned.includes('casino_share')?0.25:owned.includes('gameclub')?0.1:0;
+  // Casino bonus (reduced slightly)
+  window._propCasinoBonus=owned.includes('casino_share')?0.20:owned.includes('gameclub')?0.08:0;
+  // Diamond bizclub: +3% to all biz income
+  window._propBizclubBonus=owned.includes('bizclub')?0.03:0;
   // Drug risk reduction
   window._propDrugBonus=owned.includes('pharmacy')||owned.includes('warehouse');
   // Police bonus (wanted decay faster)
   window._propPoliceBonus=owned.includes('security_co');
-  // Garage (carjack bonus)
-  window._propGarageBonus=owned.includes('garage')?0.15:0;
-  // Taxi park (job bonus)
-  window._propTaxiBonus=owned.includes('taxipark')?30:0;
+  // Garage (carjack bonus — 10%)
+  window._propGarageBonus=owned.includes('garage')?0.10:0;
+  // Taxi park (job bonus per job done)
+  window._propTaxiBonus=owned.includes('taxipark')?20:0;
+  // Restaurant: income scales with rep (max x2)
+  window._propRestaurantBonus=owned.includes('restaurant')?Math.min(2.0,1+(me.rep||0)/500):1;
 }
 
 // Deduct manager salaries every 24h
@@ -1963,9 +1996,9 @@ function rOrg(){
       }).join('')}`;
     return;
   }
-  const members=Object.values(P).filter(p=>p.orgId===me.orgId);
+  const members=Object.values(P).filter(p=>!!(p.orgId&&me.orgId&&p.orgId===me.orgId));
   const totalP=members.reduce((s,p)=>s+p.power,0);
-  const myD=Object.values(W.districts).filter(d=>d.orgId===me.orgId);
+  const myD=Object.values(W.districts).filter(d=>!!(d.orgId&&me.orgId&&d.orgId===me.orgId));
   const myRank=getMyRank(org);
   const rankInfo=ORG_RANKS[myRank];
   const lvl=org.level||1;
@@ -2267,13 +2300,13 @@ const ORG_MISSION_TEMPLATES=[
    check:(org)=>(org.warsWon||0)>=3},
   {id:'om3',ico:'🏙️',name:'Захватить 5 районов',desc:'Контролируйте 5+ районов одновременно',
    goal:'districts',target:5,reward:{allMoney:1000,xp:400},duration:48,
-   check:()=>Object.values(W.districts).filter(d=>d.orgId===me.orgId).length>=5},
+   check:()=>Object.values(W.districts).filter(d=>!!(d.orgId&&me.orgId&&d.orgId===me.orgId)).length>=5},
   {id:'om4',ico:'👥',name:'Набрать 5 членов',desc:'Приведите новых членов в оргу',
    goal:'members',target:5,reward:{allMoney:300,xp:150},duration:48,
-   check:()=>Object.values(P).filter(p=>p.orgId===me.orgId).length>=5},
+   check:()=>Object.values(P).filter(p=>!!(p.orgId&&me.orgId&&p.orgId===me.orgId)).length>=5},
   {id:'om5',ico:'🏆',name:'Набрать 10000 очков',desc:'Все вместе зарабатывайте очки',
    goal:'score',target:10000,reward:{allMoney:2000,xp:500},duration:72,
-   check:()=>Object.values(P).filter(p=>p.orgId===me.orgId).reduce((s,p)=>s+(p.score||0),0)>=10000},
+   check:()=>Object.values(P).filter(p=>!!(p.orgId&&me.orgId&&p.orgId===me.orgId)).reduce((s,p)=>s+(p.score||0),0)>=10000},
 ];
 
 async function rOrgMissions(){
@@ -2284,7 +2317,7 @@ async function rOrgMissions(){
   }
   const active=org.activeMissions||[];
   const now=Date.now();
-  const members=Object.values(P).filter(p=>p.orgId===me.orgId);
+  const members=Object.values(P).filter(p=>!!(p.orgId&&me.orgId&&p.orgId===me.orgId));
 
   el.innerHTML=`
     <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;margin-bottom:8px;color:var(--g)">
@@ -2301,7 +2334,7 @@ async function rOrgMissions(){
         let progress=0;
         if(tmpl.goal==='treasury')progress=Math.min(100,Math.floor((org.treasury||0)/tmpl.target*100));
         else if(tmpl.goal==='members')progress=Math.min(100,Math.floor(members.length/tmpl.target*100));
-        else if(tmpl.goal==='districts')progress=Math.min(100,Math.floor(Object.values(W.districts).filter(d=>d.orgId===me.orgId).length/tmpl.target*100));
+        else if(tmpl.goal==='districts')progress=Math.min(100,Math.floor(Object.values(W.districts).filter(d=>!!(d.orgId&&me.orgId&&d.orgId===me.orgId)).length/tmpl.target*100));
         else if(tmpl.goal==='score')progress=Math.min(100,Math.floor(members.reduce((s,p)=>s+(p.score||0),0)/tmpl.target*100));
         else progress=done?100:0;
         return`
@@ -2367,7 +2400,7 @@ async function claimOrgMission(templateId){
   const org=W.orgs[me.orgId];if(!org)return;
   const tmpl=ORG_MISSION_TEMPLATES.find(t=>t.id===templateId);if(!tmpl)return;
   // Pay all members
-  const members=Object.values(P).filter(p=>p.orgId===me.orgId);
+  const members=Object.values(P).filter(p=>!!(p.orgId&&me.orgId&&p.orgId===me.orgId));
   const reward=tmpl.reward.allMoney||0;
   members.forEach(p=>{
     p.money=(p.money||0)+reward;
@@ -2634,14 +2667,14 @@ function rTop(){
 // 💼 РАБОТА — легальный заработок
 // ══════════════════════════════════════
 const JOBS=[
-  {id:'taxi',     ico:'🚕', name:'Таксист',      desc:'Развози пассажиров по городу',   pay:[80,150],   cd:60,  en:1, minLevel:1, mini:'route'},
-  {id:'delivery', ico:'📦', name:'Курьер',        desc:'Доставляй посылки вовремя',      pay:[120,200],  cd:90,  en:1, minLevel:1, mini:'memory'},
-  {id:'security', ico:'🛡️', name:'Охранник',      desc:'Дежурь на объекте',              pay:[200,300],  cd:120, en:1, minLevel:2, mini:'click'},
-  {id:'mechanic', ico:'🔧', name:'Механик',       desc:'Чини машины в мастерской',       pay:[250,400],  cd:150, en:2, minLevel:3, mini:'sequence'},
-  {id:'trader',   ico:'📈', name:'Трейдер',       desc:'Играй на бирже',                 pay:[300,800],  cd:180, en:2, minLevel:5, mini:'trade'},
-  {id:'hacker',   ico:'💻', name:'IT-специалист', desc:'Легальный сисадмин',             pay:[500,900],  cd:240, en:2, minLevel:7, mini:'typer'},
-  {id:'lawyer',   ico:'⚖️', name:'Адвокат',       desc:'Защищай клиентов в суде',        pay:[700,1500], cd:300, en:3, minLevel:10,mini:'argue'},
-  {id:'surgeon',  ico:'🏥', name:'Хирург',        desc:'Проводи операции',               pay:[1000,2000],cd:360, en:3, minLevel:15,mini:'steady'},
+  {id:'taxi',     ico:'🚕', name:'Таксист',      desc:'Развози пассажиров по городу',   pay:[50,100],   cd:120, en:1, minLevel:1,  mini:'route'},
+  {id:'delivery', ico:'📦', name:'Курьер',        desc:'Доставляй посылки вовремя',      pay:[80,140],   cd:180, en:1, minLevel:1,  mini:'memory'},
+  {id:'security', ico:'🛡️', name:'Охранник',      desc:'Дежурь на объекте',              pay:[120,200],  cd:240, en:1, minLevel:2,  mini:'click'},
+  {id:'mechanic', ico:'🔧', name:'Механик',       desc:'Чини машины в мастерской',       pay:[150,280],  cd:300, en:2, minLevel:3,  mini:'sequence'},
+  {id:'trader',   ico:'📈', name:'Трейдер',       desc:'Играй на бирже',                 pay:[200,500],  cd:360, en:2, minLevel:5,  mini:'trade'},
+  {id:'hacker',   ico:'💻', name:'IT-специалист', desc:'Легальный сисадмин',             pay:[300,600],  cd:480, en:2, minLevel:7,  mini:'typer'},
+  {id:'lawyer',   ico:'⚖️', name:'Адвокат',       desc:'Защищай клиентов в суде',        pay:[400,900],  cd:600, en:3, minLevel:10, mini:'argue'},
+  {id:'surgeon',  ico:'🏥', name:'Хирург',        desc:'Проводи операции',               pay:[600,1200], cd:900, en:3, minLevel:15, mini:'steady'},
 ];
 
 let _jobState=null;
@@ -3078,14 +3111,14 @@ function jobSteady(el){
 
 // ── MISSIONS ──
 const MISSIONS=[
-  {id:'patrol',ico:'🚗',name:'Патруль',desc:'Объедь район',diff:'EASY',r:{m:300,p:5,rep:8,sc:40},cd:120,type:'solo',en:1},
-  {id:'deal',ico:'🤝',name:'Чёрная сделка',desc:'Встреть поставщика',diff:'MEDIUM',r:{m:800,p:12,rep:15,sc:100},cd:300,type:'solo',en:2},
-  {id:'heist',ico:'🏦',name:'Ограбление банка',desc:'Командная операция. Нужна орга',diff:'HARD',r:{m:2000,p:25,rep:35,sc:250},cd:600,type:'org',en:3,minLevel:8},
-  {id:'race',ico:'🏎️',name:'Уличная гонка',desc:'Выиграй трассу',diff:'MEDIUM',r:{m:1000,p:8,rep:20,sc:130},cd:240,type:'solo',en:2},
-  {id:'smuggle',ico:'🚢',name:'Контрабанда',desc:'Перегони груз',diff:'HARD',r:{m:2500,p:30,rep:10,sc:300},cd:900,type:'solo',en:3},
-  {id:'protect',ico:'🛡️',name:'Охрана VIP',desc:'Прикрой клиента',diff:'MEDIUM',r:{m:700,p:15,rep:25,sc:110},cd:360,type:'org',en:2},
-  {id:'hack',ico:'💻',name:'Взлом системы',desc:'Добудь данные',diff:'HARD',r:{m:1800,p:20,rep:15,sc:200},cd:720,type:'solo',en:3},
-  {id:'recruit',ico:'📢',name:'Вербовка',desc:'Привлеки члена',diff:'EASY',r:{m:100,p:5,rep:30,sc:70},cd:180,type:'org',en:1},
+  {id:'patrol', ico:'🚗', name:'Патруль',         desc:'Объедь район',                   diff:'EASY',   r:{m:150,p:5,rep:5,sc:25},    cd:300,  type:'solo',en:1},
+  {id:'deal',   ico:'🤝', name:'Чёрная сделка',   desc:'Встреть поставщика',             diff:'MEDIUM', r:{m:400,p:10,rep:12,sc:60},   cd:600,  type:'solo',en:2},
+  {id:'heist',  ico:'🏦', name:'Ограбление банка',desc:'Командная операция. Нужна орга', diff:'HARD',   r:{m:1200,p:20,rep:30,sc:150}, cd:1800, type:'org', en:3,minLevel:8},
+  {id:'race',   ico:'🏎️', name:'Уличная гонка',   desc:'Выиграй трассу',                 diff:'MEDIUM', r:{m:500,p:8,rep:15,sc:80},    cd:600,  type:'solo',en:2},
+  {id:'smuggle',ico:'🚢', name:'Контрабанда',      desc:'Перегони груз',                  diff:'HARD',   r:{m:1500,p:25,rep:8,sc:180},  cd:2700, type:'solo',en:3},
+  {id:'protect',ico:'🛡️', name:'Охрана VIP',       desc:'Прикрой клиента',                diff:'MEDIUM', r:{m:350,p:12,rep:20,sc:70},   cd:900,  type:'org', en:2},
+  {id:'hack',   ico:'💻', name:'Взлом системы',    desc:'Добудь данные',                  diff:'HARD',   r:{m:1000,p:18,rep:12,sc:120}, cd:2160, type:'solo',en:3},
+  {id:'recruit',ico:'📢', name:'Вербовка',          desc:'Привлеки члена',                 diff:'EASY',   r:{m:50,p:3,rep:25,sc:40},     cd:600,  type:'org', en:1},
 ];
 function rMissions(){
   const el=document.getElementById('D_missions');if(!el)return;
@@ -3679,10 +3712,10 @@ async function doMission(id){ // legacy fallback
 
 // ── CARJACK ──
 const CARS=[
-  {id:'civic',name:'Honda Civic',ico:'🚗',reward:200,dur:3000,diff:'EASY'},
-  {id:'bmw',name:'BMW M3',ico:'🚙',reward:600,dur:2500,diff:'MEDIUM'},
-  {id:'lambo',name:'Lamborghini',ico:'🏎️',reward:1500,dur:2000,diff:'HARD'},
-  {id:'truck',name:'Бронефургон',ico:'🚚',reward:3000,dur:1500,diff:'INSANE'},
+  {id:'civic',name:'Honda Civic',   ico:'🚗', reward:120,  dur:3000,diff:'EASY'},
+  {id:'bmw',  name:'BMW M3',        ico:'🚙', reward:350,  dur:2500,diff:'MEDIUM'},
+  {id:'lambo',name:'Lamborghini',   ico:'🏎️', reward:900,  dur:2000,diff:'HARD'},
+  {id:'truck',name:'Бронефургон',   ico:'🚚', reward:1800, dur:1500,diff:'INSANE'},
 ];
 // ══════════════════════════════════════
 // 🚗 УГОН — многоэтапная мини-игра
@@ -3933,15 +3966,15 @@ async function cjFinishWin(){
 // 💊 ТРАФИК — мини-игра при доставке
 // ══════════════════════════════════════
 const DROUTES=[
-  {from:'suburbs',   to:'downtown',   drug:'Трава',     buy:200,  sell:500,  risk:.15},
-  {from:'industrial',to:'port',       drug:'Крисс',     buy:800,  sell:1800, risk:.25},
-  {from:'port',      to:'vinewood',   drug:'Кокс',      buy:1500, sell:3500, risk:.35},
-  {from:'airport',   to:'downtown',   drug:'Экстази',   buy:500,  sell:1200, risk:.20},
-  {from:'wasteland', to:'beach',      drug:'Синтетика', buy:400,  sell:900,  risk:.18},
-  {from:'docks',     to:'casino_dist',drug:'Порошок',   buy:1200, sell:2800, risk:.30},
-  {from:'hills',     to:'business',   drug:'Таблетки',  buy:600,  sell:1400, risk:.22},
-  {from:'grove',     to:'chinatown',  drug:'Спайс',     buy:300,  sell:700,  risk:.16},
-  {from:'trainyard', to:'marina',     drug:'Героин',    buy:2000, sell:4500, risk:.40},
+  {from:'suburbs',   to:'downtown',   drug:'Трава',     buy:200,  sell:420,  risk:.22},
+  {from:'industrial',to:'port',       drug:'Крисс',     buy:800,  sell:1600, risk:.35},
+  {from:'port',      to:'vinewood',   drug:'Кокс',      buy:1500, sell:2900, risk:.45},
+  {from:'airport',   to:'downtown',   drug:'Экстази',   buy:500,  sell:1000, risk:.28},
+  {from:'wasteland', to:'beach',      drug:'Синтетика', buy:400,  sell:800,  risk:.25},
+  {from:'docks',     to:'casino_dist',drug:'Порошок',   buy:1200, sell:2300, risk:.40},
+  {from:'hills',     to:'business',   drug:'Таблетки',  buy:600,  sell:1200, risk:.30},
+  {from:'grove',     to:'chinatown',  drug:'Спайс',     buy:300,  sell:600,  risk:.22},
+  {from:'trainyard', to:'marina',     drug:'Героин',    buy:2000, sell:3800, risk:.50},
 ];
 
 function rDrugs(){
@@ -3967,7 +4000,7 @@ function rDrugs(){
   +`<div class="sec mt8"><div class="sec-l">Закупить товар</div></div>`
   +DROUTES.map((r,i)=>{
     const fd=W.districts[r.from],td=W.districts[r.to];
-    const ctrl=fd?.orgId===me.orgId;const onCd=Date.now()<(me.cooldowns?.['drug'+i]||0);
+    const ctrl=!!(fd?.orgId&&me.orgId&&fd?.orgId===me.orgId);const onCd=Date.now()<(me.cooldowns?.['drug'+i]||0);
     const profit=r.sell-r.buy;
     return`<div class="card">
       <div class="fc" style="gap:6px;margin-bottom:8px">
@@ -4013,8 +4046,9 @@ async function buyDrugs(i){
 // Delivery mini-game — провези груз не спалившись
 function startDrugDelivery(idx){
   const s=me.drugStash[idx];
-  const ctrl=W.districts[DROUTES[s.ri]?.from]?.orgId===me.orgId;
-  const risk=Math.max(0.05,s.risk*(ctrl?.9:1)-(me.skills?.defense||0)*.03);
+  const _dd=W.districts[DROUTES[s.ri]?.from];const ctrl=!!(_dd?.orgId&&me.orgId&&_dd.orgId===me.orgId);
+  const baseRisk=s.risk*(ctrl?.9:1)-(me.skills?.defense||0)*.03;
+  const risk=getDrugRisk(Math.max(0.05,baseRisk));
   window._drugDelivery={idx,s,risk,checkpoints:0,maxCheckpoints:4,caught:false};
   rDrugs();
 }
@@ -4138,12 +4172,11 @@ window.drugCheckpointChoice=function(correct){
 async function drugDeliverySuccess(){
   const {s}=window._drugDelivery;
   window._drugDelivery=null;
-  const weatherMod=1+(getWeatherMod('drug')||0); // hot=+15%, rain=-10%
+  const weatherMod=1+(getWeatherMod('drug')||0);
   const gross=s.qty*s.sell*(window.drugBonus?2:1)*weatherMod;
   const tax=Math.floor(gross*0.15);
   const profit=Math.floor(gross-tax);
   me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;
-  // Wanted: event can block it
   const wantedAdd=window._eventNoWanted?0:1;
   me.wanted=(me.wanted||0)+wantedAdd;
   me.drugStash.splice(s._idx||0,1);
@@ -4157,6 +4190,19 @@ async function drugDeliverySuccess(){
   saveMe();updateHdr();
   await pushFeed('💊','<b>'+me.name+'</b> доставил '+s.drug+' на '+fmt(profit)+'$');
   toast('✅ Доставлено! +'+fmt(profit)+'$'+(tax>0?' (−'+fmt(tax)+'$ налог)':''));rDrugs();
+}
+
+function getDrugRisk(baseRisk){
+  // Pharmacy: -15% risk, Warehouse: -10% risk
+  if(window._propDrugBonus===true){
+    const owned=me.props||[];
+    const hasPharma=owned.includes('pharmacy');
+    const hasWarehouse=owned.includes('warehouse');
+    if(hasPharma&&hasWarehouse) return Math.max(0.05,baseRisk*0.70);
+    if(hasPharma) return Math.max(0.05,baseRisk*0.82);
+    if(hasWarehouse) return Math.max(0.05,baseRisk*0.88);
+  }
+  return baseRisk;
 }
 
 async function drugDeliveryCaught(){
@@ -4746,23 +4792,32 @@ async function sendDM(){
 let minesState=null;
 function rMines(){
   const el=document.getElementById('D_mines');if(!el)return;
+  const maxBet=Math.min(me.money,50000);
   if(!minesState||minesState.done){
     el.innerHTML=`
       <div class="card hi" style="text-align:center;padding:20px;margin-bottom:10px">
         <div style="font-size:48px;margin-bottom:8px">💣</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">САПЁР</div>
-        <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Открывай клетки — не нарвись на мину.<br>Останови в любой момент и забери деньги!</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <input class="inp" id="minesBet" type="number" placeholder="Ставка $" value="500" style="flex:1">
+        <div style="font-size:11px;color:var(--dm);margin-bottom:14px">Открывай клетки — не нарвись на мину.<br>Забери деньги в любой момент. Макс x12.</div>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <input class="inp" id="minesBet" type="number" placeholder="Ставка $" value="500" min="100" max="${maxBet}" style="flex:1">
           <select class="inp" id="minesCnt" style="flex:1">
+            <option value="1">1 мина (осторожно)</option>
             <option value="3">3 мины (легко)</option>
             <option value="5" selected>5 мин (средне)</option>
             <option value="10">10 мин (хардкор)</option>
+            <option value="15">15 мин (безумие)</option>
           </select>
+        </div>
+        <div style="font-size:9px;color:var(--dm);margin-bottom:10px;text-align:left">
+          Мин: 100$ · Макс: ${fmt(maxBet)}$ · Множитель: до x12 · House edge: 5%
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          ${[500,1000,5000].map(v=>`<button class="btn btn-gh btn-sm" style="flex:1" onclick="document.getElementById('minesBet').value=${v}">${fmt(v)}$</button>`).join('')}
         </div>
         <button class="btn btn-r btn-full" onclick="startMines()">💣 НАЧАТЬ ИГРУ</button>
       </div>
-      ${minesState?.done?`<div class="card" style="text-align:center;color:${minesState.win?'var(--gr)':'var(--r)'}">
+      ${minesState?.done?`<div class="card" style="text-align:center;padding:14px;color:${minesState.win?'var(--gr)':'var(--r)'}">
         ${minesState.win?`🎉 Выиграл +${fmt(minesState.profit)}$!`:`💥 Мина! Потерял -${fmt(minesState.bet)}$`}
       </div>`:''}`;
     return;
@@ -4771,11 +4826,20 @@ function rMines(){
   const safe=revealed.filter(r=>r).length;
   const total=25;
   const cashout=Math.floor(bet*multiplier);
+  const tax=cashout>bet?Math.floor((cashout-bet)*0.10):0;
+  const netCashout=cashout-tax;
   el.innerHTML=`
-    <div class="card mb8" style="display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:11px;color:var(--dm)">Ставка</div><div style="font-weight:700">${fmt(bet)}$</div></div>
-      <div style="text-align:center"><div style="font-size:11px;color:var(--dm)">Множитель</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g)">x${multiplier.toFixed(2)}</div></div>
-      <div style="text-align:right"><div style="font-size:11px;color:var(--dm)">Выигрыш</div><div style="font-weight:700;color:var(--gr)">${fmt(cashout)}$</div></div>
+    <div class="card mb8">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><div style="font-size:10px;color:var(--dm)">Ставка</div><div style="font-weight:700;font-size:13px">${fmt(bet)}$</div></div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--dm)">Множитель</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:${multiplier>=10?'var(--r)':multiplier>=5?'var(--g)':'var(--cy)'}">x${multiplier.toFixed(2)}</div>
+          ${multiplier>=10?'<div style="font-size:8px;color:var(--r)">ПОЧТИ ПОТОЛОК!</div>':''}
+        </div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--dm)">На руки</div><div style="font-weight:700;font-size:13px;color:var(--gr)">${fmt(netCashout)}$</div></div>
+      </div>
+      ${tax>0?`<div style="font-size:9px;color:var(--dm);text-align:center">налог 10% = −${fmt(tax)}$</div>`:''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px">
       ${grid.map((cell,i)=>{
@@ -4784,24 +4848,27 @@ function rMines(){
         return`<div onclick="clickMine(${i})" style="aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:${isRevealed?'default':'pointer'};
           background:${isRevealed?(isMine?'rgba(230,57,80,.3)':'rgba(29,184,122,.2)'):'var(--d3)'};
           border:1px solid ${isRevealed?(isMine?'var(--r)':'var(--gr)'):'var(--br2)'};
-          transition:all .15s">
-          ${isRevealed?(isMine?'💣':'💎'):safe>0?'':'❓'}
+          transition:all .15s;user-select:none">
+          ${isRevealed?(isMine?'💣':'💎'):'❓'}
         </div>`;
       }).join('')}
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-g btn-full" onclick="cashoutMines()">💰 ЗАБРАТЬ ${fmt(cashout)}$</button>
-    </div>
-    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:6px">Открыто: ${safe} · Мин: ${mines} · Осталось: ${total-mines-safe} безопасных</div>`;
+    <button class="btn btn-g btn-full" onclick="cashoutMines()" style="font-size:14px;padding:13px">
+      💰 ЗАБРАТЬ ${fmt(netCashout)}$${tax>0?' (−'+fmt(tax)+'$ налог)':''}
+    </button>
+    <div style="text-align:center;font-size:10px;color:var(--dm);margin-top:6px">
+      Открыто: ${safe} · Мин: ${mines} · Осталось безопасных: ${total-mines-safe}
+    </div>`;
 }
 
 function startMines(){
   const bet=parseInt(document.getElementById('minesBet')?.value)||0;
-  const mines=parseInt(document.getElementById('minesCnt')?.value)||5;
+  const mines=Math.max(1,Math.min(15,parseInt(document.getElementById('minesCnt')?.value)||3));
+  const maxBet=Math.min(me.money, 50000); // cap max bet at 50k
   if(bet<100){toast('Минимум 100$!',1);return;}
+  if(bet>maxBet){toast('Максимум '+fmt(maxBet)+'$!',1);return;}
   if(me.money<bet){toast('Недостаточно денег!',1);return;}
   me.money-=bet;saveMe();updateHdr();
-  // Build grid
   const grid=Array(25).fill('safe');
   let placed=0;
   while(placed<mines){const i=Math.floor(Math.random()*25);if(grid[i]!=='mine'){grid[i]='mine';placed++;}}
@@ -4822,26 +4889,32 @@ function clickMine(i){
     minesState=null;setTimeout(rMines,1500);
     return;
   }
-  // Safe — update multiplier
+  // Safe — update multiplier with house edge
   const safe=minesState.revealed.filter(r=>r).length;
   const remaining=25-minesState.mines-safe;
-  const risk=minesState.mines/(25-safe+1);
-  minesState.multiplier=parseFloat((minesState.multiplier*(1+risk*1.2)).toFixed(2));
+  const totalSafe=25-minesState.mines;
+  // Mathematically correct multiplier with 5% house edge
+  const mineProb=minesState.mines/(25-safe+minesState.mines);
+  const rawMult=minesState.multiplier*(1+mineProb*0.95); // 5% house edge
+  minesState.multiplier=Math.min(parseFloat(rawMult.toFixed(2)),12); // hard cap x12
   sfx('coins');haptic('light');
-  // Auto cashout if all safe cells found
   if(remaining===0)cashoutMines();
   else rMines();
 }
 
 function cashoutMines(){
   if(!minesState||minesState.done)return;
-  const profit=Math.floor(minesState.bet*minesState.multiplier);
-  me.money+=profit;
-  addTx(profit-minesState.bet,'💣 Мины — выигрыш x'+minesState.multiplier.toFixed(2));
+  const gross=Math.floor(minesState.bet*minesState.multiplier);
+  const winNet=gross-minesState.bet; // actual profit
+  const tax=winNet>0?Math.floor(winNet*0.10):0; // 10% only on profit
+  const payout=gross-tax;
+  me.money+=payout;
+  if(winNet>0&&tax>0)addTx(-tax,'🏛️ Налог на выигрыш (10%)');
+  addTx(payout-minesState.bet,'💣 Мины x'+minesState.multiplier.toFixed(2));
   me.casinoWins=(me.casinoWins||0)+1;
   saveMe();updateHdr();checkAchievements();
   sfx('win');haptic('medium');
-  toast('💰 Забрал '+fmt(profit)+'$! (x'+minesState.multiplier.toFixed(2)+')');
+  toast('💰 Забрал '+fmt(payout)+'$! (x'+minesState.multiplier.toFixed(2)+(tax>0?' −'+fmt(tax)+'$ налог':'')+')');
   minesState=null;rMines();
 }
 
@@ -6433,7 +6506,9 @@ function rHistory(){
 }
 
 function fmtAge(ts){
+  if(!ts||ts<=0) return '—';
   const s = Math.floor((Date.now()-ts)/1000);
+  if(s < 0) return 'только что';
   if(s < 60) return s+'с';
   if(s < 3600) return Math.floor(s/60)+'м';
   if(s < 86400) return Math.floor(s/3600)+'ч';
@@ -6586,7 +6661,19 @@ async function collectRefRewards(){
       me.money += 2000;
       me.skillPoints = (me.skillPoints||0)+1;
       if(!me.refFriends) me.refFriends=[];
-      if(!me.refFriends.includes(r.from)) me.refFriends.push(r.from);
+      // Save as object with name/avatar for display
+      const friendPID = r.from;
+      const alreadyAdded = me.refFriends.find(f=>
+        (typeof f==='string'&&f===friendPID)||(typeof f==='object'&&(f.pid||f.from)===friendPID)
+      );
+      if(!alreadyAdded){
+        me.refFriends.push({
+          pid: friendPID,
+          name: r.fromName || (P[friendPID]?.name) || ('Игрок #'+friendPID.slice(-4)),
+          avatar: P[friendPID]?.avatar || '👤',
+          ts: r.ts || Date.now(),
+        });
+      }
       me.refEarned = (me.refEarned||0)+2000;
       addTx(2000,'👥 Реферал: '+(r.fromName||'игрок')+' вступил!');
       toast('👥 '+(r.fromName||'Новый игрок')+' вступил по твоей ссылке! +2000$ +1 SP 🎉');
@@ -6607,8 +6694,31 @@ function getRefBonus(){
 function rShopRefer(){
   const el = document.getElementById('D_refer'); if(!el) return;
   const link = getRefLink();
-  const friends = me.refFriends || [];
+  // refFriends can be array of PIDs (old) or objects (new) — handle both
+  const rawFriends = me.refFriends || [];
   const earned = me.refEarned || 0;
+
+  // Normalize: convert PID strings to display objects
+  const friends = rawFriends.map(f=>{
+    if(typeof f === 'string'){
+      // Old format: just a PID string — look up in P
+      const player = P[f];
+      return {
+        pid: f,
+        name: player?.name || ('Игрок #'+f.slice(-4)),
+        avatar: player?.avatar || '👤',
+        ts: player?.lastSeen || 0,
+      };
+    }
+    // New format: already an object
+    return {
+      pid: f.pid||f.from||'',
+      name: f.name||f.fromName||('Игрок #'+(f.pid||f.from||'?').slice(-4)),
+      avatar: f.avatar || (P[f.pid||f.from]?.avatar) || '👤',
+      ts: f.ts || 0,
+    };
+  });
+
   el.innerHTML = `
     <div class="shop-hero">
       <div style="font-size:48px;margin-bottom:8px">👥</div>
@@ -6637,9 +6747,11 @@ function rShopRefer(){
       </div>
       ${friends.length ? friends.map(f=>`
         <div class="ref-friend">
-          <div style="font-size:20px">${f.avatar||'👤'}</div>
-          <div style="flex:1"><div style="font-size:12px;font-weight:700">${f.name}</div>
-          <div style="font-size:9px;color:var(--dm)">Вступил ${fmtAge(f.ts)} назад</div></div>
+          <div style="font-size:20px">${f.avatar}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700">${f.name}</div>
+            <div style="font-size:9px;color:var(--dm)">Вступил ${f.ts?fmtAge(f.ts)+' назад':'недавно'}</div>
+          </div>
           <span class="tag tgr" style="font-size:9px">+2000$</span>
         </div>`).join('') : `<div class="empty">Пока нет рефералов — поделись ссылкой!</div>`}
     </div>
@@ -7395,7 +7507,7 @@ async function collectIncome(){
     return s+Math.floor((getPropData(p.id)?.income/60||p.income/60)*eventMult);
   },0);
   const dInc=Object.values(W.districts)
-    .filter(d=>d.orgId===me.orgId)
+    .filter(d=>!!(d.orgId&&me.orgId&&d.orgId===me.orgId))
     .reduce((s,d)=>{
       const bBonus=(d.buildings||[]).reduce((b,bid)=>b+(BUILDINGS[bid]?.incBonus||0),0);
       const ctrl=(d.control||100)/100;
@@ -7403,9 +7515,10 @@ async function collectIncome(){
       const tax=Math.floor(raw*(d.tax||0)/100);
       return s+raw-tax;
     },0);
-  // Org level income bonus
+  // Org level income bonus + bizclub bonus
   const orgBonus=getOrgLevelBonus().income/100;
-  const total=Math.floor((pInc+dInc)*(1+orgBonus));
+  const bizclubBonus=window._propBizclubBonus||0;
+  const total=Math.floor((pInc+dInc)*(1+orgBonus+bizclubBonus));
   if(total>0){
     me.money+=total;
     addTx(total,'🏠 Пассивный доход'+(eventMult>1?' 💸x'+eventMult:''));
@@ -7461,7 +7574,14 @@ function updateTimers(){
   Object.entries(W?.wars||{}).forEach(([wid,w])=>{if(w.end&&now>w.end+5000)resolveWar(wid);});
   if(me&&(me.wanted||0)>0){
     if(!me._wantedTimer)me._wantedTimer=now;
-    if(now-me._wantedTimer>3e5){me.wanted=Math.max(0,(me.wanted||0)-1);me._wantedTimer=now;saveMe();updateHdr();if(me.wanted===0)toast('✅ Розыск снят');}
+    // ЧОП ускоряет снижение розыска в 2 раза
+    const decayTime=window._propPoliceBonus?150000:300000; // 2.5мин или 5мин
+    if(now-me._wantedTimer>decayTime){
+      me.wanted=Math.max(0,(me.wanted||0)-1);
+      me._wantedTimer=now;
+      saveMe();updateHdr();
+      if(me.wanted===0)toast('✅ Розыск снят');
+    }
   }
   // Jail check
   if(me) checkJail();
