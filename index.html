@@ -966,6 +966,13 @@ function saveMe(){
   P[PID]=me;
   ST.set('players',P).catch(e=>console.warn('saveMe failed:',e));
 }
+const _actionLocks = {};
+async function withLock(key, fn){
+  if(_actionLocks[key]) return false;
+  _actionLocks[key] = true;
+  try{return await fn();}
+  finally{_actionLocks[key] = false;}
+}
 // pushFeed is defined above in Supabase section — remove old duplicate:
 
 
@@ -1612,7 +1619,7 @@ function rProp(){
         const tierClr={t1:'var(--bl)',t2:'var(--g)',t3:'var(--g)'}[p.tier]||'var(--g)';
         const specEmoji={home:'🏠',boost:'⚡',drug:'💊',rep:'⭐',social:'🤝',passive:'💤',bank:'💰',casino:'🎰',police:'🛡️',prestige:'👑'}[p.spec?.type]||'✨';
         return`
-        <div class="card mb8" style="border-left:3px solid ${hasEvent?'var(--r)':tierClr};opacity:${hasEvent?.7:1}">
+        <div class="card mb8" style="border-left:3px solid ${hasEvent?'var(--r)':tierClr};opacity:${hasEvent?0.7:1}">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
             <div style="font-size:28px;width:46px;height:46px;background:var(--d3);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.ico}</div>
             <div style="flex:1;min-width:0">
@@ -4022,7 +4029,7 @@ function rDrugs(){
       </div>
       <div class="fb">
         <div style="font-size:10px;color:${r.risk>.25?'var(--r)':'var(--dm)'}">
-          Риск: ${Math.round(r.risk*(ctrl?.9:1)*100)}% ${ctrl?'🛡️':''}
+          Риск: ${Math.round(r.risk*(ctrl?0.9:1)*100)}% ${ctrl?'🛡️':''}
         </div>
         <button class="btn btn-pu btn-sm" onclick="buyDrugs(${i})" ${me.money<r.buy||onCd?'disabled':''}>
           ${onCd?`⏳`:`КУПИТЬ ${r.buy}$`}
@@ -4047,7 +4054,7 @@ async function buyDrugs(i){
 function startDrugDelivery(idx){
   const s=me.drugStash[idx];
   const _dd=W.districts[DROUTES[s.ri]?.from];const ctrl=!!(_dd?.orgId&&me.orgId&&_dd.orgId===me.orgId);
-  const baseRisk=s.risk*(ctrl?.9:1)-(me.skills?.defense||0)*.03;
+  const baseRisk=s.risk*(ctrl?0.9:1)-(me.skills?.defense||0)*.03;
   const risk=getDrugRisk(Math.max(0.05,baseRisk));
   window._drugDelivery={idx,s,risk,checkpoints:0,maxCheckpoints:4,caught:false};
   rDrugs();
@@ -4170,7 +4177,7 @@ window.drugCheckpointChoice=function(correct){
 };
 
 async function drugDeliverySuccess(){
-  const {s}=window._drugDelivery;
+  const {s,idx}=window._drugDelivery;
   window._drugDelivery=null;
   const weatherMod=1+(getWeatherMod('drug')||0);
   const gross=s.qty*s.sell*(window.drugBonus?2:1)*weatherMod;
@@ -4179,9 +4186,11 @@ async function drugDeliverySuccess(){
   me.money+=profit;me.score+=Math.floor(profit/15);me.rep+=10;
   const wantedAdd=window._eventNoWanted?0:1;
   me.wanted=(me.wanted||0)+wantedAdd;
-  me.drugStash.splice(s._idx||0,1);
-  const idx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
-  if(idx>=0)me.drugStash.splice(idx,1);
+  if(Number.isInteger(idx)&&idx>=0&&idx<me.drugStash.length) me.drugStash.splice(idx,1);
+  else{
+    const stashIdx=me.drugStash.findIndex(x=>x.drug===s.drug&&x.qty===s.qty);
+    if(stashIdx>=0)me.drugStash.splice(stashIdx,1);
+  }
   me.drugDeliveries=(me.drugDeliveries||0)+1;
   gainXP(80);
   addTx(Math.floor(gross),'💊 Доставлено: '+s.drug);
@@ -5364,12 +5373,17 @@ async function rDuel(){
 }
 
 async function challengeDuel(tid){
+  if(_actionLocks.duel_challenge)return;
+  _actionLocks.duel_challenge=true;
+  try{
+  if(tid===PID){toast('Нельзя вызывать самого себя!',1);return;}
   const bet=parseInt(document.getElementById('duelBet')?.value)||0;
   if(bet<200){toast('Минимум 200$!',1);return;}
   if(me.money<bet){toast('Недостаточно денег!',1);return;}
+  const duels=await ST.get('duels')||[];
+  if(duels.some(d=>!d.done&&((d.challenger===PID)||(d.target===PID)))){toast('У тебя уже есть активная дуэль!',1);return;}
   me.money-=bet;addTx(-bet,'🥊 Дуэль — залог');
   saveMe();updateHdr();
-  const duels=await ST.get('duels')||[];
   duels.push({id:'d'+Date.now(),challenger:PID,chalName:me.name,target:tid,bet,done:false,accepted:false,ts:Date.now()});
   await ST.set('duels',duels.slice(-20));
   sfx('click');haptic('medium');
@@ -5377,12 +5391,19 @@ async function challengeDuel(tid){
   const target=P[tid];
   if(target?.tgId) notifyPlayer(target.tgId,'duel',{challenger:me.name,bet});
   toast('⚔️ Вызов отправлен '+P[tid]?.name+'!');rDuel();
+  }finally{
+    _actionLocks.duel_challenge=false;
+  }
 }
 
 async function acceptDuel(duelId){
+  if(_actionLocks.duel_accept)return;
+  _actionLocks.duel_accept=true;
+  try{
   const duels=await ST.get('duels')||[];
-  const d=duels.find(x=>x.id===duelId);if(!d)return;
+  const d=duels.find(x=>x.id===duelId);if(!d||d.done||d.accepted)return;
   if(me.money<d.bet){toast('Недостаточно денег!',1);return;}
+  const challenger=P[d.challenger];
   me.money-=d.bet;addTx(-d.bet,'🥊 Дуэль — залог');
   saveMe();updateHdr();
   d.accepted=true;
@@ -5396,18 +5417,28 @@ async function acceptDuel(duelId){
   d.done=true;d.winner=iWin?PID:d.challenger;
   await ST.set('duels',duels);
   if(iWin){
-    me.money+=prize;me.rep+=20;me.score+=50;
+    me.money+=prize;me.rep+=20;me.score+=50;me.duelsWon=(me.duelsWon||0)+1;
     addTx(gross,'🥊 Дуэль — победа!');
     addTx(-tax,'🏛️ Налог на перевод (5%)');
     sfx('win');haptic('heavy');
     await pushFeed('🥊',`<b>${me.name}</b> победил <b>${P[d.challenger]?.name}</b> в дуэли! +${fmt(prize)}$`);
     toast(`🏆 Победа! +${fmt(prize)}$ (−${fmt(tax)}$ налог)`);
   }else{
+    if(challenger){
+      challenger.money=(challenger.money||0)+prize;
+      challenger.rep=(challenger.rep||0)+20;
+      challenger.score=(challenger.score||0)+50;
+      challenger.duelsWon=(challenger.duelsWon||0)+1;
+      P[d.challenger]=challenger;
+    }
     sfx('fail');haptic('medium');
     await pushFeed('🥊',`<b>${P[d.challenger]?.name}</b> победил <b>${me.name}</b> в дуэли и забрал ${fmt(prize)}$!`);
     toast(`💀 Проигрыш! ${P[d.challenger]?.name} оказался сильнее`,1);
   }
   saveMe();updateHdr();checkAchievements();rDuel();
+  }finally{
+    _actionLocks.duel_accept=false;
+  }
 }
 
 async function declineDuel(duelId){
@@ -5415,7 +5446,13 @@ async function declineDuel(duelId){
   const d=duels.find(x=>x.id===duelId);if(!d)return;
   d.done=true;
   // Refund challenger
-  if(d.challenger===PID){me.money+=d.bet;saveMe();}
+  if(d.challenger===PID){
+    me.money+=d.bet;
+    saveMe();
+  }else if(P[d.challenger]){
+    P[d.challenger].money=(P[d.challenger].money||0)+d.bet;
+    ST.set('players',P).catch(e=>console.warn('duel refund failed:',e));
+  }
   await ST.set('duels',duels);
   toast('Дуэль отклонена');rDuel();
 }
@@ -6982,6 +7019,10 @@ function buyPremium(planId){
   const plan = PREMIUM_PLANS.find(p=>p.id===planId);
   if(!plan) return;
   const tg = window.Telegram?.WebApp;
+  if(!tg?.openInvoice){
+    toast('Покупка премиума доступна только внутри Telegram WebApp после подключения оплаты.',1);
+    return;
+  }
   // In production: tg.openInvoice(...) with Bot API invoice
   // For demo — simulate purchase
   if(tg?.openInvoice){
@@ -6994,6 +7035,11 @@ function buyPremium(planId){
 }
 
 function activatePremium(planId){
+  if(window._premiumPurchaseApproved !== planId){
+    toast('Премиум активируется только после подтверждённой оплаты.',1);
+    return;
+  }
+  delete window._premiumPurchaseApproved;
   me.premium = planId;
   me.premiumUntil = Date.now() + 30*864e5;
   const plan = PREMIUM_PLANS.find(p=>p.id===planId);
@@ -7008,6 +7054,14 @@ function buyDonate(itemId){
   const item = DONATE_ITEMS.find(d=>d.id===itemId);
   if(!item) return;
   const tg = window.Telegram?.WebApp;
+  if(!tg?.initDataUnsafe?.user){
+    toast('Донат доступен только внутри Telegram WebApp.',1);
+    return;
+  }
+  if(!tg?.openInvoice){
+    toast('Покупка доната доступна только внутри Telegram WebApp после подключения оплаты.',1);
+    return;
+  }
   if(tg?.openInvoice){
     toast('⭐ Оплата через Telegram Stars (требует backend)',1);
   } else {
@@ -7777,7 +7831,7 @@ function renderCityEvent(ev){
 // ════════════════════════════════════════
 async function checkStashes(){
   const stashes=await ST.get('stashes')||[];
-  const active=stashes.filter(s=>!s.claimed&&s.until>Date.now());
+  let active=stashes.filter(s=>!s.claimed&&s.until>Date.now());
   // Generate new stashes if none
   if(active.length<3){
     const districts=Object.keys((W||{}).districts||{});
@@ -7796,6 +7850,7 @@ async function checkStashes(){
       newStashes.push({id:'s'+Date.now()+i,district:dist,reward:r,
         until:Date.now()+4*3600000,claimed:false,ts:Date.now()});
     }
+    active=newStashes.slice(-10).filter(s=>!s.claimed&&s.until>Date.now());
     await ST.set('stashes',newStashes.slice(-10));
   }
   // Show badge on map
@@ -8067,6 +8122,9 @@ function showBankTab(tab){
 }
 
 async function makeDeposit(planId){
+  if(_actionLocks.make_deposit)return;
+  _actionLocks.make_deposit=true;
+  try{
   const plan=DEPOSIT_PLANS.find(p=>p.id===planId);if(!plan)return;
   if((me.level||1)<plan.minLevel){toast('Нужен уровень '+plan.minLevel+'!',1);return;}
   if(plan.diamond&&!(me.premium==='diamond'&&Date.now()<(me.premiumUntil||0))){
@@ -8082,10 +8140,16 @@ async function makeDeposit(planId){
   saveMe();updateHdr();sfx('coins');haptic('medium');
   toast('💴 Вклад открыт! Заберёшь +'+fmt(Math.floor(amount*(1+plan.rate)))+'$ через '+plan.hours+'ч');
   showBankTab('deposits');
+  }finally{
+    _actionLocks.make_deposit=false;
+  }
 }
 
 async function collectDeposit(){
-  const d=me.activeDeposit;if(!d||!d.collected===false)return;
+  if(_actionLocks.collect_deposit)return;
+  _actionLocks.collect_deposit=true;
+  try{
+  const d=me.activeDeposit;if(!d||d.collected)return;
   if(Date.now()<d.until){toast('Вклад ещё не созрел!',1);return;}
   const payout=Math.floor(d.amount*(1+d.rate));
   me.money+=payout;
@@ -8093,12 +8157,19 @@ async function collectDeposit(){
   me.activeDeposit=null;
   saveMe();updateHdr();sfx('win');haptic('heavy');
   toast('🎉 Вклад получен! +'+fmt(payout)+'$');showBankTab('deposits');
+  }finally{
+    _actionLocks.collect_deposit=false;
+  }
 }
 
 async function bankTransfer(){
+  if(_actionLocks.bank_transfer)return;
+  _actionLocks.bank_transfer=true;
+  try{
   const targetId=document.getElementById('transferTarget')?.value;
   const amount=parseInt(document.getElementById('transferAmount')?.value)||0;
   if(!targetId){toast('Выбери получателя!',1);return;}
+  if(targetId===PID){toast('Нельзя переводить самому себе!',1);return;}
   if(amount<100){toast('Минимум 100$!',1);return;}
   const fee=Math.floor(amount*0.05);
   const net=amount-fee;
@@ -8116,6 +8187,9 @@ async function bankTransfer(){
   if(target.tgId)notifyPlayer(target.tgId,'daily_remind'); // reuse as generic ping
   toast('✅ Переведено '+fmt(net)+'$ → '+target.name+' (комиссия '+fmt(fee)+'$)');
   showBankTab('history');
+  }finally{
+    _actionLocks.bank_transfer=false;
+  }
 }
 
 // rCredits is defined above as the full bank with showBankTab
@@ -8158,6 +8232,9 @@ function rCredits(){
 }
 
 async function takeLoan(planId){
+  if(_actionLocks.take_loan)return;
+  _actionLocks.take_loan=true;
+  try{
   if(me.activeLoan&&me.activeLoan.until>Date.now()){toast('Сначала погаси текущий кредит!',1);return;}
   const plan=CREDIT_PLANS.find(p=>p.id===planId);if(!plan)return;
   if((me.level||1)<plan.minLevel){toast('Нужен уровень '+plan.minLevel+'!',1);return;}
@@ -8171,9 +8248,15 @@ async function takeLoan(planId){
   saveMe();updateHdr();
   sfx('coins');haptic('medium');
   toast('💳 Кредит получен! Верни '+fmt(debt)+'$ за '+plan.hours+'ч');rCredits();
+  }finally{
+    _actionLocks.take_loan=false;
+  }
 }
 
 async function repayLoan(){
+  if(_actionLocks.repay_loan)return;
+  _actionLocks.repay_loan=true;
+  try{
   const loan=me.activeLoan;if(!loan)return;
   if(me.money<loan.debt){toast('Не хватает '+fmt(loan.debt-me.money)+'$!',1);return;}
   me.money-=loan.debt;
@@ -8182,6 +8265,9 @@ async function repayLoan(){
   saveMe();updateHdr();
   sfx('win');haptic('medium');
   toast('✅ Кредит погашен!');rCredits();
+  }finally{
+    _actionLocks.repay_loan=false;
+  }
 }
 
 function checkCredit(){
@@ -8468,7 +8554,11 @@ function openSendMoney(pid){
 }
 
 async function confirmSendMoney(pid){
+  if(_actionLocks.profile_transfer)return;
+  _actionLocks.profile_transfer=true;
+  try{
   const amount=parseInt(document.getElementById('sendAmt')?.value)||0;
+  if(pid===PID){toast('Нельзя переводить самому себе!',1);return;}
   if(amount<100){toast('Минимум 100$!',1);return;}
   const fee=Math.floor(amount*0.05);
   const net=amount-fee;
@@ -8486,6 +8576,9 @@ async function confirmSendMoney(pid){
   await pushFeed('💸',`<b>${me.name}</b> отправил <b>${target.name}</b> ${fmt(net)}$`);
   if(target.tgId)notifyPlayer(target.tgId,'biz_event',{ico:'💸',biz:'Перевод',event:me.name+' отправил тебе '+fmt(net)+'$'});
   toast('✅ Отправлено '+fmt(net)+'$ → '+target.name);
+  }finally{
+    _actionLocks.profile_transfer=false;
+  }
 }
 
 // ── СИСТЕМА ДРУЗЕЙ ──
